@@ -24,30 +24,78 @@
 
 (cl:in-package :cl-tiger)
 
-(defclass id ()
-  ((str :type string
-        :initform ""
-        :initarg :str
-        :accessor id-str)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (deftype id () 'string)
 
-(defmethod print-object ((id id) stream)
-  (format stream "id(~A)" (id-str id)))
+  (defclass stm ()
+    ())
 
-(defun make-id (str)
-  (make-instance 'id :str str))
+  (defclass compound-stm (stm)
+    ((first-stm :type stm
+                :initform (error "Must supply the first statement.")
+                :initarg :first-stm
+                :accessor compound-stm-first)
+     (rest-stm :type stm
+               :initform (error "Must supply the rest statement.")
+               :initarg :rest-stm
+               :accessor compound-stm-rest)))
 
-(defclass stm ()
-  ())
+  (defclass expr ()
+    ())
 
-(defclass compound-stm (stm)
-  ((first-stm :type stm
-              :initform (error "Must supply the first statement.")
-              :initarg :first-stm
-              :accessor compound-stm-first)
-   (rest-stm :type stm
-              :initform (error "Must supply the rest statement.")
-              :initarg :rest-stm
-              :accessor compound-stm-rest)))
+  (defclass assign-stm (stm)
+    ((id :type id
+         :initform (error "Must supply the id of the variable to be assigned.")
+         :initarg :id
+         :accessor assign-stm-id)
+     (expr :type expr
+           :initform (error "Must supply the expression.")
+           :initarg :expr
+           :accessor assign-stm-expr)))
+
+  (defclass print-stm (stm)
+    ((exprs :type list
+            :initform nil
+            :initarg :exprs
+            :accessor print-stm-exprs)))
+
+  (defclass id-expr (expr)
+    ((id :type id
+         :initform (error "Must supply the id.")
+         :initarg :id
+         :accessor id-expr-id)))
+
+  (defclass num-expr (expr)
+    ((num :type number
+          :initform (error "Must supply the num.")
+          :initarg :num
+          :accessor num-expr-num)))
+
+  (deftype bin-op () '(member :plus :minus :times :div))
+
+  (defclass bin-op-expr (expr)
+    ((left-expr :type expr
+                :initform (error "Must supply the left expression.")
+                :initarg :left-expr
+                :accessor bin-op-expr-left)
+     (right-expr :type expr
+                 :initform (error "Must supply the right expression.")
+                 :initarg :right-expr
+                 :accessor bin-op-expr-right)
+     (op :type bin-op
+       :initform (error "Must supply the binary operator.")
+       :initarg :op
+       :accessor bin-op-expr-op)))
+
+  (defclass stm-expr-expr (expr)
+    ((stm :type stm
+          :initform (error "Must supply the statement.")
+          :initarg :stm
+          :accessor stm-expr-expr-stm)
+     (expr :type expr
+           :initform (error "Must supply the expression.")
+           :initarg :expr
+           :accessor stm-expr-expr-expr))))
 
 (defmethod print-object ((stm compound-stm) stream)
   (format stream "~A; ~A"
@@ -59,19 +107,6 @@
                  :first-stm first-stm
                  :rest-stm rest-stm))
 
-(defclass expr ()
-  ())
-
-(defclass assign-stm (stm)
-  ((id :type id
-       :initform (error "Must supply the id of the variable to be assigned.")
-       :initarg :id
-       :accessor assign-stm-id)
-   (expr :type expr
-         :initform (error "Must supply the expression.")
-         :initarg :expr
-         :accessor assign-stm-expr)))
-
 (defmethod print-object ((stm assign-stm) stream)
   (format stream "~A = ~A"
           (assign-stm-id stm)
@@ -82,12 +117,6 @@
                  :id id
                  :expr expr))
 
-(defclass print-stm (stm)
-  ((exprs :type list
-          :initform nil
-          :initarg :exprs
-          :accessor print-stm-exprs)))
-
 (defmethod print-object ((stm print-stm) stream)
   (format stream "print(~{~A~^, ~})" (print-stm-exprs stm)))
 
@@ -97,45 +126,17 @@
 (defun make-print-stm* (&rest exprs)
   (make-print-stm exprs))
 
-(defclass id-expr (expr)
-  ((id :type id
-       :initform (error "Must supply the id.")
-       :initarg :id
-       :accessor id-expr-id)))
-
 (defmethod print-object ((expr id-expr) stream)
   (format stream "expr(~A)" (id-expr-id expr)))
 
 (defun make-id-expr (id)
-  (make-instance 'id-expr :id (make-id id)))
-
-(defclass num-expr (expr)
-  ((num :type number
-        :initform (error "Must supply the num.")
-        :initarg :num
-        :accessor num-expr-num)))
+  (make-instance 'id-expr :id id))
 
 (defmethod print-object ((expr num-expr) stream)
   (format stream "expr(~A)" (num-expr-num expr)))
 
 (defun make-num-expr (num)
   (make-instance 'num-expr :num num))
-
-(deftype bin-op () '(member :plus :minus :times :div))
-
-(defclass bin-op-expr (expr)
-  ((left-expr :type expr
-              :initform (error "Must supply the left expression.")
-              :initarg :left-expr
-              :accessor bin-op-expr-left)
-   (right-expr :type expr
-              :initform (error "Must supply the right expression.")
-              :initarg :right-expr
-              :accessor bin-op-expr-right)
-   (op :type bin-op
-       :initform (error "Must supply the binary operator.")
-       :initarg :op
-       :accessor bin-op-expr-op)))
 
 (defmethod print-object ((expr bin-op-expr) stream)
   (format stream "~A ~A ~A"
@@ -153,16 +154,6 @@
                  :op op
                  :right-expr right-expr))
 
-(defclass stm-expr-expr (expr)
-  ((stm :type stm
-        :initform (error "Must supply the statement.")
-        :initarg :stm
-        :accessor stm-expr-expr-stm)
-   (expr :type expr
-         :initform (error "Must supply the expression.")
-         :initarg :expr
-         :accessor stm-expr-expr-expr)))
-
 (defmethod print-object ((expr stm-expr-expr) stream)
   (format stream "(~A, ~A)"
           (stm-expr-expr-stm expr)
@@ -171,15 +162,14 @@
 (defun make-stm-expr-expr (stm expr)
   (make-instance 'stm-expr-expr :stm stm :expr expr))
 
-
 (defvar *prog*
   (make-compound-stm
    (make-assign-stm
-    (make-id "a")
+    "a"
     (make-bin-op-expr (make-num-expr 5) :plus (make-num-expr 3)))
    (make-compound-stm
     (make-assign-stm
-     (make-id "b")
+     "b"
      (make-stm-expr-expr
       (make-print-stm*
        (make-id-expr "a")
@@ -197,13 +187,13 @@
     ((assign-stm (assign-stm-id id)
                  (assign-stm-expr expr))
      (trivia:let-match (((list int-value new-env) (interpret-expr expr env)))
-       (cons (cons (id-str id) int-value) new-env)))
+       (cons (cons id int-value) new-env)))
     ((print-stm (print-stm-exprs exprs))
      (let ((first-expr? t))
        (prog1
            (reduce (lambda (cur-env expr)
                      (trivia:let-match (((list int-value new-env) (interpret-expr expr cur-env)))
-                       (format t (if  first-expr? "~A" " ~A") int-value)
+                       (format t (if first-expr? "~A" " ~A") int-value)
                        (setf first-expr? nil)
                        new-env))
                    exprs
@@ -214,7 +204,7 @@
   ;; Returns (int-return-value new-env)
   (trivia:ematch expr
     ((id-expr (id-expr-id id))
-     (let ((id-value (assoc (id-str id) env :test #'string=)))
+     (let ((id-value (assoc id env :test #'string=)))
        (unless id-value (error "Undefined variable: ~A, current environment: ~A." id env))
        (list (cdr id-value) env)))
     ((num-expr (num-expr-num num))
