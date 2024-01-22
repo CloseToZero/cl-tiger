@@ -1,26 +1,9 @@
-;; Copyright (c) 2023 Zhexuan Chen <2915234902@qq.com>
-
-;; This file is part of cl-tiger.
-
-;; This file is free software: you can redistribute it and/or modify it
-;; under the terms of the GNU General Public License as published by the
-;; Free Software Foundation, either version 3 of the License, or (at
-;; your option) any later version.
-;;
-;; This file is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License
-;; along with this file.  If not, see <http://www.gnu.org/licenses/>.
-
-;;; Code:
-
 (defsystem "cl-tiger"
   :description "The Tiger Programming Language (from Modern Compiler Implementation in ML) implemented in Common Lisp."
   :version "0.0.1"
   :author "Zhexuan Chen <2915234902@qq.com>"
   :licence "MIT"
-  :depends-on ("trivia")
-  :components ((:file "cl-tiger")))
+  :depends-on ("trivia" "esrap" "alexandria")
+  :components ((:file "straight-line")
+               (:file  "ast")
+               (:file "parser" :depends-on ("ast"))))

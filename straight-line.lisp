@@ -19,10 +19,10 @@
 
 ;;; Code:
 
-(cl:defpackage :cl-tiger
+(cl:defpackage :cl-tiger/straight-line
   (:use :cl))
 
-(cl:in-package :cl-tiger)
+(cl:in-package :cl-tiger/straight-line)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (deftype id () 'string)
