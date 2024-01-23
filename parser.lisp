@@ -38,7 +38,9 @@
 
 (deftoken id
     (and letter (* (or letter digit #\_)))
-  (:text t))
+  (:text t)
+  (:lambda (result)
+    (symbol:get-sym result)))
 
 (deftoken keyword-type "type")
 
@@ -56,22 +58,17 @@
 
 (deftoken keyword-of "of")
 
-(deftoken type-id id
-  (:lambda (result)
-    (cl-tiger/symbol:get-sym result)))
+(deftoken type-id id)
 
 (esrap:defrule name-ty
     type-id
   (:lambda (result esrap:&bounds start)
-    (cl-tiger/ast:make-name-ty result start)))
+    (ast:make-name-ty result start)))
 
 (esrap:defrule field
     (and id/?s token-colon/?s type-id)
   (:lambda (result esrap:&bounds start)
-    (cl-tiger/ast:make-field
-     (cl-tiger/symbol:get-sym (nth 0 result))
-     (nth 2 result)
-     start)))
+    (ast:make-field (nth 0 result) (nth 2 result) start)))
 
 (deftoken fields
     (esrap:? (and field
