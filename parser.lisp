@@ -54,45 +54,57 @@
 (deftoken keyword-of "of")
 
 (deftoken type-id id
-  (:function (lambda (result)
-               (cl-tiger/ast:make-type-id result))))
+  (:lambda (result)
+    (cl-tiger/symbol:get-sym result)))
 
-(deftoken type-fields
-    (esrap:? (and id/?s token-colon/?s type-id
-                  (* (and (esrap:? skippable) token-comma/?s id/?s token-colon/?s type-id))))
-  (:function (lambda (result)
-               (cond ((null result) nil)
-                     (t (let ((rest-type-fields (nth 3 result)))
-                          (cons (list (nth 0 result) (nth 2 result))
-                                (mapcar (lambda (type-field-with-comma)
-                                          (list (nth 2 type-field-with-comma)
-                                                (nth 4 type-field-with-comma)))
-                                        rest-type-fields))))))))
+(esrap:defrule name-ty
+    type-id
+  (:lambda (result esrap:&bounds start)
+    (cl-tiger/ast:make-name-ty result start)))
 
-(esrap:defrule record-type
-    (and token-left-brace/?s type-fields/?s token-right-brace)
-  (:function (lambda (result)
-               (cl-tiger/ast:make-record-type (second result)))))
+(esrap:defrule field
+    (and id/?s token-colon/?s type-id)
+  (:lambda (result esrap:&bounds start)
+    (cl-tiger/ast:make-field
+     (cl-tiger/symbol:get-sym (nth 0 result))
+     (nth 2 result)
+     start)))
 
-(esrap:defrule array-type
+(deftoken fields
+    (esrap:? (and field
+                  (* (and (esrap:? skippable) token-comma/?s field))))
+  (:lambda (result)
+    (cond ((null result) nil)
+          (t (cons (first result)
+                   (mapcar (lambda (field-with-comma)
+                             (nth 2 field-with-comma))
+                           (second result)))))))
+
+(esrap:defrule record-ty
+    (and token-left-brace/?s fields/?s token-right-brace)
+  (:lambda (result)
+    (cl-tiger/ast:make-record-ty (second result))))
+
+(esrap:defrule array-ty
     (and keyword-array/?s keyword-of/?s type-id)
-  (:function (lambda (result)
-               (cl-tiger/ast:make-array-type (nth 2 result)))))
+  (:lambda (result esrap:&bounds start)
+    (cl-tiger/ast:make-array-ty (nth 2 result) start)))
 
-(esrap:defrule type
-    (or array-type record-type type-id))
+(esrap:defrule ty
+    (or array-ty record-ty name-ty))
 
-(esrap:defrule type-declaration
-    (and keyword-type/?s type-id/?s token-equal/?s type)
-  (:function (lambda (result)
-               (cl-tiger/ast:make-type-declaration (nth 1 result) (nth 3 result)))))
+(esrap:defrule type-decl
+    (and keyword-type/?s type-id/?s token-equal/?s ty)
+  (:lambda (result esrap:&bounds start)
+    (cl-tiger/ast:make-type-decl (nth 1 result) (nth 3 result) start)))
 
-(esrap:defrule type-declarations
-    (and type-declaration
-         (* (and (esrap:? skippable) type-declaration)))
-  (:function (lambda (result)
-               (cl-tiger/ast:make-type-declarations
-                (cons (first result)
-                      (mapcar (lambda (type-declaration-with-nil)
-                                (second type-declaration-with-nil))
-                              (second result)))))))
+(esrap:defrule type-decls
+    (esrap:? (and type-decl
+                  (* (and (esrap:? skippable) type-decl))))
+  (:lambda (result)
+    (cl-tiger/ast:make-type-decls
+     (cond ((null result) nil)
+           (t (cons (first result)
+                    (mapcar (lambda (type-decl-with-nil)
+                              (second type-decl-with-nil))
+                            (second result))))))))
