@@ -1,5 +1,8 @@
 (cl:defpackage :cl-tiger/parser
-  (:use :cl))
+  (:use :cl)
+  (:local-nicknames
+   (:symbol :cl-tiger/symbol)
+   (:ast :cl-tiger/ast)))
 
 (cl:in-package :cl-tiger/parser)
 
@@ -83,12 +86,12 @@
 (esrap:defrule record-ty
     (and token-left-brace/?s fields/?s token-right-brace)
   (:lambda (result)
-    (cl-tiger/ast:make-record-ty (second result))))
+    (ast:make-record-ty (second result))))
 
 (esrap:defrule array-ty
     (and keyword-array/?s keyword-of/?s type-id)
   (:lambda (result esrap:&bounds start)
-    (cl-tiger/ast:make-array-ty (nth 2 result) start)))
+    (ast:make-array-ty (nth 2 result) start)))
 
 (esrap:defrule ty
     (or array-ty record-ty name-ty))
@@ -96,13 +99,13 @@
 (esrap:defrule type-decl
     (and keyword-type/?s type-id/?s token-equal/?s ty)
   (:lambda (result esrap:&bounds start)
-    (cl-tiger/ast:make-type-decl (nth 1 result) (nth 3 result) start)))
+    (ast:make-type-decl (nth 1 result) (nth 3 result) start)))
 
 (esrap:defrule type-decls
     (esrap:? (and type-decl
                   (* (and (esrap:? skippable) type-decl))))
   (:lambda (result)
-    (cl-tiger/ast:make-type-decls
+    (ast:make-type-decls
      (cond ((null result) nil)
            (t (cons (first result)
                     (mapcar (lambda (type-decl-with-nil)

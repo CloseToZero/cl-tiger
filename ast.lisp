@@ -1,5 +1,6 @@
 (cl:defpackage :cl-tiger/ast
-  (:use :cl :cl-tiger/symbol)
+  (:use :cl)
+  (:local-nicknames (:symbol :cl-tiger/symbol))
   (:export
 
    #:pos
@@ -107,7 +108,7 @@
 
 (defclass simple-var (var)
   ((sym
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the symbol of the simple-var.")
     :initarg :sym
     :accessor simple-var-sym)
@@ -127,7 +128,7 @@
     :initarg :var
     :accessor field-var-var)
    (sym
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the symbol of the field-var.")
     :initarg :sym
     :accessor field-var-sym)
@@ -203,7 +204,7 @@
 
 (defclass call-expr (expr)
   ((fun
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the function of the call-expr.")
     :initarg :fun
     :accessor call-expr-fun)
@@ -253,7 +254,7 @@
     :initarg :fields
     :accessor record-expr-fields)
    (type-id
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the type-id of the record-expr.")
     :initarg :type-id
     :accessor record-expr-type-id)
@@ -345,7 +346,7 @@
 
 (defclass for-expr (expr)
   ((var
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the var of the for-expr.")
     :initarg :var
     :accessor for-expr-var)
@@ -390,12 +391,12 @@
 
 (defclass field ()
   ((name
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the name of the field.")
     :initarg :name
     :accessor field-name)
    (type-id
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the type-id of the field.")
     :initarg :type-id
     :accessor field-type-id)
@@ -418,7 +419,7 @@
 
 (defclass name-ty (ty)
   ((name
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the name of the name-ty.")
     :initarg :name
     :accessor name-ty-name)
@@ -444,7 +445,7 @@
 
 (defclass array-ty (ty)
   ((base-type-id
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the base-type-id of the array-ty.")
     :initarg :base-type-id
     :accessor array-ty-base-type-id)
@@ -459,7 +460,7 @@
 
 (defclass function-decl ()
   ((name
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the name of the function declaration.")
     :initarg :name
     :accessor function-decl-name)
@@ -492,7 +493,7 @@
 
 (defclass type-decl ()
   ((name
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the name of the type declaration.")
     :initarg :name
     :accessor type-decl-name)
@@ -537,7 +538,7 @@
 
 (defclass var-decl (decl)
   ((name
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the name of the variable declaration.")
     :initarg :name
     :accessor var-decl-name)
@@ -589,7 +590,7 @@
 
 (defclass array-expr (expr)
   ((base-type-id
-    :type sym
+    :type symbol:sym
     :initform (error "Must supply the base-type-id of the array-expr.")
     :initarg :type-id
     :accessor array-expr-base-type-id)
