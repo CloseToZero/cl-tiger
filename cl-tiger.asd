@@ -4,6 +4,8 @@
   :author "Zhexuan Chen <2915234902@qq.com>"
   :licence "MIT"
   :depends-on ("trivia" "esrap" "alexandria")
+  :serial t
   :components ((:file "straight-line")
-               (:file  "ast")
-               (:file "parser" :depends-on ("ast"))))
+               (:file "symbol")
+               (:file "ast")
+               (:file "parser")))
