@@ -50,9 +50,19 @@
 
 (deftoken token-colon ":")
 
+(deftoken token-semicolon ";")
+
+(deftoken token-left-paren "(")
+
+(deftoken token-right-paren ")")
+
 (deftoken token-left-brace "{")
 
 (deftoken token-right-brace "}")
+
+(deftoken token-left-bracket "[")
+
+(deftoken token-right-bracket "]")
 
 (deftoken keyword-array "array")
 
@@ -108,3 +118,72 @@
                     (mapcar (lambda (type-decl-with-nil)
                               (second type-decl-with-nil))
                             (second result))))))))
+
+(deftoken expr
+    (or nil-expr
+        int-expr
+        var-expr
+        seq-expr))
+
+(esrap:defrule simple-var id
+  (:lambda (result esrap:&bounds start)
+    (ast:make-simple-var result start)))
+
+(esrap:defrule field-var
+    (and var "." id)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-field-var
+     (nth 0 result)
+     (nth 2 result)
+     start)))
+
+(esrap:defrule subscript-var
+    (and var token-left-bracket/?s expr/?s token-right-bracket)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-subscript-var
+     (nth 0 result)
+     (nth 2 result)
+     start)))
+
+(esrap:defrule var
+    (or subscript-var field-var simple-var))
+
+(esrap:defrule var-expr var
+  (:lambda (result)
+    (ast:make-var-expr result)))
+
+(esrap:defrule nil-expr
+    "nil"
+  (:lambda (result)
+    (ast:make-nil-expr)))
+
+(esrap:defrule int-expr
+    (and (esrap:? #\-) (+ digit))
+  (:text t)
+  (:lambda (result)
+    (let ((value (parse-integer result)))
+      (when (or (> value most-positive-fixnum)
+                (< value most-negative-fixnum))
+        (error "The integer ~A is not within the range [~A, ~A]"
+               value most-negative-fixnum most-positive-fixnum))
+      (ast:make-int-expr value))))
+
+(esrap:defrule expr-with-pos expr
+  (:lambda (result esrap:&bounds start)
+    (list result start)))
+
+(esrap:defrule one-or-more-expr-with-pos-list
+    (and expr-with-pos
+         (* (and (esrap:? skippable) token-semicolon/?s expr-with-pos)))
+  (:lambda (result)
+    (cons (first result)
+          (mapcar (lambda (expr-with-nil)
+                    (nth 2 expr-with-nil))
+                  (second result)))))
+
+(esrap:defrule seq-expr
+    (and token-left-paren
+         (esrap:? one-or-more-expr-with-pos-list)
+         token-right-paren)
+  (:lambda (result)
+    (ast:make-seq-expr (second result))))

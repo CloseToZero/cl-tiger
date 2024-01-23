@@ -98,13 +98,13 @@
 
 (cl:in-package :cl-tiger/ast)
 
-(deftype pos () 'integer)
+(defclass expr ()
+  ())
 
 (defclass var ()
   ())
 
-(defclass expr ()
-  ())
+(deftype pos () 'integer)
 
 (defclass simple-var (var)
   ((sym
