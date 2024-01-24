@@ -20,7 +20,11 @@
 
 (defmacro deftoken (name expression &body options)
   (let ((name/skippable (alexandria:symbolicate name '#:/s))
-        (name/maybe-skippable (alexandria:symbolicate name '#:/?s)))
+        (name/maybe-skippable (alexandria:symbolicate name '#:/?s))
+        (with-pos? (let ((value (assoc :with-pos options))) (second value)))
+        (options (remove-if (lambda (option)
+                              (eql (car option) :with-pos))
+                            options)))
     `(progn
        (esrap:defrule ,name ,expression ,@options)
        (esrap:defrule ,name/skippable
@@ -28,7 +32,16 @@
          (:function first))
        (esrap:defrule ,name/maybe-skippable
            (and ,name (esrap:? skippable))
-         (:function first)))))
+         (:function first))
+       ,@(when with-pos?
+           (mapcar (lambda (name)
+                     `(esrap:defrule ,(alexandria:symbolicate name '#:/with-pos)
+                          ,name
+                        ,@options
+                          (:lambda (result esrap:&bounds start)
+                            (list result start))))
+                   (list name name/skippable name/maybe-skippable)))
+       (values))))
 
 (esrap:defrule letter
     (esrap:character-ranges (#\a #\z) (#\A #\Z)))
@@ -44,13 +57,6 @@
     (symbol:get-sym result)))
 
 (deftoken keyword-type "type")
-
-(deftoken token-eq "=")
-(deftoken token-neq "<>")
-(deftoken token-gt ">")
-(deftoken token-lt "<")
-(deftoken token-ge ">=")
-(deftoken token-le "<=")
 
 (deftoken token-comma ",")
 
@@ -70,10 +76,27 @@
 
 (deftoken token-right-bracket "]")
 
-(deftoken token-plus "+")
-(deftoken token-minus "-")
-(deftoken token-times "*")
-(deftoken token-div "/")
+(deftoken token-plus "+"
+  (:with-pos t))
+(deftoken token-minus "-"
+  (:with-pos t))
+(deftoken token-times "*"
+  (:with-pos t))
+(deftoken token-div "/"
+  (:with-pos t))
+
+(deftoken token-eq "="
+  (:with-pos t))
+(deftoken token-neq "<>"
+  (:with-pos t))
+(deftoken token-gt ">"
+  (:with-pos t))
+(deftoken token-lt "<"
+  (:with-pos t))
+(deftoken token-ge ">="
+  (:with-pos t))
+(deftoken token-le "<="
+  (:with-pos t))
 
 (deftoken keyword-array "array")
 
@@ -241,56 +264,62 @@
     (or compare-term plus-minus-or-high-prior-term))
 
 (esrap:defrule compare-term
-    (or (and compare-or-high-prior-term/?s token-eq/?s plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-neq/?s plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-gt/?s plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-lt/?s plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-ge/?s plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-le/?s plus-minus-or-high-prior-term))
+    (or (and compare-or-high-prior-term/?s token-eq/?s/with-pos plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-neq/?s/with-pos plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-gt/?s/with-pos plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-lt/?s/with-pos plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-ge/?s/with-pos plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-le/?s/with-pos plus-minus-or-high-prior-term))
   (:lambda (result)
     (ast:make-op-expr (nth 0 result)
-                      (alexandria:eswitch ((second result) :test #'equal)
+                      (alexandria:eswitch ((first (second result)) :test #'equal)
                         ("=" :eq)
                         ("<>" :neq)
                         (">" :gt)
                         ("<" :lt)
                         (">=" :ge)
                         ("<=" :le))
-                      (nth 2 result))))
+                      (nth 2 result)
+                      (second (second result)))))
 
 (deftoken plus-minus-or-high-prior-term
     (or plus-or-minus-term times-div-or-high-prior-term))
 
 (esrap:defrule plus-or-minus-term
-    (or (and plus-minus-or-high-prior-term/?s token-plus/?s times-div-or-high-prior-term)
-        (and plus-minus-or-high-prior-term/?s token-minus/?s times-div-or-high-prior-term))
+    (or (and plus-minus-or-high-prior-term/?s token-plus/?s/with-pos times-div-or-high-prior-term)
+        (and plus-minus-or-high-prior-term/?s token-minus/?s/with-pos times-div-or-high-prior-term))
   (:lambda (result)
     (ast:make-op-expr (nth 0 result)
-                      (alexandria:eswitch ((second result) :test #'equal)
+                      (alexandria:eswitch ((first (second result)) :test #'equal)
                         ("+" :plus)
                         ("-" :minus))
-                      (nth 2 result))))
+                      (nth 2 result)
+                      (second (second result)))))
 
 (deftoken times-div-or-high-prior-term
     (or times-or-div-term unary-minus-or-high-prior-term))
 
 (esrap:defrule times-or-div-term
-    (or (and times-div-or-high-prior-term/?s token-times/?s unary-minus-or-high-prior-term)
-        (and times-div-or-high-prior-term/?s token-div/?s unary-minus-or-high-prior-term))
+    (or (and times-div-or-high-prior-term/?s token-times/?s/with-pos unary-minus-or-high-prior-term)
+        (and times-div-or-high-prior-term/?s token-div/?s/with-pos unary-minus-or-high-prior-term))
   (:lambda (result)
     (ast:make-op-expr (nth 0 result)
-                      (alexandria:eswitch ((second result) :test #'equal)
+                      (alexandria:eswitch ((first (second result)) :test #'equal)
                         ("*" :times)
                         ("/" :div))
-                      (nth 2 result))))
+                      (nth 2 result)
+                      (second (second result)))))
 
 (esrap:defrule unary-minus-or-high-prior-term
     (or unary-minus-term base-term))
 
 (esrap:defrule unary-minus-term
-    (and token-minus/?s unary-minus-or-high-prior-term)
+    (and token-minus/?s/with-pos unary-minus-or-high-prior-term)
   (:lambda (result)
-    (ast:make-op-expr (ast:make-int-expr 0) :minus (nth 1 result))))
+    (ast:make-op-expr (ast:make-int-expr 0)
+                      :minus
+                      (second result)
+                      (second (first result)))))
 
 (esrap:defrule base-term
     (or nil-expr

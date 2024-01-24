@@ -241,10 +241,15 @@
     :type expr
     :initform (error "Must supply the right expression of the op-expr.")
     :initarg :right
-    :accessor op-expr-right)))
+    :accessor op-expr-right)
+   (pos
+    :type pos
+    :initform (error "Must supply the position of the op-expr.")
+    :initarg :pos
+    :accessor op-expr-pos)))
 
-(defun make-op-expr (left op right)
-  (make-instance 'op-expr :left left :op op :right right))
+(defun make-op-expr (left op right pos)
+  (make-instance 'op-expr :left left :op op :right right :pos pos))
 
 (defclass record-expr (expr)
   ((fields
