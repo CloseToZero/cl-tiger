@@ -258,23 +258,23 @@
   (:lambda (result)
     (ast:make-seq-expr (second result))))
 
-(esrap:defrule op-expr compare-or-high-prior-term)
+(esrap:defrule op-expr comparison-or-high-prior-term)
 
-(deftoken compare-or-high-prior-term
-    (or compare-term plus-minus-or-high-prior-term))
+(deftoken comparison-or-high-prior-term
+    (or comparison-term plus-minus-or-high-prior-term))
 
-(esrap:defrule compare-term
-    (or (and compare-or-high-prior-term/?s token-eq/?s/with-pos plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-neq/?s/with-pos plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-gt/?s/with-pos plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-lt/?s/with-pos plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-ge/?s/with-pos plus-minus-or-high-prior-term)
-        (and compare-or-high-prior-term/?s token-le/?s/with-pos plus-minus-or-high-prior-term))
+(esrap:defrule comparison-term
+    (or (and comparison-or-high-prior-term/?s token-eq/?s/with-pos plus-minus-or-high-prior-term)
+        (and comparison-or-high-prior-term/?s token-neq/?s/with-pos plus-minus-or-high-prior-term)
+        (and comparison-or-high-prior-term/?s token-gt/?s/with-pos plus-minus-or-high-prior-term)
+        (and comparison-or-high-prior-term/?s token-lt/?s/with-pos plus-minus-or-high-prior-term)
+        (and comparison-or-high-prior-term/?s token-ge/?s/with-pos plus-minus-or-high-prior-term)
+        (and comparison-or-high-prior-term/?s token-le/?s/with-pos plus-minus-or-high-prior-term))
   (:lambda (result)
     (when (trivia:match (first result)
             ((ast:op-expr :op op)
              (member op '(:eq :neq :gt :lt :ge :le))))
-      (error "Compare operators are not associate (pos: ~A)" (second (second result))))
+      (error "Comparison operators are not associate (pos: ~A)" (second (second result))))
     (ast:make-op-expr (nth 0 result)
                       (alexandria:eswitch ((first (second result)) :test #'equal)
                         ("=" :eq)
