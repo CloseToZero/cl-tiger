@@ -34,7 +34,8 @@
     (esrap:character-ranges (#\a #\z) (#\A #\Z)))
 
 (esrap:defrule digit
-    (esrap:character-ranges (#\0 #\9)))
+    (esrap:character-ranges (#\0 #\9))
+  (:text t))
 
 (deftoken id
     (and letter (* (or letter digit #\_)))
@@ -169,6 +170,46 @@
                value most-negative-fixnum most-positive-fixnum))
       (ast:make-int-expr value))))
 
+(esrap:defrule escape-seq
+    (and #\\ (or #\n
+                 #\t
+                 (and #\^ character)
+                 (and digit digit digit)
+                 #\"
+                 #\\
+                 (+ skippable)))
+  (:lambda (result)
+    (let ((code (second result)))
+      (cond ((equal code '(nil))
+             ;; \f__f\
+             nil)
+            ((and (listp code)
+                  (let ((e-1 (first code)))
+                    (and (stringp e-1)
+                         (= (length e-1) 1)
+                         (digit-char-p (elt e-1 0))))) 
+             ;; \ddd
+             (let ((char-value (parse-integer (apply #'format nil "~A~A~A" code))))
+               (code-char char-value)))
+            ((and (listp code)
+                  (string= (first code) #\^))
+             ;; \^c
+             (code-char (logxor #x40 (char-code (char-upcase (second code))))))
+            (t
+             (alexandria:eswitch (code :test #'equal)
+               ("n" #\Newline)
+               ("t" #\Tab)
+               ("\"" #\")
+               ("\\" #\\))))))
+  (:text t))
+
+(esrap:defrule string-expr
+    (and #\" (* (or escape-seq (not #\")))  #\")
+  (:function second)
+  (:text t)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-string-expr result start)))
+
 (esrap:defrule expr-with-pos expr
   (:lambda (result esrap:&bounds start)
     (list result start)))
@@ -228,5 +269,6 @@
 (esrap:defrule base-term
     (or nil-expr
         int-expr
+        string-expr
         var-expr
         seq-expr))
