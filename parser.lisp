@@ -7,7 +7,7 @@
 (cl:in-package :cl-tiger/parser)
 
 (esrap:defrule whitespace
-    (+ (or #\Space #\Tab #\Newline))
+    (+ (or #\Space #\Tab #\Newline #\Return #\Linefeed #\Page))
   (:constant nil))
 
 (esrap:defrule comment
