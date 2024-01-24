@@ -192,89 +192,41 @@
 (esrap:defrule arith-expr plus-minus-or-high-prior-term)
 
 (deftoken plus-minus-or-high-prior-term
+    (or plus-or-minus-term times-div-or-high-prior-term))
+
+(esrap:defrule plus-or-minus-term
     (or (and plus-minus-or-high-prior-term/?s token-plus/?s times-div-or-high-prior-term)
-        (and plus-minus-or-high-prior-term/?s token-minus/?s times-div-or-high-prior-term)
-        times-div-or-high-prior-term)
+        (and plus-minus-or-high-prior-term/?s token-minus/?s times-div-or-high-prior-term))
   (:lambda (result)
-    (if (listp result)
-        (let ((op (second result)))
-          (cond ((and (stringp op) (string= op "+"))
-                 (ast:make-op-expr (nth 0 result) :plus (nth 2 result)))
-                ((and (stringp op) (string= op "-"))
-                 (ast:make-op-expr (nth 0 result) :minus (nth 2 result)))
-                (t result)))
-        result)))
+    (ast:make-op-expr (nth 0 result)
+                      (alexandria:eswitch ((second result) :test #'equal)
+                        ("+" :plus)
+                        ("-" :minus))
+                      (nth 2 result))))
 
 (deftoken times-div-or-high-prior-term
+    (or times-or-div-term unary-minus-or-high-prior-term))
+
+(esrap:defrule times-or-div-term
     (or (and times-div-or-high-prior-term/?s token-times/?s unary-minus-or-high-prior-term)
-        (and times-div-or-high-prior-term/?s token-div/?s unary-minus-or-high-prior-term)
-        unary-minus-or-high-prior-term)
+        (and times-div-or-high-prior-term/?s token-div/?s unary-minus-or-high-prior-term))
   (:lambda (result)
-    (if (listp result)
-        (let ((op (second result)))
-          (cond ((and (stringp op) (string= op "*"))
-                 (ast:make-op-expr (nth 0 result) :times (nth 2 result)))
-                ((and (stringp op) (string= op "/"))
-                 (ast:make-op-expr (nth 0 result) :div (nth 2 result)))
-                (t result)))
-        result)))
+    (ast:make-op-expr (nth 0 result)
+                      (alexandria:eswitch ((second result) :test #'equal)
+                        ("*" :times)
+                        ("/" :div))
+                      (nth 2 result))))
 
 (esrap:defrule unary-minus-or-high-prior-term
-    (or (and token-minus/?s unary-minus-or-high-prior-term) base-term)
+    (or unary-minus-term base-term))
+
+(esrap:defrule unary-minus-term
+    (and token-minus/?s unary-minus-or-high-prior-term)
   (:lambda (result)
-    (if (listp result)
-        (let ((op (first result)))
-          (cond ((and (stringp op) (string= op "-"))
-                 (ast:make-op-expr (ast:make-int-expr 0) :minus (nth 1 result)))
-                (t result)))
-        result)))
+    (ast:make-op-expr (ast:make-int-expr 0) :minus (nth 1 result))))
 
 (esrap:defrule base-term
     (or nil-expr
         int-expr
         var-expr
         seq-expr))
-
-;; Why following rules cannot work as above rules?
-;; (esrap:parse 'expr "3 + 4 + 5 - 6") will raise error
-;; The two set of rules seem equivalent.
-
-;; (deftoken plus-minus-or-high-prior-term
-;;     (or plus-term minus-term times-div-or-high-prior-term))
-
-;; (esrap:defrule plus-term
-;;     (and plus-minus-or-high-prior-term/?s token-plus/?s times-div-or-high-prior-term)
-;;   (:lambda (result)
-;;     (ast:make-op-expr (nth 0 result) :plus (nth 2 result))))
-
-;; (esrap:defrule minus-term
-;;     (and plus-minus-or-high-prior-term/?s token-minus/?s times-div-or-high-prior-term)
-;;   (:lambda (result)
-;;     (ast:make-op-expr (nth 0 result) :minus (nth 2 result))))
-
-;; (deftoken times-div-or-high-prior-term
-;;     (or times-term div-term unary-minus-or-high-prior-term))
-
-;; (esrap:defrule times-term
-;;     (and times-div-or-high-prior-term/?s token-times/?s unary-minus-or-high-prior-term)
-;;   (:lambda (result)
-;;     (ast:make-op-expr (nth 0 result) :times (nth 2 result))))
-
-;; (esrap:defrule div-term
-;;     (and times-div-or-high-prior-term/?s token-div/?s unary-minus-or-high-prior-term)
-;;   (:lambda (result)
-;;     (ast:make-op-expr (nth 0 result) :div (nth 2 result))))
-
-;; (esrap:defrule unary-minus-or-high-prior-term
-;;     (or unary-minus-term base-term))
-
-;; (esrap:defrule unary-minus-term
-;;     (and token-minus/?s unary-minus-or-high-prior-term)
-;;   (:lambda (result)
-;;     (ast:make-op-expr (ast:make-int-expr 0) :minus (nth 1 result))))
-
-;; (esrap:defrule base-term
-;;     (or nil-expr
-;;         int-expr
-;;         var-expr
-;;         seq-expr))
