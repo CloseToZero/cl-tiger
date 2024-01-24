@@ -130,7 +130,7 @@
                               (second type-decl-with-nil))
                             (second result))))))))
 
-(deftoken expr arith-expr)
+(deftoken expr op-expr)
 
 (esrap:defrule simple-var id
   (:lambda (result esrap:&bounds start)
@@ -235,7 +235,7 @@
   (:lambda (result)
     (ast:make-seq-expr (second result))))
 
-(esrap:defrule arith-expr compare-or-high-prior-term)
+(esrap:defrule op-expr compare-or-high-prior-term)
 
 (deftoken compare-or-high-prior-term
     (or compare-term plus-minus-or-high-prior-term))
