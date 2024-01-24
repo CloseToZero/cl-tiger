@@ -45,7 +45,12 @@
 
 (deftoken keyword-type "type")
 
-(deftoken token-equal "=")
+(deftoken token-eq "=")
+(deftoken token-neq "<>")
+(deftoken token-gt ">")
+(deftoken token-lt "<")
+(deftoken token-ge ">=")
+(deftoken token-le "<=")
 
 (deftoken token-comma ",")
 
@@ -110,7 +115,7 @@
     (or array-ty record-ty name-ty))
 
 (esrap:defrule type-decl
-    (and keyword-type/?s type-id/?s token-equal/?s ty)
+    (and keyword-type/?s type-id/?s token-eq/?s ty)
   (:lambda (result esrap:&bounds start)
     (ast:make-type-decl (nth 1 result) (nth 3 result) start)))
 
@@ -230,7 +235,28 @@
   (:lambda (result)
     (ast:make-seq-expr (second result))))
 
-(esrap:defrule arith-expr plus-minus-or-high-prior-term)
+(esrap:defrule arith-expr compare-or-high-prior-term)
+
+(deftoken compare-or-high-prior-term
+    (or compare-term plus-minus-or-high-prior-term))
+
+(esrap:defrule compare-term
+    (or (and compare-or-high-prior-term/?s token-eq/?s plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-neq/?s plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-gt/?s plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-lt/?s plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-ge/?s plus-minus-or-high-prior-term)
+        (and compare-or-high-prior-term/?s token-le/?s plus-minus-or-high-prior-term))
+  (:lambda (result)
+    (ast:make-op-expr (nth 0 result)
+                      (alexandria:eswitch ((second result) :test #'equal)
+                        ("=" :eq)
+                        ("<>" :neq)
+                        (">" :gt)
+                        ("<" :lt)
+                        (">=" :ge)
+                        ("<=" :le))
+                      (nth 2 result))))
 
 (deftoken plus-minus-or-high-prior-term
     (or plus-or-minus-term times-div-or-high-prior-term))
