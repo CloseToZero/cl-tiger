@@ -7,94 +7,164 @@
 
    #:field
    #:make-field
+   #:field-name
+   #:field-type-id
+   #:field-pos
+   #:field-type-escape
 
    #:ty
 
    #:name-ty
    #:make-name-ty
+   #:name-ty-name
+   #:name-ty-pos
 
    #:record-ty
    #:make-record-ty
+   #:record-ty-fields
 
    #:array-ty
    #:make-array-ty
+   #:array-ty-base-type-id
+   #:array-ty-pos
 
    #:decl
 
    #:function-decl
    #:make-function-decl
+   #:function-decl-name
+   #:function-decl-params
+   #:function-decl-result
+   #:function-decl-body
+   #:function-decl-pos
 
    #:type-decl
    #:make-type-decl
+   #:type-decl-name
+   #:type-decl-ty
+   #:type-decl-pos
 
    #:function-decls
    #:make-function-decls
+   #:function-decls-decls
 
    #:type-decls
    #:make-type-decls
+   #:type-decls-decls
 
    #:var-decl
    #:make-var-decl
+   #:var-decl-name
+   #:var-decl-typ
+   #:var-decl-init
+   #:var-decl-escape
 
    #:var
 
    #:simple-var
    #:make-simple-var
+   #:simple-var-sym
+   #:simple-var-pos
 
    #:field-var
    #:make-field-var
+   #:field-var-var
+   #:field-var-sym
+   #:field-var-pos
 
    #:subscript-var
    #:make-subscript-var
+   #:subscript-var-var
+   #:subscript-var-expr
+   #:subscript-var-pos
 
    #:expr
 
    #:var-expr
    #:make-var-expr
+   #:var-expr-var
 
    #:nil-expr
    #:make-nil-expr
 
    #:int-expr
    #:make-int-expr
+   #:init-expr-value
 
    #:string-expr
    #:make-string-expr
+   #:string-expr-str
+   #:string-expr-pos
 
    #:call-expr
    #:make-call-expr
+   #:call-expr-fun
+   #:call-expr-args
+   #:call-expr-pos
 
    #:op
 
    #:op-expr
    #:make-op-expr
+   #:op-expr-left
+   #:op-expr-op
+   #:op-expr-right
+   #:op-expr-pos
 
    #:record-expr
    #:make-record-expr
+   #:record-expr-fields
+   #:record-expr-type-id
+   #:record-expr-pos
 
    #:seq-expr
    #:make-seq-expr
+   #:seq-expr-exprs
 
    #:assign-expr
    #:make-assign-expr
+   #:assign-expr-var
+   #:assign-expr-expr
+   #:assign-expr-pos
 
    #:if-expr
    #:make-if-expr
+   #:if-expr-test
+   #:if-expr-then
+   #:if-expr-else
+   #:if-expr-pos
 
    #:while-expr
    #:make-while-expr
+   #:while-expr-test
+   #:while-expr-body
+   #:while-expr-pos
 
    #:for-expr
    #:make-for-expr
+   #:for-expr-var
+   #:for-expr-low
+   #:for-expr-high
+   #:for-expr-body
+   #:for-expr-pos
+   #:for-expr-escape
 
    #:break-expr
    #:make-break-expr
+   #:break-expr-pos
 
    #:let-expr
    #:make-let-expr
+   #:let-expr-decls
+   #:let-expr-body
+   #:let-expr-pos
 
    #:array-expr
-   #:make-array-expr))
+   #:make-array-expr
+   #:array-expr-base-type-id
+   #:array-expr-size
+   #:array-expr-init
+   #:array-expr-pos))
 
 (cl:in-package :cl-tiger/ast)
 
