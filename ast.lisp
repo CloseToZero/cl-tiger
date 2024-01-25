@@ -322,25 +322,25 @@
   (make-instance 'op-expr :left left :op op :right right :pos pos))
 
 (defclass record-expr (expr)
-  ((fields
+  ((type-id
+    :type symbol:sym
+    :initform (error "Must supply the type-id of the record-expr.")
+    :initarg :type-id
+    :accessor record-expr-type-id)
+   (fields
     ;; A list of (sym expr pos).
     :type list
     :initform (error "Must supply the record fields of the record-expr.")
     :initarg :fields
     :accessor record-expr-fields)
-   (type-id
-    :type symbol:sym
-    :initform (error "Must supply the type-id of the record-expr.")
-    :initarg :type-id
-    :accessor record-expr-type-id)
    (pos
     :type pos
     :initform (error "Must supply the position of the record-expr.")
     :initarg :pos
     :accessor record-expr-pos)))
 
-(defun make-record-expr (fields type-id pos)
-  (make-instance 'record-expr :fields fields :type-id type-id :pos pos))
+(defun make-record-expr (type-id fields pos)
+  (make-instance 'record-expr :type-id type-id :fields fields :pos pos))
 
 (defclass seq-expr (expr)
   ((exprs
