@@ -102,6 +102,10 @@
 
 (deftoken keyword-of "of")
 
+(deftoken keyword-if "if")
+(deftoken keyword-then "then")
+(deftoken keyword-else "else")
+
 (deftoken type-id id)
 
 (esrap:defrule name-ty
@@ -310,6 +314,17 @@
      (nth 5 result)
      start)))
 
+(esrap:defrule if-then-expr
+    (and keyword-if/?s expr/?s
+         keyword-then/?s expr/?s
+         (esrap:? (and keyword-else/?s expr/?s)))
+  (:lambda (result esrap:&bounds start)
+    (ast:make-if-expr
+     (nth 1 result)
+     (nth 3 result)
+     (second (nth 4 result))
+     start)))
+
 (esrap:defrule op-expr comparison-or-high-prior-term)
 
 (deftoken comparison-or-high-prior-term
@@ -381,6 +396,7 @@
     (or nil-expr
         int-expr
         string-expr
+        if-then-expr
         call-expr
         record-expr
         array-expr
