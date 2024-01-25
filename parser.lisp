@@ -98,6 +98,12 @@
 (deftoken token-le "<="
   (:with-pos t))
 
+(deftoken token-boolean-and "&"
+  (:with-pos t))
+
+(deftoken token-boolean-or "|"
+  (:with-pos t))
+
 (deftoken keyword-array "array")
 
 (deftoken keyword-of "of")
@@ -325,7 +331,31 @@
      (second (nth 4 result))
      start)))
 
-(esrap:defrule op-expr comparison-or-high-prior-term)
+(esrap:defrule op-expr boolean-or-or-high-prior-term)
+
+(deftoken boolean-or-or-high-prior-term
+    (or boolean-or-term boolean-and-or-high-prior-term))
+
+(esrap:defrule boolean-or-term
+    (and boolean-or-or-high-prior-term/?s token-boolean-or/?s/with-pos boolean-and-or-high-prior-term)
+  (:lambda (result)
+    (ast:make-if-expr
+     (nth 0 result)
+     (ast:make-int-expr 1)
+     (nth 2 result)
+     (second (second result)))))
+
+(deftoken boolean-and-or-high-prior-term
+    (or boolean-and-term comparison-or-high-prior-term))
+
+(esrap:defrule boolean-and-term
+    (and boolean-and-or-high-prior-term/?s token-boolean-and/?s/with-pos comparison-or-high-prior-term)
+  (:lambda (result)
+    (ast:make-if-expr
+     (nth 0 result)
+     (nth 2 result)
+     (ast:make-int-expr 0)
+     (second (second result)))))
 
 (deftoken comparison-or-high-prior-term
     (or comparison-term plus-minus-or-high-prior-term))
