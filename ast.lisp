@@ -387,7 +387,7 @@
    (else
     :type (or expr null)
     :initform nil
-    :initarg :then
+    :initarg :else
     :accessor if-expr-else)
    (pos
     :type pos
