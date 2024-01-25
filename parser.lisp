@@ -298,6 +298,18 @@
   (:lambda (result esrap:&bounds start)
     (ast:make-record-expr (nth 0 result) (nth 2 result) start)))
 
+(esrap:defrule array-expr
+    (and type-id/?s
+         token-left-bracket/?s expr/?s token-right-bracket/?s
+         keyword-of/?s
+         expr)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-array-expr
+     (nth 0 result)
+     (nth 2 result)
+     (nth 5 result)
+     start)))
+
 (esrap:defrule op-expr comparison-or-high-prior-term)
 
 (deftoken comparison-or-high-prior-term
@@ -371,5 +383,6 @@
         string-expr
         call-expr
         record-expr
+        array-expr
         var-expr
         seq-expr))
