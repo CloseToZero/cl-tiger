@@ -58,6 +58,8 @@
 
 (deftoken keyword-type "type")
 
+(deftoken keyword-function "function")
+
 (deftoken keyword-break "break")
 
 (deftoken token-comma ",")
@@ -124,7 +126,8 @@
 
 (deftoken keyword-do "do")
 
-(deftoken type-id id)
+(deftoken type-id id
+  (:with-pos t))
 
 (esrap:defrule name-ty
     type-id
@@ -173,6 +176,32 @@
            (t (cons (first result)
                     (mapcar (lambda (type-decl-with-nil)
                               (second type-decl-with-nil))
+                            (second result))))))))
+
+(esrap:defrule function-decl
+    (and keyword-function/?s id/?s
+         token-left-paren/?s
+         fields/?s
+         token-right-paren/?s
+         (esrap:? (and token-colon/?s type-id/?s/with-pos))
+         token-eq/?s expr)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-function-decl
+     (nth 1 result)
+     (nth 3 result)
+     (second (nth 5 result))
+     (nth 7 result)
+     start)))
+
+(esrap:defrule function-decls
+    (esrap:? (and function-decl
+                  (* (and (esrap:? skippable) function-decl))))
+  (:lambda (result)
+    (ast:make-function-decls
+     (cond ((null result) nil)
+           (t (cons (first result)
+                    (mapcar (lambda (function-decl-with-nil)
+                              (second function-decl-with-nil))
                             (second result))))))))
 
 (deftoken expr op-expr)
