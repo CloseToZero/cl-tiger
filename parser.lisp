@@ -170,15 +170,14 @@
     (ast:make-type-decl (nth 1 result) (nth 3 result) start)))
 
 (esrap:defrule type-decls
-    (esrap:? (and type-decl
-                  (* (and (esrap:? skippable) type-decl))))
+    (and type-decl
+         (* (and (esrap:? skippable) type-decl)))
   (:lambda (result)
     (ast:make-type-decls
-     (cond ((null result) nil)
-           (t (cons (first result)
-                    (mapcar (lambda (type-decl-with-nil)
-                              (second type-decl-with-nil))
-                            (second result))))))))
+     (cons (first result)
+           (mapcar (lambda (type-decl-with-nil)
+                     (second type-decl-with-nil))
+                   (second result))))))
 
 (esrap:defrule function-decl
     (and keyword-function/?s id/?s
@@ -196,15 +195,14 @@
      start)))
 
 (esrap:defrule function-decls
-    (esrap:? (and function-decl
-                  (* (and (esrap:? skippable) function-decl))))
+    (and function-decl
+         (* (and (esrap:? skippable) function-decl)))
   (:lambda (result)
     (ast:make-function-decls
-     (cond ((null result) nil)
-           (t (cons (first result)
-                    (mapcar (lambda (function-decl-with-nil)
-                              (second function-decl-with-nil))
-                            (second result))))))))
+     (cons (first result)
+           (mapcar (lambda (function-decl-with-nil)
+                     (second function-decl-with-nil))
+                   (second result))))))
 
 (esrap:defrule var-decl
     (and keyword-var/?s id/?s

@@ -591,24 +591,28 @@
 
 (defclass function-decls (decl)
   ((decls
-    ;; A list of function-decl.
+    ;; A list of one or more function-decl.
     :type list
     :initform nil
     :initarg :decls
     :accessor function-decls-decls)))
 
 (defun make-function-decls (decls)
+  (when (null decls)
+    (error "function-decls must have at least one declaration."))
   (make-instance 'function-decls :decls decls))
 
 (defclass type-decls (decl)
   ((decls
-    ;; A list of type-decl.
+    ;; A list of one or more type-decl.
     :type list
     :initform nil
     :initarg :decls
     :accessor type-decls-decls)))
 
 (defun make-type-decls (decls)
+  (when (null decls)
+    (error "type-decls must have at least one declaration."))
   (make-instance 'type-decls :decls decls))
 
 (defclass var-decl (decl)
