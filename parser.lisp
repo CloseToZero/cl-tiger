@@ -62,6 +62,12 @@
 
 (deftoken keyword-var "var")
 
+(deftoken keyword-let "let")
+
+(deftoken keyword-in "in")
+
+(deftoken keyword-end "end")
+
 (deftoken keyword-break "break")
 
 (deftoken token-comma ",")
@@ -215,6 +221,30 @@
      (nth 4 result)
      start)))
 
+(esrap:defrule decl
+    (or function-decls
+        type-decls
+        var-decl))
+
+(esrap:defrule one-or-more-decls
+    (and decl
+         (* (and (esrap:? skippable) decl)))
+  (:lambda (result)
+    (cons (first result)
+          (mapcar (lambda (decl-with-nil)
+                    (second decl-with-nil))
+                  (second result)))))
+
+(deftoken zero-or-more-decls
+    (esrap:? one-or-more-decls))
+
+(esrap:defrule let-expr
+    (and keyword-let/?s zero-or-more-decls/?s keyword-in/?s
+         seq-expr-without-parens/?s keyword-end)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-let-expr
+     (nth 1 result) (nth 3 result) start)))
+
 (deftoken expr op-expr)
 
 (esrap:defrule simple-var id
@@ -237,7 +267,7 @@
      (nth 2 result)
      start)))
 
-(esrap:defrule var
+(deftoken var
     (or subscript-var field-var simple-var))
 
 (esrap:defrule var-expr var
@@ -340,6 +370,11 @@
   (:lambda (result)
     (ast:make-seq-expr (second result))))
 
+(deftoken seq-expr-without-parens
+    zero-or-more-exprs-by-semicolon-with-pos/?s
+  (:lambda (result)
+    (ast:make-seq-expr result)))
+
 (esrap:defrule field-expr
     (and id/?s token-eq/?s expr)
   (:lambda (result esrap:&bounds start)
@@ -370,6 +405,14 @@
      (nth 0 result)
      (nth 2 result)
      (nth 5 result)
+     start)))
+
+(esrap:defrule assign-expr
+    (and var/?s token-assign/?s expr)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-assign-expr
+     (first result)
+     (third result)
      start)))
 
 (esrap:defrule if-then-expr
@@ -504,11 +547,13 @@
         int-expr
         string-expr
         break-expr
+        let-expr
         if-then-expr
         while-expr
         for-expr
         call-expr
+        seq-expr
         record-expr
         array-expr
-        var-expr
-        seq-expr))
+        assign-expr
+        var-expr))
