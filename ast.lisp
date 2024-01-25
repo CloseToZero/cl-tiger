@@ -667,7 +667,7 @@
   ((base-type-id
     :type symbol:sym
     :initform (error "Must supply the base-type-id of the array-expr.")
-    :initarg :type-id
+    :initarg :base-type-id
     :accessor array-expr-base-type-id)
    (size
     :type expr
