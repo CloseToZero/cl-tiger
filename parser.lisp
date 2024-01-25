@@ -60,6 +60,8 @@
 
 (deftoken keyword-function "function")
 
+(deftoken keyword-var "var")
+
 (deftoken keyword-break "break")
 
 (deftoken token-comma ",")
@@ -203,6 +205,17 @@
                     (mapcar (lambda (function-decl-with-nil)
                               (second function-decl-with-nil))
                             (second result))))))))
+
+(esrap:defrule var-decl
+    (and keyword-var/?s id/?s
+         (esrap:? (and token-colon/?s type-id/?s/with-pos))
+         token-assign/?s expr)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-var-decl
+     (nth 1 result)
+     (second (nth 2 result))
+     (nth 4 result)
+     start)))
 
 (deftoken expr op-expr)
 
