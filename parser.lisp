@@ -238,11 +238,28 @@
   (:lambda (result esrap:&bounds start)
     (ast:make-string-expr result start)))
 
+(esrap:defrule one-or-more-expr-by-comma
+    (and expr
+         (* (and (esrap:? skippable) token-comma/?s expr)))
+  (:lambda (result)
+    (cons (first result)
+          (mapcar (lambda (expr-with-nil)
+                    (nth 2 expr-with-nil))
+                  (second result)))))
+
+(deftoken zero-or-more-expr-by-comma
+    (esrap:? one-or-more-expr-by-comma))
+
+(esrap:defrule call-expr
+    (and id/?s token-left-paren/?s zero-or-more-expr-by-comma/?s token-right-paren)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-call-expr (first result) (third result) start)))
+
 (esrap:defrule expr-with-pos expr
   (:lambda (result esrap:&bounds start)
     (list result start)))
 
-(esrap:defrule one-or-more-expr-with-pos-list
+(esrap:defrule one-or-more-expr-by-semicolon-with-pos-list
     (and expr-with-pos
          (* (and (esrap:? skippable) token-semicolon/?s expr-with-pos)))
   (:lambda (result)
@@ -251,9 +268,12 @@
                     (nth 2 expr-with-nil))
                   (second result)))))
 
+(deftoken zero-or-more-expr-by-semicolon-with-pos-list
+    (esrap:? one-or-more-expr-by-semicolon-with-pos-list))
+
 (esrap:defrule seq-expr
     (and token-left-paren
-         (esrap:? one-or-more-expr-with-pos-list)
+         zero-or-more-expr-by-semicolon-with-pos-list/?s
          token-right-paren)
   (:lambda (result)
     (ast:make-seq-expr (second result))))
@@ -329,5 +349,6 @@
     (or nil-expr
         int-expr
         string-expr
+        call-expr
         var-expr
         seq-expr))
