@@ -58,6 +58,8 @@
 
 (deftoken keyword-type "type")
 
+(deftoken keyword-break "break")
+
 (deftoken token-comma ",")
 
 (deftoken token-colon ":")
@@ -98,6 +100,8 @@
 (deftoken token-le "<="
   (:with-pos t))
 
+(deftoken token-assign ":=")
+
 (deftoken token-boolean-and "&"
   (:with-pos t))
 
@@ -111,6 +115,14 @@
 (deftoken keyword-if "if")
 (deftoken keyword-then "then")
 (deftoken keyword-else "else")
+
+(deftoken keyword-while "while")
+
+(deftoken keyword-for "for")
+
+(deftoken keyword-to "to")
+
+(deftoken keyword-do "do")
 
 (deftoken type-id id)
 
@@ -331,6 +343,31 @@
      (second (nth 4 result))
      start)))
 
+(esrap:defrule while-expr
+    (and keyword-while/?s expr/?s keyword-do/?s expr/?s)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-while-expr
+     (nth 1 result)
+     (nth 3 result)
+     start)))
+
+(esrap:defrule for-expr
+    (and keyword-for/?s
+         id/?s token-assign/?s expr/?s
+         keyword-to/?s expr/?s
+         keyword-do/?s expr/?s)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-for-expr
+     (nth 1 result)
+     (nth 3 result)
+     (nth 5 result)
+     (nth 7 result)
+     start)))
+
+(esrap:defrule break-expr keyword-break
+  (:lambda (result esrap:&bounds start)
+    (ast:make-break-expr start)))
+
 (esrap:defrule op-expr boolean-or-or-high-prior-term)
 
 (deftoken boolean-or-or-high-prior-term
@@ -426,7 +463,10 @@
     (or nil-expr
         int-expr
         string-expr
+        break-expr
         if-then-expr
+        while-expr
+        for-expr
         call-expr
         record-expr
         array-expr
