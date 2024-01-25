@@ -278,6 +278,26 @@
   (:lambda (result)
     (ast:make-seq-expr (second result))))
 
+(esrap:defrule field-expr
+    (and id/?s token-eq/?s expr)
+  (:lambda (result esrap:&bounds start)
+    (list (nth 0 result) (nth 2 result) start)))
+
+(deftoken field-exprs
+    (esrap:? (and field-expr
+                  (* (and (esrap:? skippable) token-comma/?s field-expr))))
+  (:lambda (result)
+    (cond ((null result) nil)
+          (t (cons (first result)
+                   (mapcar (lambda (field-expr-with-comma)
+                             (nth 2 field-expr-with-comma))
+                           (second result)))))))
+
+(esrap:defrule record-expr
+    (and type-id/?s token-left-brace/?s field-exprs/?s token-right-brace)
+  (:lambda (result esrap:&bounds start)
+    (ast:make-record-expr (nth 0 result) (nth 2 result) start)))
+
 (esrap:defrule op-expr comparison-or-high-prior-term)
 
 (deftoken comparison-or-high-prior-term
@@ -350,5 +370,6 @@
         int-expr
         string-expr
         call-expr
+        record-expr
         var-expr
         seq-expr))
