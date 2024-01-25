@@ -321,7 +321,7 @@
   (:lambda (result esrap:&bounds start)
     (list result start)))
 
-(esrap:defrule one-or-more-expr-by-semicolon-with-pos-list
+(esrap:defrule one-or-more-exprs-by-semicolon-with-pos
     (and expr-with-pos
          (* (and (esrap:? skippable) token-semicolon/?s expr-with-pos)))
   (:lambda (result)
@@ -330,12 +330,12 @@
                     (nth 2 expr-with-nil))
                   (second result)))))
 
-(deftoken zero-or-more-expr-by-semicolon-with-pos-list
-    (esrap:? one-or-more-expr-by-semicolon-with-pos-list))
+(deftoken zero-or-more-exprs-by-semicolon-with-pos
+    (esrap:? one-or-more-exprs-by-semicolon-with-pos))
 
 (esrap:defrule seq-expr
     (and token-left-paren
-         zero-or-more-expr-by-semicolon-with-pos-list/?s
+         zero-or-more-exprs-by-semicolon-with-pos/?s
          token-right-paren)
   (:lambda (result)
     (ast:make-seq-expr (second result))))
