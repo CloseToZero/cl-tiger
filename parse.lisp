@@ -2,7 +2,9 @@
   (:use :cl)
   (:local-nicknames
    (:symbol :cl-tiger/symbol)
-   (:ast :cl-tiger/ast)))
+   (:ast :cl-tiger/ast))
+  (:export
+   #:parse-program))
 
 (cl:in-package :cl-tiger/parse)
 
@@ -491,7 +493,7 @@
     (when (trivia:match (first result)
             ((ast:op-expr :op op)
              (member op '(:eq :neq :gt :lt :ge :le))))
-      (error "Comparison operators are not associate (pos: ~A)" (second (second result))))
+      (error "Comparison operators are not associate (pos: ~A)." (second (second result))))
     (ast:make-op-expr (nth 0 result)
                       (alexandria:eswitch ((first (second result)) :test #'equal)
                         ("=" :eq)
@@ -562,3 +564,6 @@
     (and (* skippable) expr (* skippable))
   (:lambda (result)
     (second result)))
+
+(defun parse-program (text &key (start 0) end junk-allowed)
+  (esrap:parse 'prog text :start start :end end :junk-allowed junk-allowed))
