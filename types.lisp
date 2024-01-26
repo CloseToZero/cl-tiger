@@ -3,7 +3,6 @@
   (:local-nicknames
    (:symbol :cl-tiger/symbol))
   (:export
-
    #:ty
 
    #:int-ty
