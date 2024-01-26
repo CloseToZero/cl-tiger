@@ -10,4 +10,5 @@
                (:file "ast")
                (:file "parse")
                (:file "types")
-               (:file "env")))
+               (:file "env")
+               (:file "type-check")))
