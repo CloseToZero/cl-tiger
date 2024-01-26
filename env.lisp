@@ -19,7 +19,7 @@
    #:fun-entry
    #:make-fun-entry
    #:fun-entry-formal-types
-   fun-entry-result-type
+   #:fun-entry-result-type
 
    #:get-value))
 
