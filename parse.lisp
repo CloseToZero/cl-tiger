@@ -1,10 +1,10 @@
-(cl:defpackage :cl-tiger/parser
+(cl:defpackage :cl-tiger/parse
   (:use :cl)
   (:local-nicknames
    (:symbol :cl-tiger/symbol)
    (:ast :cl-tiger/ast)))
 
-(cl:in-package :cl-tiger/parser)
+(cl:in-package :cl-tiger/parse)
 
 (esrap:defrule whitespace
     (+ (or #\Space #\Tab #\Newline #\Return #\Linefeed #\Page))
