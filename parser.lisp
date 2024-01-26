@@ -557,3 +557,8 @@
         array-expr
         assign-expr
         var-expr))
+
+(esrap:defrule prog
+    (and (* skippable) expr (* skippable))
+  (:lambda (result)
+    (second result)))
