@@ -278,7 +278,7 @@
     :initarg :fun
     :accessor call-expr-fun)
    (args
-    ;; A list of expressions.
+    ;; A list of exprs.
     :type list
     :initform (error "Must supply the arguments of the call-expr.")
     :initarg :args
@@ -667,11 +667,11 @@
   (make-instance 'let-expr :decls decls :body body :pos pos))
 
 (defclass array-expr (expr)
-  ((base-type-id
+  ((type-id
     :type symbol:sym
-    :initform (error "Must supply the base-type-id of the array-expr.")
-    :initarg :base-type-id
-    :accessor array-expr-base-type-id)
+    :initform (error "Must supply the type-id of the array-expr.")
+    :initarg :type-id
+    :accessor array-expr-type-id)
    (size
     :type expr
     :initform (error "Must supply the size expression of the array-expr.")
@@ -688,7 +688,7 @@
     :initarg :pos
     :accessor array-expr-pos)))
 
-(defun make-array-expr (base-type-id size init pos)
+(defun make-array-expr (type-id size init pos)
   (make-instance 'array-expr
-                 :base-type-id base-type-id
+                 :type-id type-id
                  :size size :init init :pos pos))
