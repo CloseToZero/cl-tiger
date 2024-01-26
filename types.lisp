@@ -13,9 +13,11 @@
 
    #:record-ty
    #:make-record-ty
+   #:record-ty-fields
 
    #:array-ty
    #:make-array-ty
+   #:array-ty-base-type
 
    #:nil-ty
    #:make-nil-ty
@@ -24,7 +26,9 @@
    #:make-unit-ty
 
    #:name-ty
-   #:make-name-ty))
+   #:make-name-ty
+   #:name-ty-sym
+   #:name-ty-ty))
 
 (cl:in-package :cl-tiger/types)
 
