@@ -7,8 +7,11 @@
    (:cl-ds.hamt :cl-data-structures.dicts.hamt))
   (:export
    #:*base-type-env*
+   #:*base-value-env*
+
    #:get-type
    #:get-unnamed-base-type
+   #:insert-type
 
    #:value-entry
 
@@ -21,7 +24,8 @@
    #:fun-entry-formal-types
    #:fun-entry-result-type
 
-   #:get-value))
+   #:get-value
+   #:insert-value))
 
 (cl:in-package :cl-tiger/env)
 
@@ -51,6 +55,9 @@
 
 (defun get-unnamed-base-type (sym)
   (cl-ds:at *unnamed-base-type-env* sym))
+
+(defun insert-type (type-env sym ty)
+  (cl-ds:insert type-env sym ty))
 
 (defclass value-entry ()
   ())
@@ -139,3 +146,6 @@
 
 (defun get-value (value-env sym)
   (cl-ds:at value-env sym))
+
+(defun insert-value (value-env sym value-entry)
+  (cl-ds:insert value-env sym value-entry))
