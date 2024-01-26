@@ -8,4 +8,5 @@
   :components ((:file "straight-line")
                (:file "symbol")
                (:file "ast")
-               (:file "parse")))
+               (:file "parse")
+               (:file "types")))
