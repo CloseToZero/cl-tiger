@@ -29,26 +29,26 @@ let
       else (buffer := getchar(); nil)
     end
 
- function merge(a: list, b: list) : list =
-   if a=nil then b
-   else if b=nil then a
-   else if a.first < b.first
-      then list{first=a.first,rest=merge(a.rest,b)}
-      else list{first=b.first,rest=merge(a,b.rest)}
+  function merge(a: list, b: list) : list =
+    if a=nil then b
+    else if b=nil then a
+    else if a.first < b.first
+         then list{first=a.first,rest=merge(a.rest,b)}
+         else list{first=b.first,rest=merge(a,b.rest)}
 
- function printint(i: int) =
-   let
-     function f(i:int) = if i>0
-	   then (f(i/10); print(chr(i-i/10*10+ord("0"))))
-   in
-     if i<0 then (print("-"); f(-i))
-     else if i>0 then f(i)
-     else print("0")
-   end
+  function printint(i: int) =
+    let
+      function f(i:int) =
+        if i>0 then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+    in
+      if i<0 then (print("-"); f(-i))
+      else if i>0 then f(i)
+      else print("0")
+    end
 
- function printlist(l: list) =
-   if l=nil then print("\n")
-   else (printint(l.first); print(" "); printlist(l.rest))
+  function printlist(l: list) =
+    if l=nil then print("\n")
+    else (printint(l.first); print(" "); printlist(l.rest))
 
   /* BODY OF MAIN PROGRAM */
 in

@@ -4,8 +4,8 @@ let
 
   function printint(i: int) =
     let
-      function f(i:int) = if i>0
-	    then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+      function f(i:int) =
+        if i>0 then (f(i/10); print(chr(i-i/10*10+ord("0"))))
     in
       break;
       if i<0 then (print("-"); f(-i))
