@@ -1,0 +1,17 @@
+let
+  var a: int := 3
+  var b: int := 4
+
+  function printint(i: int) =
+    while 1 do
+      let
+          function f(i:int) = if i>0
+          then (f(i/10); break; print(chr(i-i/10*10+ord("0"))))
+      in
+          if i<0 then (print("-"); f(-i))
+          else if i>0 then f(i)
+          else print("0")
+      end
+in
+  printint(a + b)
+end
