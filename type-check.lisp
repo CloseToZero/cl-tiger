@@ -38,6 +38,22 @@
      ty2)
     (_ ty1)))
 
+(defun check-type-circular-dependencie (ty)
+  (let ((visited (make-hash-table))
+        (path nil))
+    (labels ((rec (ty)
+               (trivia:match ty
+                 ((types:name-ty :sym sym :ty ty)
+                  (push (symbol:sym-name sym) path)
+                  (when (gethash sym visited)
+                    (error "Circular type dependencie: ~{~A~^ -> ~}" (reverse path)))
+                  (when ty
+                    (setf (gethash sym visited) t)
+                    (rec ty)))
+                 (_ nil))))
+      (rec ty)
+      (values))))
+
 (defun type-check-ty (type-env ty)
   (trivia:match ty
     ((ast:name-ty :name name :pos pos)
@@ -126,7 +142,6 @@
                  ;;          type-decl-pos))
                  ))
              type-decls))
-     ;; TODO check cycle dependencies of mutually recursive types.
      (let ((new-type-env
              (reduce (lambda (acc-type-env type-decl)
                        (env:insert-type acc-type-env
@@ -138,7 +153,8 @@
                (let ((type-decl-ty (ast:type-decl-ty type-decl)))
                  (let ((ty (type-check-ty new-type-env type-decl-ty)))
                    (setf (types:name-ty-ty (env:get-type new-type-env (ast:type-decl-name type-decl)))
-                         ty))))
+                         ty)
+                   (check-type-circular-dependencie ty))))
              type-decls)
        (list new-type-env value-env)))
     ((ast:function-decls :decls function-decls)
