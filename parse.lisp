@@ -58,6 +58,34 @@
   (:lambda (result)
     (symbol:get-sym result)))
 
+(defvar *keyword-table*
+  (let ((table (make-hash-table))
+        (keywords '("type"
+                    "function"
+                    "var"
+                    "let"
+                    "in"
+                    "end"
+                    "break"
+                    "array"
+                    "of"
+                    "if"
+                    "then"
+                    "else"
+                    "while"
+                    "for"
+                    "to"
+                    "do")))
+    (dolist (keyword keywords)
+      (setf (gethash (symbol:get-sym keyword) table) t))
+    table))
+
+(defun is-non-keyword (id-sym)
+  (not (gethash id-sym *keyword-table*)))
+
+(deftoken non-keyword-id
+    (is-non-keyword id))
+
 (deftoken keyword-type "type")
 
 (deftoken keyword-function "function")
@@ -136,7 +164,7 @@
 
 (deftoken keyword-do "do")
 
-(deftoken type-id id
+(deftoken type-id non-keyword-id
   (:with-pos t))
 
 (esrap:defrule name-ty
@@ -145,7 +173,7 @@
     (ast:make-name-ty result start)))
 
 (esrap:defrule field
-    (and id/?s token-colon/?s type-id)
+    (and non-keyword-id/?s token-colon/?s type-id)
   (:lambda (result esrap:&bounds start)
     (ast:make-field (nth 0 result) (nth 2 result) start)))
 
@@ -188,7 +216,7 @@
                    (second result))))))
 
 (esrap:defrule function-decl
-    (and keyword-function/?s id/?s
+    (and keyword-function/?s non-keyword-id/?s
          token-left-paren/?s
          fields/?s
          token-right-paren/?s
@@ -213,7 +241,7 @@
                    (second result))))))
 
 (esrap:defrule var-decl
-    (and keyword-var/?s id/?s
+    (and keyword-var/?s non-keyword-id/?s
          (esrap:? (and token-colon/?s type-id/?s/with-pos))
          token-assign/?s expr)
   (:lambda (result esrap:&bounds start)
@@ -249,12 +277,12 @@
 
 (deftoken expr op-expr)
 
-(esrap:defrule simple-var id
+(esrap:defrule simple-var non-keyword-id
   (:lambda (result esrap:&bounds start)
     (ast:make-simple-var result start)))
 
 (esrap:defrule field-var
-    (and var "." id)
+    (and var "." non-keyword-id)
   (:lambda (result esrap:&bounds start)
     (ast:make-field-var
      (nth 0 result)
@@ -345,7 +373,7 @@
     (esrap:? one-or-more-expr-by-comma))
 
 (esrap:defrule call-expr
-    (and id/?s token-left-paren/?s zero-or-more-expr-by-comma/?s token-right-paren)
+    (and non-keyword-id/?s token-left-paren/?s zero-or-more-expr-by-comma/?s token-right-paren)
   (:lambda (result esrap:&bounds start)
     (ast:make-call-expr (first result) (third result) start)))
 
@@ -373,12 +401,12 @@
     (ast:make-seq-expr (second result))))
 
 (deftoken seq-expr-without-parens
-    zero-or-more-exprs-by-semicolon-with-pos/?s
+    zero-or-more-exprs-by-semicolon-with-pos
   (:lambda (result)
     (ast:make-seq-expr result)))
 
 (esrap:defrule field-expr
-    (and id/?s token-eq/?s expr)
+    (and non-keyword-id/?s token-eq/?s expr)
   (:lambda (result esrap:&bounds start)
     (list (nth 0 result) (nth 2 result) start)))
 
@@ -438,7 +466,7 @@
 
 (esrap:defrule for-expr
     (and keyword-for/?s
-         id/?s token-assign/?s expr/?s
+         non-keyword-id/?s token-assign/?s expr/?s
          keyword-to/?s expr/?s
          keyword-do/?s expr/?s)
   (:lambda (result esrap:&bounds start)
