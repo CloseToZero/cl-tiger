@@ -66,7 +66,7 @@
     ((ast:record-ty :fields fields)
      (types:make-record-ty
       (mapcar (lambda  (field)
-                (trivia:let-match (((ast:field :name name :type-id type-id :pos pos) field))
+                (trivia:let-match1 (ast:field :name name :type-id type-id :pos pos) field
                   (let ((ty (env:get-type type-env type-id)))
                     (unless ty
                       (error "The type of field ~A is an undefined type: ~A (pos: ~A)."
@@ -199,8 +199,7 @@
                      :initial-value value-env)))
        (mapc (lambda (function-decl)
                (let ((value-entry (env:get-value new-value-env (ast:function-decl-name function-decl))))
-                 (trivia:let-match
-                     (((env:fun-entry :formal-types formal-types) value-entry))
+                 (trivia:let-match1 (env:fun-entry :formal-types formal-types) value-entry
                    (type-check-expr
                     type-env
                     (loop with acc-value-env = new-value-env
@@ -361,8 +360,8 @@ doesn't match the base type of the type ~A (pos: ~A)." type-id pos)))
          (error "Type ~A is not an array (pos: ~A)." (symbol:sym-name type-id) pos))
        ty))
     ((ast:let-expr :decls decls :body body)
-     (trivia:let-match
-         (((list new-type-env new-value-env) (type-check-decls type-env value-env decls within-loop)))
+     (trivia:let-match1
+         (list new-type-env new-value-env) (type-check-decls type-env value-env decls within-loop)
        (type-check-expr new-type-env new-value-env body within-loop)))))
 
 (defun type-check-program (prog)
