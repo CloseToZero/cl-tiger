@@ -7,6 +7,7 @@
   :serial t
   :components ((:file "straight-line")
                (:file "symbol")
+               (:file "utils")
                (:file "ast")
                (:file "parse")
                (:file "types")
