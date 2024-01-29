@@ -175,7 +175,7 @@
 (esrap:defrule field
     (and non-keyword-id/?s token-colon/?s type-id)
   (:lambda (result esrap:&bounds start)
-    (ast:field (nth 0 result) (nth 2 result) start (ast:escape t))))
+    (ast:field (nth 0 result) (nth 2 result) start (ast:escape-ref t))))
 
 (deftoken fields
     (esrap:? (and field
@@ -250,7 +250,7 @@
      (second (nth 2 result))
      (nth 4 result)
      start
-     (ast:escape t))))
+     (ast:escape-ref t))))
 
 (esrap:defrule decl
     (or function-decls
@@ -477,7 +477,7 @@
      (nth 5 result)
      (nth 7 result)
      start
-     (ast:escape t))))
+     (ast:escape-ref t))))
 
 (esrap:defrule break-expr keyword-break
   (:lambda (result esrap:&bounds start)

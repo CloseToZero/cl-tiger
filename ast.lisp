@@ -16,14 +16,14 @@
    #:gt-op
    #:ge-op
 
-   #:escape
-   #:escape-value
+   #:escape-ref
+   #:escape-ref-value
 
    #:field
    #:field-name
    #:field-type-id
    #:field-pos
-   #:field-escape
+   #:field-escape-ref
 
    #:ty
    #:name-ty
@@ -57,7 +57,7 @@
    #:var-decl-typ
    #:var-decl-init
    #:var-decl-pos
-   #:var-decl-escape
+   #:var-decl-escape-ref
 
    #:var
    #:simple-var
@@ -115,7 +115,7 @@
    #:for-expr-high
    #:for-expr-body
    #:for-expr-pos
-   #:for-expr-escape
+   #:for-expr-escape-ref
    #:break-expr
    #:break-expr-pos
    #:array-expr
@@ -144,19 +144,18 @@
   gt-op
   ge-op)
 
-;; escape type,
-;; use as a reference,
+;; escape reference type,
 ;; so we can have mutable data inside immutable data.
-(defstruct (escape
-            (:conc-name escape-)
-            (:constructor escape (value)))
+(defstruct (escape-ref
+            (:conc-name escape-ref-)
+            (:constructor escape-ref (value)))
   (value t :type boolean))
 
 (serapeum:defconstructor field
   (name symbol:sym)
   (type-id symbol:sym)
   (pos pos)
-  (escape escape))
+  (escape-ref escape-ref))
 
 (serapeum:defunion ty
   (name-ty
@@ -196,7 +195,7 @@
    (typ (or list null))
    (init expr)
    (pos pos)
-   (escape escape)))
+   (escape-ref escape-ref)))
 
 (serapeum:defunion var
   (simple-var
@@ -257,7 +256,7 @@
    (high expr)
    (body expr)
    (pos pos)
-   (escape escape))
+   (escape-ref escape-ref))
   (break-expr
    (pos pos))
   (array-expr
