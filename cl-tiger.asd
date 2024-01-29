@@ -20,4 +20,5 @@
                (:file "type-check")
                (:file "temp")
                (:file "target")
-               (:file "frame")))
+               (:file "frame")
+               (:file "translate")))

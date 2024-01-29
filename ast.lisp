@@ -163,6 +163,7 @@
    (pos pos))
   (record-ty
    ;; A list of field.
+   ;; In this case, the escape-ref of a field is useless.
    (fields list))
   (array-ty
    (base-type-id symbol:sym)
