@@ -18,4 +18,6 @@
                (:file "types")
                (:file "env")
                (:file "type-check")
-               (:file "temp")))
+               (:file "temp")
+               (:file "target")
+               (:file "frame")))
