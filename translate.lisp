@@ -148,7 +148,7 @@
   (frame-access frame:access))
 
 (defun new-level (parent name formals target)
-  (let* ((frame (frame:new-frame name formals target))
+  (let* ((frame (frame:new-frame name (cons t formals) target))
          (level (inner-level parent name frame)))
     level))
 
