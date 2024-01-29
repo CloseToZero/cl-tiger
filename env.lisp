@@ -31,9 +31,9 @@
     (reduce (lambda (env binding)
               (cl-ds:insert env (first binding) (second binding)))
             (list (list (symbol:get-sym "int")
-                        (types:make-int-ty))
+                        types:int-ty)
                   (list (symbol:get-sym "string")
-                        (types:make-string-ty)))
+                        types:string-ty))
             :initial-value env)))
 
 (defvar *unnamed-base-type-env*
@@ -41,9 +41,9 @@
     (reduce (lambda (env binding)
               (cl-ds:insert env (first binding) (second binding)))
             (list (list (symbol:get-sym "nil")
-                        (types:make-nil-ty))
+                        types:nil-ty)
                   (list (symbol:get-sym "unit")
-                        (types:make-unit-ty)))
+                        types:unit-ty))
             :initial-value env)))
 
 (defun get-type (type-env sym)

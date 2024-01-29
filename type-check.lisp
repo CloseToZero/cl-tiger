@@ -49,10 +49,10 @@
 (defvar *line-map* nil)
 
 (defun actual-ty (ty)
-  (trivia:match ty
-    ((types:name-ty :ty ty)
-     (if (null ty) ty (actual-ty ty)))
-    ((types:array-ty :base-type base-type) (types:make-array-ty (actual-ty base-type)))
+  (serapeum:match-of types:ty ty
+    ((types:name-ty _ ty-ref)
+     (if (null ty) ty (actual-ty (types:ty-ref-value ty-ref))))
+    ((types:array-ty base-type) (types:array-ty (actual-ty base-type)))
     ;; NOTE: We don't need to recursive into record-ty since we use nominal type system.
     (_ ty)))
 
@@ -60,8 +60,8 @@
 (defun type-compatible (ty1 ty2)
   (or (eq ty1 ty2)
       (trivia:match (list ty1 ty2)
-        ((list (types:array-ty :base-type base-type-1)
-               (types:array-ty :base-type base-type-2))
+        ((list (types:array-ty base-type-1)
+               (types:array-ty base-type-2))
          (type-compatible base-type-1 base-type-2))
         ((or (list (types:record-ty) (types:nil-ty))
              (list (types:nil-ty) (types:record-ty)))
@@ -80,16 +80,16 @@
   (let ((visited (make-hash-table))
         (path nil))
     (labels ((rec (ty)
-               (trivia:match ty
-                 ((types:name-ty :sym sym :ty ty)
+               (serapeum:match-of types:ty ty
+                 ((types:name-ty sym ty-ref)
                   (push (symbol:sym-name sym) path)
                   (when (gethash sym visited)
                     (type-check-error
                      pos *line-map*
                      "Circular type dependencie: ~{~A~^ -> ~}." (reverse path)))
-                  (when ty
+                  (alexandria:when-let (type-ref-value (types:ty-ref-value ty-ref))
                     (setf (gethash sym visited) t)
-                    (rec ty)))
+                    (rec type-ref-value)))
                  (_ nil))))
       (rec ty)
       (values))))
@@ -102,7 +102,7 @@
          (type-check-error pos *line-map* "Undefined type: ~A." (symbol:sym-name name)))
        ty))
     ((ast:record-ty fields)
-     (types:make-record-ty
+     (types:record-ty
       (mapcar (lambda  (field)
                 (trivia:let-match1 (ast:field name type-id pos _) field
                   (let ((ty (env:get-type type-env type-id)))
@@ -122,7 +122,7 @@
           *line-map*
           "Undefined base type of an array: ~A."
           (symbol:sym-name base-type-id)))
-       (types:make-array-ty ty)))))
+       (types:array-ty ty)))))
 
 (defun type-check-var (value-env var)
   (serapeum:match-of ast:var var
@@ -140,8 +140,8 @@
         "Undefined variable: ~A." (symbol:sym-name sym))))
     ((ast:field-var var sym pos)
      (let ((type (type-check-var value-env var)))
-       (trivia:match type
-         ((types:record-ty :fields fields)
+       (serapeum:match-of types:ty type
+         ((types:record-ty fields)
           (alexandria:if-let
               (field
                (find-if (lambda (field)
@@ -157,8 +157,8 @@
              "You can only access the field of a record.")))))
     ((ast:subscript-var var pos)
      (let ((type (type-check-var value-env var)))
-       (trivia:match type
-         ((types:array-ty :base-type base-type)
+       (serapeum:match-of types:ty type
+         ((types:array-ty base-type)
           (actual-ty base-type))
          (_ (type-check-error
              pos *line-map*
@@ -203,13 +203,15 @@
              (reduce (lambda (acc-type-env type-decl)
                        (env:insert-type acc-type-env
                                         (ast:type-decl-name type-decl)
-                                        (types:make-name-ty (ast:type-decl-name type-decl))))
+                                        (types:name-ty (ast:type-decl-name type-decl) (types:ty-ref nil))))
                      type-decls
                      :initial-value type-env)))
        (mapc (lambda (type-decl)
                (let ((ty (type-check-ty new-type-env (ast:type-decl-ty type-decl))))
-                 (setf (types:name-ty-ty (env:get-type new-type-env (ast:type-decl-name type-decl)))
-                       ty)
+                 (setf
+                  (types:ty-ref-value (types:name-ty-ty-ref
+                                       (env:get-type new-type-env (ast:type-decl-name type-decl))))
+                  ty)
                  (check-type-circular-dependencie ty (ast:type-decl-pos type-decl))))
              type-decls)
        (list new-type-env value-env)))
@@ -343,7 +345,7 @@
           (env:get-type env:*base-type-env* (symbol:get-sym "int"))))))
     ((ast:record-expr type-id fields pos)
      (alexandria:if-let (ty (actual-ty (env:get-type type-env type-id)))
-       (trivia:if-match (types:record-ty :fields decl-fields) ty
+       (trivia:if-match (types:record-ty decl-fields) ty
          (progn
            (loop for decl-field in decl-fields
                  ;; decl-field form: (sym ty).
@@ -456,7 +458,7 @@ doesn't match the expected type."
      (env:get-unnamed-base-type (symbol:get-sym "unit")))
     ((ast:array-expr type-id size init pos)
      (let ((ty (actual-ty (env:get-type type-env type-id))))
-       (trivia:if-match (types:array-ty :base-type base-type) ty
+       (trivia:if-match (types:array-ty base-type) ty
          (let ((size-ty (type-check-expr type-env value-env size within-loop))
                (init-ty (type-check-expr type-env value-env init within-loop)))
            (unless (type-compatible size-ty (env:get-type env:*base-type-env* (symbol:get-sym "int")))

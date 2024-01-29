@@ -4,93 +4,37 @@
    (:symbol :cl-tiger/symbol))
   (:export
    #:ty
-
    #:int-ty
-   #:make-int-ty
-
    #:string-ty
-   #:make-string-ty
-
    #:record-ty
-   #:make-record-ty
    #:record-ty-fields
-
    #:array-ty
-   #:make-array-ty
    #:array-ty-base-type
-
    #:nil-ty
-   #:make-nil-ty
-
    #:unit-ty
-   #:make-unit-ty
-
    #:name-ty
-   #:make-name-ty
    #:name-ty-sym
-   #:name-ty-ty))
+   #:name-ty-ty-ref
+   #:ty-ref
+   #:ty-ref-value))
 
 (cl:in-package :cl-tiger/types)
 
-(defclass ty ()
-  ())
+(serapeum:defunion ty
+  int-ty
+  string-ty
+  (record-ty
+   ;; A list of (sym ty)
+   (fields list))
+  (array-ty
+   (base-type ty))
+  nil-ty
+  unit-ty
+  (name-ty
+   (sym symbol:sym)
+   (ty-ref ty-ref)))
 
-(defclass int-ty (ty)
-  ())
-
-(defun make-int-ty ()
-  (make-instance 'int-ty))
-
-(defclass string-ty (ty)
-  ())
-
-(defun make-string-ty ()
-  (make-instance 'string-ty))
-
-(defclass record-ty (ty)
-  ((fields
-    ;; A list of (sym ty)
-    :type list
-    :initform nil
-    :initarg :fields
-    :accessor record-ty-fields)))
-
-(defun make-record-ty (fields)
-  (make-instance 'record-ty :fields fields))
-
-(defclass array-ty (ty)
-  ((base-type
-    :type ty
-    :initform (error "Must supply the base-type of array-ty")
-    :initarg :base-type
-    :accessor array-ty-base-type)))
-
-(defun make-array-ty (base-type)
-  (make-instance 'array-ty :base-type base-type))
-
-(defclass nil-ty (ty)
-  ())
-
-(defun make-nil-ty ()
-  (make-instance 'nil-ty))
-
-(defclass unit-ty (ty)
-  ())
-
-(defun make-unit-ty ()
-  (make-instance 'unit-ty))
-
-(defclass name-ty (ty)
-  ((sym
-    :type symbol:sym
-    :initform (error "Must supply the symbol of the name-ty.")
-    :initarg :sym
-    :accessor name-ty-sym)
-   (ty
-    :type (or ty null)
-    :initform nil
-    :initarg :ty
-    :accessor name-ty-ty)))
-
-(defun make-name-ty (sym &optional ty)
-  (make-instance 'name-ty :sym sym :ty ty))
+(defstruct (ty-ref
+            (:conc-name ty-ref-)
+            (:constructor ty-ref (value)))
+  (value nil :type (or ty null)))
