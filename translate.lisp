@@ -7,7 +7,7 @@
    (:cl-ds :cl-data-structures)
    (:cl-ds.hamt :cl-data-structures.dicts.hamt))
   (:export
-   #:find-and-fill-escape
+   #:find-and-fill-escapes
 
    #:level
    #:top-level
@@ -38,47 +38,47 @@
 
 ;; prog is the expression of the whole program with the type
 ;; of ast:expr.
-(defun find-and-fill-escape (prog)
-  (find-and-fill-escape-expr *base-escape-ref-env* 0 prog)
+(defun find-and-fill-escapes (prog)
+  (find-and-fill-escapes-expr *base-escape-ref-env* 0 prog)
   (values))
 
-(defun find-and-fill-escape-expr (escape-ref-env depth expr)
+(defun find-and-fill-escapes-expr (escape-ref-env depth expr)
   (serapeum:match-of ast:expr expr
     ((ast:var-expr var)
-     (find-and-fill-escape-var escape-ref-env depth var))
+     (find-and-fill-escapes-var escape-ref-env depth var))
     ((ast:nil-expr) nil)
     ((ast:int-expr _) nil)
     ((ast:string-expr _ _) nil)
     ((ast:call-expr _ args _)
      (mapc (lambda (arg)
-             (find-and-fill-escape-expr escape-ref-env depth arg))
+             (find-and-fill-escapes-expr escape-ref-env depth arg))
            args))
     ((ast:op-expr left _ right _)
-     (find-and-fill-escape-expr escape-ref-env depth left)
-     (find-and-fill-escape-expr escape-ref-env depth right))
+     (find-and-fill-escapes-expr escape-ref-env depth left)
+     (find-and-fill-escapes-expr escape-ref-env depth right))
     ((ast:record-expr _ fields _)
      (mapc (lambda (field)
              ;; form: (sym expr pos).
-             (find-and-fill-escape-expr escape-ref-env depth (second field)))
+             (find-and-fill-escapes-expr escape-ref-env depth (second field)))
            fields))
     ((ast:seq-expr exprs)
      (mapc (lambda (expr-with-pos)
                ;; expr-with-pos form: (expr pos).
-               (find-and-fill-escape-expr escape-ref-env depth (first expr-with-pos)))
+               (find-and-fill-escapes-expr escape-ref-env depth (first expr-with-pos)))
              exprs))
     ((ast::assign-expr _ expr _)
-     (find-and-fill-escape-expr escape-ref-env depth expr))
+     (find-and-fill-escapes-expr escape-ref-env depth expr))
     ((ast:if-expr test then else _)
-     (find-and-fill-escape-expr escape-ref-env depth test)
-     (find-and-fill-escape-expr escape-ref-env depth then)
-     (when else (find-and-fill-escape-expr escape-ref-env depth else)))
+     (find-and-fill-escapes-expr escape-ref-env depth test)
+     (find-and-fill-escapes-expr escape-ref-env depth then)
+     (when else (find-and-fill-escapes-expr escape-ref-env depth else)))
     ((ast:while-expr test body _)
-     (find-and-fill-escape-expr escape-ref-env depth test)
-     (find-and-fill-escape-expr escape-ref-env depth body))
+     (find-and-fill-escapes-expr escape-ref-env depth test)
+     (find-and-fill-escapes-expr escape-ref-env depth body))
     ((ast:for-expr var low high body _ escape-ref)
-     (find-and-fill-escape-expr escape-ref-env depth low)
-     (find-and-fill-escape-expr escape-ref-env depth high)
-     (find-and-fill-escape-expr (insert-escape-ref
+     (find-and-fill-escapes-expr escape-ref-env depth low)
+     (find-and-fill-escapes-expr escape-ref-env depth high)
+     (find-and-fill-escapes-expr (insert-escape-ref
                                  escape-ref-env var depth
                                  (progn (setf (ast:escape-ref-value escape-ref) nil)
                                         escape-ref))
@@ -86,13 +86,13 @@
     ((ast:break-expr _)
      nil)
     ((ast:array-expr _ size init _)
-     (find-and-fill-escape-expr escape-ref-env depth size)
-     (find-and-fill-escape-expr escape-ref-env depth init))
+     (find-and-fill-escapes-expr escape-ref-env depth size)
+     (find-and-fill-escapes-expr escape-ref-env depth init))
     ((ast:let-expr decls body _)
-     (let ((new-escape-ref-env (find-and-fill-escape-decls escape-ref-env depth decls)))
-       (find-and-fill-escape-expr new-escape-ref-env depth body)))))
+     (let ((new-escape-ref-env (find-and-fill-escapes-decls escape-ref-env depth decls)))
+       (find-and-fill-escapes-expr new-escape-ref-env depth body)))))
 
-(defun find-and-fill-escape-var (escape-ref-env depth var)
+(defun find-and-fill-escapes-var (escape-ref-env depth var)
   (serapeum:match-of ast:var var
     ((ast:simple-var sym _)
      (trivia:let-match1 (list escape-ref-depth escape-ref) (get-escape-ref escape-ref-env sym)
@@ -100,22 +100,22 @@
          (setf (ast:escape-ref-value escape-ref) t)))
      nil)
     ((ast:field-var var _ _)
-     (find-and-fill-escape-var escape-ref-env depth var))
+     (find-and-fill-escapes-var escape-ref-env depth var))
     ((ast:subscript-var var expr _)
-     (find-and-fill-escape-expr escape-ref-env depth expr)
-     (find-and-fill-escape-var escape-ref-env depth var))))
+     (find-and-fill-escapes-expr escape-ref-env depth expr)
+     (find-and-fill-escapes-var escape-ref-env depth var))))
 
-(defun find-and-fill-escape-decl (escape-ref-env depth decl)
+(defun find-and-fill-escapes-decl (escape-ref-env depth decl)
   (serapeum:match-of ast:decl decl
     ((ast:var-decl name _ init _ escape-ref)
-     (find-and-fill-escape-expr escape-ref-env depth init)
+     (find-and-fill-escapes-expr escape-ref-env depth init)
      (insert-escape-ref escape-ref-env name depth
                         (progn (setf (ast:escape-ref-value escape-ref) nil)
                                escape-ref)))
     ((ast:type-decls _) escape-ref-env)
     ((ast:function-decls function-decls)
      (mapc (lambda (function-decl)
-             (find-and-fill-escape-expr
+             (find-and-fill-escapes-expr
               (loop with acc-escape-ref-env = escape-ref-env
                     for param-field in (ast:function-decl-params function-decl)
                     do (setf acc-escape-ref-env
@@ -130,9 +130,9 @@
            function-decls)
      escape-ref-env)))
 
-(defun find-and-fill-escape-decls (escape-ref-env depth decls)
+(defun find-and-fill-escapes-decls (escape-ref-env depth decls)
   (reduce (lambda (acc-escape-ref-env decl)
-            (find-and-fill-escape-decl acc-escape-ref-env depth decl))
+            (find-and-fill-escapes-decl acc-escape-ref-env depth decl))
           decls
           :initial-value escape-ref-env))
 
