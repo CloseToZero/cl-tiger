@@ -153,9 +153,9 @@
     level))
 
 (defun level-formals (level)
-  (mapcar (lambda (frame-access)
-            (access level frame-access))
-          (frame:frame-formals (inner-level-frame level))))
+  (rest (mapcar (lambda (frame-access)
+                  (access level frame-access))
+                (frame:frame-formals (inner-level-frame level)))))
 
 (defun alloc-local (level escape target)
   (serapeum:match-of level level
