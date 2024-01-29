@@ -48,7 +48,6 @@
 
 (defvar *line-map* nil)
 
-
 (defun actual-ty (ty)
   (trivia:match ty
     ((types:name-ty :ty ty)
@@ -129,10 +128,10 @@
   (serapeum:match-of ast:var var
     ((ast:simple-var sym pos)
      (alexandria:if-let (value-entry (env:get-value value-env sym))
-       (trivia:ematch value-entry
-         ((env:var-entry :ty ty)
+       (serapeum:match-of env:value-entry value-entry
+         ((env:var-entry ty)
           (actual-ty ty))
-         ((env:fun-entry)
+         ((env:fun-entry _ _)
           (type-check-error
            pos *line-map*
            "simple-var cannot reference to a function.")))
@@ -181,7 +180,7 @@
             pos *line-map*
             "The type of the init expression of the variable doesn't the type ~A."
             (symbol:sym-name (first typ)))))
-       (list type-env (env:insert-value value-env name (env:make-var-entry init-ty)))))
+       (list type-env (env:insert-value value-env name (env:var-entry init-ty)))))
     ((ast:type-decls type-decls)
      (let ((name-exists-table (make-hash-table)))
        (mapc (lambda (type-decl)
@@ -231,7 +230,7 @@
                        (env:insert-value
                         acc-value-env
                         (ast:function-decl-name function-decl)
-                        (env:make-fun-entry
+                        (env:fun-entry
                          (mapcar (lambda (param-field)
                                    (let ((ty (env:get-type type-env (ast:field-type-id param-field))))
                                      (unless ty
@@ -259,7 +258,7 @@
                      :initial-value value-env)))
        (mapc (lambda (function-decl)
                (let ((value-entry (env:get-value new-value-env (ast:function-decl-name function-decl))))
-                 (trivia:let-match1 (env:fun-entry :formal-types formal-types) value-entry
+                 (trivia:let-match1 (env:fun-entry formal-types _) value-entry
                    (type-check-expr
                     type-env
                     (loop with acc-value-env = new-value-env
@@ -268,7 +267,7 @@
                           do (setf acc-value-env
                                    (env:insert-value acc-value-env
                                                      (ast:field-name param-field)
-                                                     (env:make-var-entry formal-type)))
+                                                     (env:var-entry formal-type)))
                           finally (return acc-value-env))
                     (ast:function-decl-body function-decl)
                     ;; Cannot break into the outer function.
@@ -294,8 +293,8 @@
      (env:get-type env:*base-type-env* (symbol:get-sym "string")))
     ((ast:call-expr fun args pos)
      (alexandria:if-let (value-entry (env:get-value value-env fun))
-       (trivia:match value-entry
-         ((env:fun-entry :formal-types formal-types :result-type result-type)
+       (serapeum:match-of env:value-entry value-entry
+         ((env:fun-entry formal-types result-type)
           (unless (eql (length args) (length formal-types))
             (type-check-error
              pos *line-map*
@@ -442,7 +441,7 @@ doesn't match the expected type."
            (type-check-error
             pos *line-map*
             "The type of the high expression of a for expression should be int."))
-         (let ((new-value-env (env:insert-type value-env var (env:make-var-entry int-ty))))
+         (let ((new-value-env (env:insert-type value-env var (env:var-entry int-ty))))
            (let ((body-ty (type-check-expr type-env new-value-env body t)))
              (unless (type-compatible body-ty (env:get-unnamed-base-type (symbol:get-sym "unit")))
                (type-check-error
