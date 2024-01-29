@@ -2,10 +2,27 @@
   (:use :cl)
   (:local-nicknames
    (:ast :cl-tiger/ast)
+   (:temp :cl-tiger/temp)
+   (:frame :cl-tiger/frame)
    (:cl-ds :cl-data-structures)
    (:cl-ds.hamt :cl-data-structures.dicts.hamt))
   (:export
-   #:find-and-fill-escape))
+   #:find-and-fill-escape
+
+   #:level
+   #:top-level
+   #:inner-level
+   #:inner-level-parent
+   #:inner-level-name
+   #:inner-level-frame
+
+   #:access
+   #:access-level
+   #:access-frame-access
+
+   #:new-level
+   #:level-formals
+   #:alloc-local))
 
 (cl:in-package :cl-tiger/translate)
 
@@ -118,3 +135,30 @@
             (find-and-fill-escape-decl acc-escape-ref-env depth decl))
           decls
           :initial-value escape-ref-env))
+
+(serapeum:defunion level
+  top-level
+  (inner-level
+   (parent level)
+   (name temp:label)
+   (frame frame:frame)))
+
+(serapeum:defconstructor access
+  (level level)
+  (frame-access frame:access))
+
+(defun new-level (parent name formals target)
+  (let* ((frame (frame:new-frame name formals target))
+         (level (inner-level parent name frame)))
+    level))
+
+(defun level-formals (level)
+  (mapcar (lambda (frame-access)
+            (access level frame-access))
+          (frame:frame-formals (inner-level-frame level))))
+
+(defun alloc-local (level escape target)
+  (serapeum:match-of level level
+    (top-level (error "Cannot alloc a local variable in the top level."))
+    ((inner-level _ _ frame)
+     (access level (frame:alloc-local frame escape target)))))
