@@ -31,71 +31,71 @@
     ())
 
   (defclass compound-stm (stm)
-    ((first-stm :type stm
-                :initform (error "Must supply the first statement.")
-                :initarg :first-stm
-                :accessor compound-stm-first)
-     (rest-stm :type stm
-               :initform (error "Must supply the rest statement.")
-               :initarg :rest-stm
-               :accessor compound-stm-rest)))
+    ((first-stm
+      :type stm
+      :initarg :first-stm
+      :accessor compound-stm-first)
+     (rest-stm
+      :type stm
+      :initarg :rest-stm
+      :accessor compound-stm-rest)))
 
   (defclass expr ()
     ())
 
   (defclass assign-stm (stm)
-    ((id :type id
-         :initform (error "Must supply the id of the variable to be assigned.")
-         :initarg :id
-         :accessor assign-stm-id)
-     (expr :type expr
-           :initform (error "Must supply the expression.")
-           :initarg :expr
-           :accessor assign-stm-expr)))
+    ((id
+      :type id
+      :initarg :id
+      :accessor assign-stm-id)
+     (expr
+      :type expr
+      :initarg :expr
+      :accessor assign-stm-expr)))
 
   (defclass print-stm (stm)
-    ((exprs :type list
-            :initform nil
-            :initarg :exprs
-            :accessor print-stm-exprs)))
+    ((exprs
+      :type list
+      :initform nil
+      :initarg :exprs
+      :accessor print-stm-exprs)))
 
   (defclass id-expr (expr)
-    ((id :type id
-         :initform (error "Must supply the id.")
-         :initarg :id
-         :accessor id-expr-id)))
+    ((id
+      :type id
+      :initarg :id
+      :accessor id-expr-id)))
 
   (defclass num-expr (expr)
-    ((num :type number
-          :initform (error "Must supply the num.")
-          :initarg :num
-          :accessor num-expr-num)))
+    ((num
+      :type number
+      :initarg :num
+      :accessor num-expr-num)))
 
   (deftype bin-op () '(member :plus :minus :times :div))
 
   (defclass bin-op-expr (expr)
-    ((left-expr :type expr
-                :initform (error "Must supply the left expression.")
-                :initarg :left-expr
-                :accessor bin-op-expr-left)
-     (right-expr :type expr
-                 :initform (error "Must supply the right expression.")
-                 :initarg :right-expr
-                 :accessor bin-op-expr-right)
+    ((left-expr
+      :type expr
+      :initarg :left-expr
+      :accessor bin-op-expr-left)
+     (right-expr
+      :type expr
+      :initarg :right-expr
+      :accessor bin-op-expr-right)
      (op :type bin-op
-       :initform (error "Must supply the binary operator.")
        :initarg :op
        :accessor bin-op-expr-op)))
 
   (defclass stm-expr-expr (expr)
-    ((stm :type stm
-          :initform (error "Must supply the statement.")
-          :initarg :stm
-          :accessor stm-expr-expr-stm)
-     (expr :type expr
-           :initform (error "Must supply the expression.")
-           :initarg :expr
-           :accessor stm-expr-expr-expr))))
+    ((stm
+      :type stm
+      :initarg :stm
+      :accessor stm-expr-expr-stm)
+     (expr
+      :type expr
+      :initarg :expr
+      :accessor stm-expr-expr-expr))))
 
 (defmethod print-object ((stm compound-stm) stream)
   (format stream "~A; ~A"

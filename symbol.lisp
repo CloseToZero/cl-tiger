@@ -9,7 +9,6 @@
 
 (defclass sym ()
   ((name :type string
-         :initform (error "Must supply the name of the symbol.")
          :initarg :name
          :accessor sym-name)))
 

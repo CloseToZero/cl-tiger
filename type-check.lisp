@@ -14,12 +14,10 @@
 (define-condition type-check-error (error)
   ((msg
     :type string
-    :initform (error "Must supply the msg of the type-check-error.")
     :initarg :msg
     :reader type-check-error-msg)
    (pos
     :type ast:pos
-    :initform (error "Must supply the pos of the type-check-error.")
     :initarg :pos
     :reader type-check-error-pos)
    (line-map
