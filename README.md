@@ -1,3 +1,3 @@
-# The Tiger Programming Language implemented in Common Lisp
+# The Tiger programming language implemented in Common Lisp
 
-The Tiger Programming Language is from the book: *Modern Compiler Implementation in ML*.
+The Tiger programming language is from the book: *Modern Compiler Implementation in ML*.
