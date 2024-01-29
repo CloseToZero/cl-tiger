@@ -40,8 +40,8 @@
                      `(esrap:defrule ,(alexandria:symbolicate name '#:/with-pos)
                           ,name
                         ,@options
-                          (:lambda (result esrap:&bounds start)
-                            (list result start))))
+                        (:lambda (result esrap:&bounds start)
+                          (list result start))))
                    (list name name/skippable name/maybe-skippable)))
        (values))))
 
@@ -170,12 +170,12 @@
 (esrap:defrule name-ty
     type-id
   (:lambda (result esrap:&bounds start)
-    (ast:make-name-ty result start)))
+    (ast:name-ty result start)))
 
 (esrap:defrule field
     (and non-keyword-id/?s token-colon/?s type-id)
   (:lambda (result esrap:&bounds start)
-    (ast:make-field (nth 0 result) (nth 2 result) start)))
+    (ast:field (nth 0 result) (nth 2 result) start (ast:escape t))))
 
 (deftoken fields
     (esrap:? (and field
@@ -190,12 +190,12 @@
 (esrap:defrule record-ty
     (and token-left-brace/?s fields/?s token-right-brace)
   (:lambda (result)
-    (ast:make-record-ty (second result))))
+    (ast:record-ty (second result))))
 
 (esrap:defrule array-ty
     (and keyword-array/?s keyword-of/?s type-id)
   (:lambda (result esrap:&bounds start)
-    (ast:make-array-ty (nth 2 result) start)))
+    (ast:array-ty (nth 2 result) start)))
 
 (esrap:defrule ty
     (or array-ty record-ty name-ty))
@@ -203,13 +203,13 @@
 (esrap:defrule type-decl
     (and keyword-type/?s type-id/?s token-eq/?s ty)
   (:lambda (result esrap:&bounds start)
-    (ast:make-type-decl (nth 1 result) (nth 3 result) start)))
+    (ast:type-decl (nth 1 result) (nth 3 result) start)))
 
 (esrap:defrule type-decls
     (and type-decl
          (* (and (esrap:? skippable) type-decl)))
   (:lambda (result)
-    (ast:make-type-decls
+    (ast:type-decls
      (cons (first result)
            (mapcar (lambda (type-decl-with-nil)
                      (second type-decl-with-nil))
@@ -223,7 +223,7 @@
          (esrap:? (and token-colon/?s type-id/?s/with-pos))
          token-eq/?s expr)
   (:lambda (result esrap:&bounds start)
-    (ast:make-function-decl
+    (ast:function-decl
      (nth 1 result)
      (nth 3 result)
      (second (nth 5 result))
@@ -234,7 +234,7 @@
     (and function-decl
          (* (and (esrap:? skippable) function-decl)))
   (:lambda (result)
-    (ast:make-function-decls
+    (ast:function-decls
      (cons (first result)
            (mapcar (lambda (function-decl-with-nil)
                      (second function-decl-with-nil))
@@ -245,11 +245,12 @@
          (esrap:? (and token-colon/?s type-id/?s/with-pos))
          token-assign/?s expr)
   (:lambda (result esrap:&bounds start)
-    (ast:make-var-decl
+    (ast:var-decl
      (nth 1 result)
      (second (nth 2 result))
      (nth 4 result)
-     start)))
+     start
+     (ast:escape t))))
 
 (esrap:defrule decl
     (or function-decls
@@ -272,19 +273,19 @@
     (and keyword-let/?s zero-or-more-decls/?s keyword-in/?s
          seq-expr-without-parens/?s keyword-end)
   (:lambda (result esrap:&bounds start)
-    (ast:make-let-expr
+    (ast:let-expr
      (nth 1 result) (nth 3 result) start)))
 
 (deftoken expr op-expr)
 
 (esrap:defrule simple-var non-keyword-id
   (:lambda (result esrap:&bounds start)
-    (ast:make-simple-var result start)))
+    (ast:simple-var result start)))
 
 (esrap:defrule field-var
     (and var "." non-keyword-id)
   (:lambda (result esrap:&bounds start)
-    (ast:make-field-var
+    (ast:field-var
      (nth 0 result)
      (nth 2 result)
      start)))
@@ -292,7 +293,7 @@
 (esrap:defrule subscript-var
     (and var token-left-bracket/?s expr/?s token-right-bracket)
   (:lambda (result esrap:&bounds start)
-    (ast:make-subscript-var
+    (ast:subscript-var
      (nth 0 result)
      (nth 2 result)
      start)))
@@ -302,12 +303,12 @@
 
 (esrap:defrule var-expr var
   (:lambda (result)
-    (ast:make-var-expr result)))
+    (ast:var-expr result)))
 
 (esrap:defrule nil-expr
     "nil"
   (:lambda (result)
-    (ast:make-nil-expr)))
+    ast:nil-expr))
 
 (esrap:defrule int-expr
     (+ digit)
@@ -318,7 +319,7 @@
                 (< value most-negative-fixnum))
         (error "The integer ~A is not within the range [~A, ~A]"
                value most-negative-fixnum most-positive-fixnum))
-      (ast:make-int-expr value))))
+      (ast:int-expr value))))
 
 (esrap:defrule escape-seq
     (and #\\ (or #\n
@@ -358,7 +359,7 @@
   (:function second)
   (:text t)
   (:lambda (result esrap:&bounds start)
-    (ast:make-string-expr result start)))
+    (ast:string-expr result start)))
 
 (esrap:defrule one-or-more-expr-by-comma
     (and expr
@@ -375,7 +376,7 @@
 (esrap:defrule call-expr
     (and non-keyword-id/?s token-left-paren/?s zero-or-more-expr-by-comma/?s token-right-paren)
   (:lambda (result esrap:&bounds start)
-    (ast:make-call-expr (first result) (third result) start)))
+    (ast:call-expr (first result) (third result) start)))
 
 (esrap:defrule expr-with-pos expr
   (:lambda (result esrap:&bounds start)
@@ -398,12 +399,12 @@
          zero-or-more-exprs-by-semicolon-with-pos/?s
          token-right-paren)
   (:lambda (result)
-    (ast:make-seq-expr (second result))))
+    (ast:seq-expr (second result))))
 
 (deftoken seq-expr-without-parens
     zero-or-more-exprs-by-semicolon-with-pos
   (:lambda (result)
-    (ast:make-seq-expr result)))
+    (ast:seq-expr result)))
 
 (esrap:defrule field-expr
     (and non-keyword-id/?s token-eq/?s expr)
@@ -423,7 +424,7 @@
 (esrap:defrule record-expr
     (and type-id/?s token-left-brace/?s field-exprs/?s token-right-brace)
   (:lambda (result esrap:&bounds start)
-    (ast:make-record-expr (nth 0 result) (nth 2 result) start)))
+    (ast:record-expr (nth 0 result) (nth 2 result) start)))
 
 (esrap:defrule array-expr
     (and type-id/?s
@@ -431,7 +432,7 @@
          keyword-of/?s
          expr)
   (:lambda (result esrap:&bounds start)
-    (ast:make-array-expr
+    (ast:array-expr
      (nth 0 result)
      (nth 2 result)
      (nth 5 result)
@@ -440,7 +441,7 @@
 (esrap:defrule assign-expr
     (and var/?s token-assign/?s expr)
   (:lambda (result esrap:&bounds start)
-    (ast:make-assign-expr
+    (ast:assign-expr
      (first result)
      (third result)
      start)))
@@ -450,7 +451,7 @@
          keyword-then/?s expr/?s
          (esrap:? (and keyword-else/?s expr/?s)))
   (:lambda (result esrap:&bounds start)
-    (ast:make-if-expr
+    (ast:if-expr
      (nth 1 result)
      (nth 3 result)
      (second (nth 4 result))
@@ -459,7 +460,7 @@
 (esrap:defrule while-expr
     (and keyword-while/?s expr/?s keyword-do/?s expr/?s)
   (:lambda (result esrap:&bounds start)
-    (ast:make-while-expr
+    (ast:while-expr
      (nth 1 result)
      (nth 3 result)
      start)))
@@ -470,16 +471,17 @@
          keyword-to/?s expr/?s
          keyword-do/?s expr/?s)
   (:lambda (result esrap:&bounds start)
-    (ast:make-for-expr
+    (ast:for-expr
      (nth 1 result)
      (nth 3 result)
      (nth 5 result)
      (nth 7 result)
-     start)))
+     start
+     (ast:escape t))))
 
 (esrap:defrule break-expr keyword-break
   (:lambda (result esrap:&bounds start)
-    (ast:make-break-expr start)))
+    (ast:break-expr start)))
 
 (esrap:defrule op-expr boolean-or-or-high-prior-term)
 
@@ -489,9 +491,9 @@
 (esrap:defrule boolean-or-term
     (and boolean-or-or-high-prior-term/?s token-boolean-or/?s/with-pos boolean-and-or-high-prior-term)
   (:lambda (result)
-    (ast:make-if-expr
+    (ast:if-expr
      (nth 0 result)
-     (ast:make-int-expr 1)
+     (ast:int-expr 1)
      (nth 2 result)
      (second (second result)))))
 
@@ -501,10 +503,10 @@
 (esrap:defrule boolean-and-term
     (and boolean-and-or-high-prior-term/?s token-boolean-and/?s/with-pos comparison-or-high-prior-term)
   (:lambda (result)
-    (ast:make-if-expr
+    (ast:if-expr
      (nth 0 result)
      (nth 2 result)
-     (ast:make-int-expr 0)
+     (ast:int-expr 0)
      (second (second result)))))
 
 (deftoken comparison-or-high-prior-term
@@ -518,20 +520,24 @@
         (and comparison-or-high-prior-term/?s token-ge/?s/with-pos plus-minus-or-high-prior-term)
         (and comparison-or-high-prior-term/?s token-le/?s/with-pos plus-minus-or-high-prior-term))
   (:lambda (result)
-    (when (trivia:match (first result)
-            ((ast:op-expr :op op)
-             (member op '(:eq :neq :gt :lt :ge :le))))
+    (when (serapeum:match-of ast:expr (first result)
+            ((ast:op-expr _ op _)
+             (serapeum:match-of ast:op op
+               ((or ast:eq-op ast:neq-op ast:gt-op ast:lt-op ast:ge-op ast:le-op)
+                t)
+               (_ nil)))
+            (_ nil))
       (error "Comparison operators are not associate (pos: ~A)." (second (second result))))
-    (ast:make-op-expr (nth 0 result)
-                      (alexandria:eswitch ((first (second result)) :test #'equal)
-                        ("=" :eq)
-                        ("<>" :neq)
-                        (">" :gt)
-                        ("<" :lt)
-                        (">=" :ge)
-                        ("<=" :le))
-                      (nth 2 result)
-                      (second (second result)))))
+    (ast:op-expr (nth 0 result)
+                 (alexandria:eswitch ((first (second result)) :test #'equal)
+                   ("=" ast:eq-op)
+                   ("<>" ast:neq-op)
+                   (">" ast:gt-op)
+                   ("<" ast:lt-op)
+                   (">=" ast:ge-op)
+                   ("<=" ast:le-op))
+                 (nth 2 result)
+                 (second (second result)))))
 
 (deftoken plus-minus-or-high-prior-term
     (or plus-or-minus-term times-div-or-high-prior-term))
@@ -540,12 +546,12 @@
     (or (and plus-minus-or-high-prior-term/?s token-plus/?s/with-pos times-div-or-high-prior-term)
         (and plus-minus-or-high-prior-term/?s token-minus/?s/with-pos times-div-or-high-prior-term))
   (:lambda (result)
-    (ast:make-op-expr (nth 0 result)
-                      (alexandria:eswitch ((first (second result)) :test #'equal)
-                        ("+" :plus)
-                        ("-" :minus))
-                      (nth 2 result)
-                      (second (second result)))))
+    (ast:op-expr (nth 0 result)
+                 (alexandria:eswitch ((first (second result)) :test #'equal)
+                   ("+" ast:plus-op)
+                   ("-" ast:minus-op))
+                 (nth 2 result)
+                 (second (second result)))))
 
 (deftoken times-div-or-high-prior-term
     (or times-or-div-term unary-minus-or-high-prior-term))
@@ -554,12 +560,12 @@
     (or (and times-div-or-high-prior-term/?s token-times/?s/with-pos unary-minus-or-high-prior-term)
         (and times-div-or-high-prior-term/?s token-div/?s/with-pos unary-minus-or-high-prior-term))
   (:lambda (result)
-    (ast:make-op-expr (nth 0 result)
-                      (alexandria:eswitch ((first (second result)) :test #'equal)
-                        ("*" :times)
-                        ("/" :div))
-                      (nth 2 result)
-                      (second (second result)))))
+    (ast:op-expr (nth 0 result)
+                 (alexandria:eswitch ((first (second result)) :test #'equal)
+                   ("*" ast:times-op)
+                   ("/" ast:div-op))
+                 (nth 2 result)
+                 (second (second result)))))
 
 (esrap:defrule unary-minus-or-high-prior-term
     (or unary-minus-term base-term))
@@ -567,10 +573,10 @@
 (esrap:defrule unary-minus-term
     (and token-minus/?s/with-pos unary-minus-or-high-prior-term)
   (:lambda (result)
-    (ast:make-op-expr (ast:make-int-expr 0)
-                      :minus
-                      (second result)
-                      (second (first result)))))
+    (ast:op-expr (ast:int-expr 0)
+                 ast:minus-op
+                 (second result)
+                 (second (first result)))))
 
 (esrap:defrule base-term
     (or nil-expr
