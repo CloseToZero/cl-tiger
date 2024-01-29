@@ -155,7 +155,7 @@
          (_ (type-check-error
              pos *line-map*
              "You can only access the field of a record.")))))
-    ((ast:subscript-var var pos)
+    ((ast:subscript-var var _ pos)
      (let ((type (type-check-var value-env var)))
        (serapeum:match-of types:ty type
          ((types:array-ty base-type)
