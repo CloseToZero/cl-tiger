@@ -96,7 +96,7 @@
 
 (serapeum:defunion expr
   (int-expr
-   (value integer))
+   (value fixnum))
   (label-expr
    (value temp:label))
   (temp-expr
