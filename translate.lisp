@@ -3,6 +3,7 @@
   (:local-nicknames
    (:ast :cl-tiger/ast)
    (:temp :cl-tiger/temp)
+   (:ir :cl-tiger/ir)
    (:frame :cl-tiger/frame)
    (:cl-ds :cl-data-structures)
    (:cl-ds.hamt :cl-data-structures.dicts.hamt))
@@ -146,6 +147,14 @@
 (serapeum:defconstructor access
   (level level)
   (frame-access frame:access))
+
+(serapeum:defunion tagged-ir
+  (expr
+   (value ir:expr))
+  (stm
+   (value ir:stm))
+  (condi
+   (value (function (temp:label temp:label) ir:stm))))
 
 (defun new-level (parent name formals target)
   (let* ((frame (frame:new-frame name (cons t formals) target))
