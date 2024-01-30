@@ -2,12 +2,15 @@
   (:use :cl)
   (:local-nicknames
    (:symbol :cl-tiger/symbol)
+   (:temp :cl-tiger/temp)
+   (:target :cl-tiger/target)
    (:types :cl-tiger/types)
+   (:trans :cl-tiger/translate)
    (:cl-ds :cl-data-structures)
    (:cl-ds.hamt :cl-data-structures.dicts.hamt))
   (:export
    #:*base-type-env*
-   #:*base-value-env*
+   #:base-value-env
 
    #:get-type
    #:get-unnamed-base-type
@@ -16,9 +19,12 @@
    #:value-entry
    #:var-entry
    #:var-entry-ty
+   #:var-entry-access
    #:fun-entry
    #:fun-entry-formal-types
    #:fun-entry-result-type
+   #:fun-entry-label
+   #:fun-entry-level
 
    #:get-value
    #:insert-value))
@@ -57,66 +63,78 @@
 
 (serapeum:defunion value-entry
   (var-entry
-   (ty types:ty))
+   (ty types:ty)
+   (access trans:access))
   (fun-entry
    ;; A list of types:ty
    (formal-types list)
-   (result-type types:ty)))
+   (result-type types:ty)
+   (label temp:label)
+   (level trans:level)))
 
-;; A map from symbol:sym to value-entry
-(defvar *base-value-env*
+;; Returns a map from symbol:sym to value-entry
+(defun base-value-env (target)
   (let ((env (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq))
         (unit-ty (get-unnamed-base-type (symbol:get-sym "unit")))
         (int-ty (get-type *base-type-env* (symbol:get-sym "int")))
         (string-ty (get-type *base-type-env* (symbol:get-sym "string"))))
     (reduce (lambda (env binding)
-              (cl-ds:insert env (first binding) (second binding)))
-            (list (list (symbol:get-sym "print")
+              (trivia:let-match1 (list name formal-types result-type) binding
+                (let ((level (trans:new-level trans:top-level
+                                              (temp:new-named-label name)
+                                              (mapcar (lambda (_) nil) formal-types)
+                                              target)))
+                  (cl-ds:insert env
+                                (symbol:get-sym name)
+                                (fun-entry formal-types
+                                           result-type
+                                           (temp:new-named-label name)
+                                           level)))))
+            (list (list "print"
                         ;; print(s: string)
                         ;; print s on std output.
-                        (fun-entry
-                         (list string-ty) unit-ty))
-                  (list (symbol:get-sym "flush")
+                         (list string-ty) unit-ty)
+                  (list "flush"
                         ;; flush()
                         ;; flush the std output buffer.
-                        (fun-entry nil unit-ty))
-                  (list (symbol:get-sym "getchar")
+                        nil unit-ty)
+                  (list "getchar"
                         ;; getchar(): string
                         ;; read a character from std input, return
                         ;; empty string on end of file.
-                        (fun-entry nil string-ty))
-                  (list (symbol:get-sym "ord")
+                        nil string-ty)
+                  (list "ord"
                         ;; ord(s: string): int
                         ;; give ASCII value of first character of s,
                         ;; yield -1 if s is empty string.
-                        (fun-entry (list string-ty) int-ty))
-                  (list (symbol:get-sym "chr")
+                        (list string-ty) int-ty)
+                  (list "chr"
                         ;; chr(i: int): string
                         ;; single-character string from ASCII value i,
                         ;; halt program if i out of range.
-                        (fun-entry (list int-ty) string-ty))
-                  (list (symbol:get-sym "size")
+                        (list int-ty) string-ty)
+                  (list "size"
                         ;; size(s: string): int
                         ;; number of characters in s.
-                        (fun-entry (list string-ty) int-ty))
-                  (list (symbol:get-sym "substring")
+                        (list string-ty) int-ty)
+                  (list "substring"
                         ;; substring(s: string, first: int, n: int): string
                         ;; substring of string s, starting with
                         ;; character first, n characters long,
                         ;; character are numbered starting at 0.
-                        (fun-entry (list string-ty int-ty int-ty) string-ty))
-                  (list (symbol:get-sym "concat")
+                        (list string-ty int-ty int-ty) string-ty)
+                  (list "concat"
                         ;; concat(s1: string, s2: string): string
                         ;; concatenation of s1 and s2.
-                        (fun-entry (list string-ty string-ty) string-ty))
-                  (list (symbol:get-sym "not")
+                        (list string-ty string-ty) string-ty)
+                  (list "not"
                         ;; not(i: int): int
                         ;; return (i = 0)
-                        (fun-entry (list int-ty) int-ty))
-                  (list (symbol:get-sym "exit")
+                        (list int-ty) int-ty)
+                  (list "exit"
                         ;; exit(i: int)
                         ;; terminate execution with code i.
-                        (fun-entry (list int-ty) unit-ty)))
+                        (list int-ty) unit-ty))
             :initial-value env)))
 
 (defun get-value (value-env sym)
