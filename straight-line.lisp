@@ -14,7 +14,7 @@
 (serapeum:defunion stm
   (compound-stm
    (first stm)
-   (rest stm))
+   (second stm))
   (assign-stm
    (id id)
    (expr expr))
@@ -50,9 +50,9 @@
 (defun interpret-stm (stm env)
   ;; Returns another assoc list as new env.
   (serapeum:match-of stm stm
-    ((compound-stm first rest)
+    ((compound-stm first second)
      (let ((new-env (interpret-stm first env)))
-       (interpret-stm rest new-env)))
+       (interpret-stm second new-env)))
     ((assign-stm id expr)
      (trivia:let-match (((list int-value new-env) (interpret-expr expr env)))
        (cons (cons id int-value) new-env)))
