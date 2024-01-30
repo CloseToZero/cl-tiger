@@ -21,10 +21,10 @@
 
 ;; User should use (new-temp) rather than (temp integer) to create temp,
 ;; even we also export the temp symbol.
-(defun new-temp ()
+(defun new-temp (&optional (base-name ""))
   (let ((count *temp-count*))
     (incf *temp-count*)
-    (temp count (format nil "t~D" count))))
+    (temp count (format nil "t~A~D" base-name count))))
 
 (deftype label () 'symbol:sym)
 
