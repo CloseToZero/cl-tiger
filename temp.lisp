@@ -9,7 +9,8 @@
    #:new-temp
 
    #:label
-   #:new-label))
+   #:new-label
+   #:new-named-label))
 
 (cl:in-package :cl-tiger/temp)
 
@@ -30,9 +31,11 @@
 
 (defvar *label-count* 0)
 
-(defun new-label (&optional name)
+(defun new-label (&optional (base-name ""))
   (symbol:get-sym
-   (or name
-       (let ((count *label-count*))
-         (incf *label-count*)
-         (format nil "L~D" count)))))
+   (let ((count *label-count*))
+     (incf *label-count*)
+     (format nil "L~A~D" base-name count))))
+
+(defun new-named-label (name)
+  (symbol:get-sym name))
