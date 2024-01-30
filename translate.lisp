@@ -218,9 +218,19 @@
 (defun tagged-ir->condi (tagged-ir)
   (serapeum:match-of tagged-ir tagged-ir
     ((expr value)
-     (lambda (true-label false-label)
-       (ir:cjump-stm value ir:neq-rel-op (ir:int-expr 0)
-                     true-label false-label)))
+     (serapeum:match-of ir:expr value
+       ((ir:int-expr 0)
+        (lambda (true-label false-label)
+          (declare (ignore true-label))
+          (ir:jump-stm (ir:label-expr false-label) (list false-label))))
+       ((ir:int-expr _)
+        (lambda (true-label false-label)
+          (declare (ignore false-label))
+          (ir:jump-stm (ir:label-expr true-label) (list true-label))))
+       (_
+        (lambda (true-label false-label)
+          (ir:cjump-stm value ir:neq-rel-op (ir:int-expr 0)
+                        true-label false-label)))))
     ((stm _)
      (error "Cannot convert a ir:stm which has no value to a conditional jump generate function."))
     ((condi value)
