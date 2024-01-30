@@ -28,8 +28,8 @@
    #:uge-rel-op
 
    #:expr
-   #:const-expr
-   #:const-expr-value
+   #:int-expr
+   #:int-expr-value
    #:label-expr
    #:label-expr-value
    #:temp-expr
@@ -95,7 +95,7 @@
   uge-rel-op)
 
 (serapeum:defunion expr
-  (const-expr
+  (int-expr
    (value integer))
   (label-expr
    (value temp:label))
