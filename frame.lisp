@@ -2,7 +2,8 @@
   (:use :cl)
   (:local-nicknames
    (:target :cl-tiger/target)
-   (:temp :cl-tiger/temp))
+   (:temp :cl-tiger/temp)
+   (:ir :cl-tiger/ir))
   (:export
    #:access
    #:frame
@@ -10,10 +11,16 @@
    #:frame-formals
    #:new-frame
    #:alloc-local
+   #:fp
+   #:word-size
+   #:access-expr
 
    ;; internal functions:
    #:new-frame%
-   #:alloc-local%))
+   #:alloc-local%
+   #:fp%
+   #:word-size%
+   #:access-expr%))
 
 (cl:in-package :cl-tiger/frame)
 
@@ -46,3 +53,19 @@
                 (target:target-arch target) (target:target-os target)))
 
 (defgeneric alloc-local% (frame escape target-arch target-os))
+
+(defun fp (target)
+  (fp% (target:target-arch target) (target:target-os target)))
+
+;; Returns an temp:temp
+(defgeneric fp% (target-arch target-os))
+
+(defun word-size (target)
+  (word-size% (target:target-arch target) (target:target-os target)))
+
+(defgeneric word-size% (target-arch target-os))
+
+(defun access-expr (access fp-expr target)
+  (access-expr% access fp-expr (target:target-arch target) (target:target-os target)))
+
+(defgeneric access-expr% (access fp-expr target-arch target-os))
