@@ -171,3 +171,57 @@
     (top-level (error "Cannot alloc a local variable in the top level."))
     ((inner-level _ _ frame)
      (access level (frame:alloc-local frame escape target)))))
+
+(defun stms->compound-stm (&rest stms)
+  (cond ((null stms)
+         (ir:expr-stm (ir:int-expr 0)))
+        ((null (cdr stms))
+         ;; A list of length 1.
+         (car stms))
+        (t
+         (ir:compound-stm
+          (car stms) (apply #'stms->compound-stm (rest stms))))))
+
+(defun tagged-ir->expr (tagged-ir)
+  (serapeum:match-of tagged-ir tagged-ir
+    ((expr value)
+     value)
+    ((stm value)
+     (ir:stm-then-expr value (ir:int-expr 0)))
+    ((condi value)
+     (let ((result-temp (temp:new-temp "result"))
+           (true-label (temp:new-label "true"))
+           (false-label (temp:new-label "false")))
+       (ir:stm-then-expr
+        (stms->compound-stm
+         (ir:move-stm (ir:temp-expr result-temp) (ir:int-expr 1))
+         (funcall value true-label false-label)
+         (ir:label-stm false-label)
+         (ir:move-stm (ir:temp-expr result-temp) (ir:int-expr 0))
+         (ir:label-stm true-label))
+        (ir:temp-expr result-temp))))))
+
+(defun tagged-ir->stm (tagged-ir)
+  (serapeum:match-of tagged-ir tagged-ir
+    ((expr value)
+     (ir:expr-stm value))
+    ((stm value)
+     value)
+    ((condi value)
+     (let ((true-label (temp:new-label "true"))
+           (false-label (temp:new-label "false")))
+       (stms->compound-stm
+        (funcall value true-label false-label)
+        (ir:label-stm true-label)
+        (ir:label-stm false-label))))))
+
+(defun tagged-ir->condi (tagged-ir)
+  (serapeum:match-of tagged-ir tagged-ir
+    ((expr value)
+     (lambda (true-label false-label)
+       (ir:cjump-stm value ir:neq-rel-op (ir:int-expr 0)
+                     true-label false-label)))
+    ((stm _)
+     (error "Cannot convert a ir:stm which has no value to a conditional jump generate function."))
+    ((condi value)
+     value)))
