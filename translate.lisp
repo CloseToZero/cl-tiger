@@ -27,7 +27,7 @@
 
 (cl:in-package :cl-tiger/translate)
 
-;; A mapping from symbol:sym to (depth ast:escape-ref)
+;; A map from symbol:sym to (depth ast:escape-ref)
 (defvar *base-escape-ref-env*
   (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq))
 
@@ -235,3 +235,21 @@
      (error "Cannot convert a ir:stm which has no value to a conditional jump generate function."))
     ((condi value)
      value)))
+
+;; cur-level should be a descendant of target-level.
+(defun fp-expr (cur-level target-level target)
+  (when (typep target-level 'top-level)
+    (error "target-level argument of fp-expr should not be top-level."))
+  (labels ((rec (cur-level acc-fp-expr)
+             (when (typep cur-level 'top-level)
+               (error "cur-level argument of fp-expr should not be top-level."))
+             (if (eq cur-level target-level)
+                 acc-fp-expr
+                 (trivia:let-match1 (inner-level parent _ frame) cur-level
+                   (rec parent
+                        (frame:access-expr
+                         (or (car (frame:frame-formals frame))
+                             (error "Missing static link in the frame: ~S" frame))
+                         acc-fp-expr
+                         target))))))
+    (rec cur-level (ir:temp-expr (frame:fp target)))))

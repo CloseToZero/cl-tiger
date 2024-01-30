@@ -25,7 +25,7 @@
 
 (cl:in-package :cl-tiger/env)
 
-;; A mapping from symbol:sym to types:ty
+;; A map from symbol:sym to types:ty
 (defvar *base-type-env*
   (let ((env (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
     (reduce (lambda (env binding)
@@ -63,7 +63,7 @@
    (formal-types list)
    (result-type types:ty)))
 
-;; A mapping from symbol:sym to value-entry
+;; A map from symbol:sym to value-entry
 (defvar *base-value-env*
   (let ((env (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq))
         (unit-ty (get-unnamed-base-type (symbol:get-sym "unit")))
