@@ -390,7 +390,7 @@ doesn't match the expected type."
                (type-check-expr type-env value-env (first expr-with-pos) within-loop))
              exprs
              :initial-value (env:get-unnamed-base-type (symbol:get-sym "unit"))))
-    ((ast::assign-expr var expr pos)
+    ((ast:assign-expr var expr pos)
      (let ((var-ty (type-check-var value-env var))
            (expr-ty (type-check-expr type-env value-env expr within-loop)))
        (unless (type-compatible var-ty expr-ty)

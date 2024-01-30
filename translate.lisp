@@ -66,7 +66,7 @@
                ;; expr-with-pos form: (expr pos).
                (find-and-fill-escapes-expr escape-ref-env depth (first expr-with-pos)))
              exprs))
-    ((ast::assign-expr _ expr _)
+    ((ast:assign-expr _ expr _)
      (find-and-fill-escapes-expr escape-ref-env depth expr))
     ((ast:if-expr test then else _)
      (find-and-fill-escapes-expr escape-ref-env depth test)
