@@ -31,7 +31,7 @@
    (left expr)
    (op op)
    (right expr))
-  (stm-expr
+  (stm-then-expr
    (stm stm)
    (expr expr)))
 
@@ -40,7 +40,7 @@
    (assign-stm "a" (op-expr (num-expr 5) plus-op (num-expr 3)))
    (compound-stm
     (assign-stm "b"
-                (stm-expr
+                (stm-then-expr
                  (print-stm
                   (list (id-expr "a")
                         (op-expr (id-expr "a") minus-op (num-expr 1))))
@@ -88,7 +88,7 @@
                   (div-op #'/))
               int-value-1 int-value-2)
              new-env-2)))
-    ((stm-expr stm expr)
+    ((stm-then-expr stm expr)
      (let ((new-env (interpret-stm stm env)))
        (interpret-expr expr new-env)))))
 
