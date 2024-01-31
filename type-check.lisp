@@ -173,7 +173,7 @@
          (type-check-error
           (second typ) *line-map*
           "Undefined type: ~A." (symbol:sym-name (first typ)))))
-     (let ((init-ty (type-check-expr type-env value-env init within-loop)))
+     (let ((init-ty (type-check-expr type-env value-env level target init within-loop)))
        (when typ
          (unless (type-compatible init-ty (actual-ty (env:get-type type-env (first typ))))
            (type-check-error
