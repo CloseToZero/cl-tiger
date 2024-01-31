@@ -22,4 +22,4 @@
                (:file "types")
                (:file "translate")
                (:file "env")
-               (:file "semantic")))
+               (:file "type-check")))
