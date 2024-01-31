@@ -139,8 +139,8 @@
         pos *line-map*
         "Undefined variable: ~A." (symbol:sym-name sym))))
     ((ast:field-var var sym pos)
-     (let ((type (type-check-var value-env level target var)))
-       (serapeum:match-of types:ty type
+     (let ((ty (type-check-var value-env level target var)))
+       (serapeum:match-of types:ty ty
          ((types:record-ty fields)
           (alexandria:if-let
               (field
@@ -156,8 +156,8 @@
              pos *line-map*
              "You can only access the field of a record.")))))
     ((ast:subscript-var var _ pos)
-     (let ((type (type-check-var value-env level target var)))
-       (serapeum:match-of types:ty type
+     (let ((ty (type-check-var value-env level target var)))
+       (serapeum:match-of types:ty ty
          ((types:array-ty base-type)
           (actual-ty base-type))
          (_ (type-check-error
