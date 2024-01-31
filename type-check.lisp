@@ -466,7 +466,7 @@ doesn't match the expected type."
             pos *line-map*
             "The type of the high expression of a for expression should be int."))
          (let ((new-value-env
-                 (env:insert-type
+                 (env:insert-value
                   value-env var
                   (env:var-entry
                    int-ty
