@@ -20,6 +20,5 @@
                (:file "ast")
                (:file "parse")
                (:file "types")
-               (:file "translate")
-               (:file "env")
-               (:file "type-check")))
+               (:file "type-check")
+               (:file "translate")))
