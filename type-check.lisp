@@ -178,7 +178,7 @@
          (unless (type-compatible init-ty (actual-ty (env:get-type type-env (first typ))))
            (type-check-error
             pos *line-map*
-            "The type of the init expression of the variable doesn't the type ~A."
+            "The type of the init expression of the variable doesn't match the type ~A."
             (symbol:sym-name (first typ)))))
        (list type-env
              (env:insert-value
