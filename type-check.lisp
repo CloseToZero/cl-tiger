@@ -119,7 +119,7 @@
           (symbol:sym-name base-type-id)))
        (types:array-ty ty)))))
 
-(defun type-check-var (type-check-env var)
+(defun type-check-var (type-env type-check-env var within-loop)
   (serapeum:match-of ast:var var
     ((ast:simple-var sym pos)
      (alexandria:if-let (type-check-entry (get-type-check-entry type-check-env sym))
@@ -134,7 +134,7 @@
         pos *line-map*
         "Undefined variable: ~A." (symbol:sym-name sym))))
     ((ast:field-var var sym pos)
-     (let ((ty (type-check-var type-check-env var)))
+     (let ((ty (type-check-var type-env type-check-env var within-loop)))
        (serapeum:match-of types:ty ty
          ((types:record-ty fields)
           (alexandria:if-let
@@ -150,8 +150,13 @@
          (_ (type-check-error
              pos *line-map*
              "You can only access the field of a record.")))))
-    ((ast:subscript-var var _ pos)
-     (let ((ty (type-check-var type-check-env var)))
+    ((ast:subscript-var var expr pos)
+     (let ((index-ty (type-check-expr type-env type-check-env expr within-loop)))
+       (unless (types:type-compatible index-ty (types:get-type types:*base-type-env* (symbol:get-sym "int")))
+         (type-check-error
+          pos *line-map*
+          "The type of the subscript expression of an array should be int.")))
+     (let ((ty (type-check-var type-env type-check-env var within-loop)))
        (serapeum:match-of types:ty ty
          ((types:array-ty base-type)
           (types:actual-ty base-type))
@@ -282,7 +287,7 @@
 (defun type-check-expr (type-env type-check-env expr within-loop)
   (serapeum:match-of ast:expr expr
     ((ast:var-expr var)
-     (type-check-var type-check-env var))
+     (type-check-var type-env type-check-env var within-loop))
     ((ast:nil-expr)
      (types:get-unnamed-base-type (symbol:get-sym "nil")))
     ((ast:int-expr _)
@@ -392,7 +397,7 @@ doesn't match the expected type."
              exprs
              :initial-value (types:get-unnamed-base-type (symbol:get-sym "unit"))))
     ((ast:assign-expr var expr pos)
-     (let ((var-ty (type-check-var type-check-env var))
+     (let ((var-ty (type-check-var type-env type-check-env var within-loop))
            (expr-ty (type-check-expr type-env type-check-env expr within-loop)))
        (unless (types:type-compatible var-ty expr-ty)
          (type-check-error
