@@ -10,7 +10,8 @@
 
    #:label
    #:new-label
-   #:new-named-label))
+   #:new-named-label
+   #:label-name))
 
 (cl:in-package :cl-tiger/temp)
 
@@ -39,3 +40,6 @@
 
 (defun new-named-label (name)
   (symbol:get-sym name))
+
+(defun label-name (label)
+  (symbol:sym-name label))

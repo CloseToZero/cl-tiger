@@ -292,7 +292,7 @@
     ((ast:array-ty base-type-id _)
      (types:array-ty (types:get-type type-env base-type-id)))))
 
-(defun translate-var (type-env ir-env level target var)
+(defun translate-var (type-env ir-env level target break-target var)
   (serapeum:match-of ast:var var
     ((ast:simple-var sym _)
      (trivia:let-match1 (ir-var-entry ty access) (get-ir-entry ir-env sym)
@@ -303,7 +303,7 @@
                                         target)))))
     ((ast:field-var var sym _)
      (trivia:let-match1 (list (types:record-ty fields) var-tagged-ir)
-         (translate-var type-env ir-env level target var)
+         (translate-var type-env ir-env level target break-target var)
        (trivia:let-match1 (list _ ty index)
            (loop for (field-sym field-ty) in fields
                  for index from 0
@@ -317,9 +317,9 @@
                               (ir:int-expr (* index (frame:word-size target))))))))))
     ((ast:subscript-var var expr _)
      (trivia:let-match (((list (types:array-ty base-type) var-tagged-ir)
-                         (translate-var type-env ir-env level target var))
+                         (translate-var type-env ir-env level target break-target var))
                         ((list _ expr-tagged-ir)
-                         (translate-expr type-env ir-env level target expr)))
+                         (translate-expr type-env ir-env level target expr break-target)))
        (list (types:actual-ty base-type)
              (tagged-expr (ir:mem-expr
                            (ir:bin-op-expr
@@ -329,12 +329,11 @@
                                             ir:times-bin-op
                                             (frame:word-size target))))))))))
 
-(defun translate-decl (type-env ir-env level target decl)
+(defun translate-decl (type-env ir-env level target break-target decl)
   (serapeum:match-of ast:decl decl
     ((ast:var-decl name _ init _ escape-ref)
      (trivia:let-match1 (list init-ty init-tagged-ir)
-         (translate-expr type-env ir-env level target init)
-       (declare (ignore init-tagged-ir))
+         (translate-expr type-env ir-env level target init break-target)
        (list type-env
              (insert-ir-entry
               ir-env name
@@ -393,35 +392,50 @@
        (mapc (lambda (function-decl)
                (let ((ir-entry (get-ir-entry new-ir-env (ast:function-decl-name function-decl))))
                  (trivia:let-match1 (ir-fun-entry formal-types _ _ level) ir-entry
-                   (translate-expr
-                    type-env
-                    (loop with acc-ir-env = new-ir-env
-                          for formal-type in formal-types
-                          for param-field in (ast:function-decl-params function-decl)
-                          for formal-access in (level-formals level)
-                          do (setf acc-ir-env
-                                   (insert-ir-entry acc-ir-env
-                                                    (ast:field-name param-field)
-                                                    (ir-var-entry
-                                                     formal-type
-                                                     formal-access)))
-                          finally (return acc-ir-env))
-                    level
-                    target
-                    (ast:function-decl-body function-decl)))))
+                   (trivia:let-match1 (list body-ty body-tagged-ir)
+                       (translate-expr
+                        type-env
+                        (loop with acc-ir-env = new-ir-env
+                              for formal-type in formal-types
+                              for param-field in (ast:function-decl-params function-decl)
+                              for formal-access in (level-formals level)
+                              do (setf acc-ir-env
+                                       (insert-ir-entry
+                                        acc-ir-env
+                                        (ast:field-name param-field)
+                                        (ir-var-entry
+                                         formal-type
+                                         formal-access)))
+                              finally (return acc-ir-env))
+                        level
+                        target
+                        (ast:function-decl-body function-decl)
+                        break-target)
+                     (let ((frame (inner-level-frame level)))
+                       (alloc-fun
+                        (frame:view-shift-for-fun-body
+                         frame
+                         (ir:move-stm
+                          (ir:temp-expr (frame:rv target))
+                          (tagged-ir->expr body-tagged-ir))
+                         target)
+                        frame))))))
              function-decls)
        (list type-env new-ir-env nil)))))
 
-(defun translate-decls (type-env ir-env level target decls)
+(defun translate-decls (type-env ir-env level target break-target decls)
   (reduce (lambda (acc decl)
-            (translate-decl (first acc) (second acc) level target decl))
+            (trivia:let-match1 (list acc-type-env acc-ir-env acc-tagged-irs) acc
+              (trivia:let-match1 (list type-env ir-env tagged-irs)
+                  (translate-decl acc-type-env acc-ir-env level target break-target decl)
+                (list type-env ir-env (nconc acc-tagged-irs tagged-irs)))))
           decls
-          :initial-value (list type-env ir-env)))
+          :initial-value (list type-env ir-env nil)))
 
-(defun translate-expr (type-env ir-env level target expr)
+(defun translate-expr (type-env ir-env level target break-target expr)
   (serapeum:match-of ast:expr expr
     ((ast:var-expr var)
-     (translate-var type-env ir-env level target var))
+     (translate-var type-env ir-env level target break-target var))
     ((ast:nil-expr)
      (list
       (types:get-unnamed-base-type (symbol:get-sym "nil"))
@@ -430,18 +444,40 @@
      (list
       (types:get-type types:*base-type-env* (symbol:get-sym "int"))
       (tagged-expr (ir:int-expr value))))
-    ((ast:string-expr _ _)
-     (list (types:get-type types:*base-type-env* (symbol:get-sym "string")) (tagged-expr (ir:int-expr 0))))
+    ((ast:string-expr str _)
+     (list (types:get-type types:*base-type-env* (symbol:get-sym "string"))
+           (let ((string-label (temp:new-label "string")))
+             (alloc-string string-label str)
+             (tagged-expr (ir:label-expr string-label)))))
     ((ast:call-expr fun args _)
      (let ((ir-entry (get-ir-entry ir-env fun)))
-       (trivia:let-match1 (ir-fun-entry _ result-type _ _) ir-entry
-         (mapcar (lambda (arg)
-                   (translate-expr type-env ir-env level target arg))
-                 args)
-         (list (types:actual-ty result-type) (tagged-expr (ir:int-expr 0))))))
+       (trivia:let-match1 (ir-fun-entry _ result-type fun-label fun-level) ir-entry
+         (list (types:actual-ty result-type)
+               (trivia:let-match1 (inner-level parent-level _) fun-level
+                 (let ((arg-ir-exprs
+                         (mapcar (lambda (arg)
+                                   (trivia:let-match1 (list _ arg-tagged-ir)
+                                       (translate-expr type-env ir-env level target break-target arg)
+                                     (tagged-ir->expr arg-tagged-ir)))
+                                 args)))
+                   (serapeum:match-of level parent-level
+                     ((inner-level _ _ _)
+                      (tagged-expr
+                       (ir:call-expr
+                        (ir:label-expr fun-label)
+                        (list*
+                         (fp-expr level parent-level target)
+                         arg-ir-exprs))))
+                     (_ (tagged-expr
+                         (frame:external-call
+                          (temp:label-name fun-label)
+                          arg-ir-exprs
+                          target))))))))))
     ((ast:op-expr left op right _)
-     (trivia:let-match (((list left-ty left-tagged-ir) (translate-expr type-env ir-env level target left))
-                        ((list right-ty right-tagged-ir) (translate-expr type-env ir-env level target right)))
+     (trivia:let-match (((list left-ty left-tagged-ir)
+                         (translate-expr type-env ir-env level target break-target left))
+                        ((list right-ty right-tagged-ir)
+                         (translate-expr type-env ir-env level target break-target right)))
        (list
         (types:get-type types:*base-type-env* (symbol:get-sym "int"))
         (cond ((member op (list ast:plus-op ast:minus-op ast:times-op ast:div-op))
@@ -454,76 +490,266 @@
                                   (ast:div-op ir:div-bin-op))
                                 (tagged-ir->expr right-tagged-ir))))
               (t
-               ;; TODO test if string or int
-               (tagged-expr (ir:int-expr 0)))))))
+               (trivia:match (list left-ty right-ty)
+                 ((list (types:string-ty) (types:string-ty))
+                  (tagged-condi
+                   (lambda (true-target false-target)
+                     (ir:cjump-stm
+                      (frame:external-call
+                       "stringCompare"
+                       (list (tagged-ir->expr left-tagged-ir)
+                             (tagged-ir->expr right-tagged-ir))
+                       target)
+                      (trivia:ematch op
+                        ((ast:eq-op) ir:eq-rel-op)
+                        ((ast:neq-op) ir:neq-rel-op)
+                        ((ast:lt-op) ir:lt-rel-op)
+                        ((ast:le-op) ir:le-rel-op)
+                        ((ast:gt-op) ir:gt-rel-op)
+                        ((ast:ge-op) ir:ge-rel-op))
+                      (ir:int-expr 0)
+                      true-target false-target))))
+                 (_
+                  (tagged-condi
+                   (lambda (true-target false-target)
+                     (ir:cjump-stm
+                      (tagged-ir->expr left-tagged-ir)
+                      (trivia:ematch op
+                        ((ast:eq-op) ir:eq-rel-op)
+                        ((ast:neq-op) ir:neq-rel-op)
+                        ((ast:lt-op) ir:lt-rel-op)
+                        ((ast:le-op) ir:le-rel-op)
+                        ((ast:gt-op) ir:gt-rel-op)
+                        ((ast:ge-op) ir:ge-rel-op))
+                      (tagged-ir->expr right-tagged-ir)
+                      true-target false-target))))))))))
     ((ast:record-expr type-id fields _)
-     (list
-      (let ((ty (types:actual-ty (types:get-type type-env type-id))))
-        (trivia:let-match1 (types:record-ty _) ty
-          (progn
-            (loop for field in fields
-                  do (translate-expr type-env ir-env level target (second field)))
-            ty)))
-      (tagged-expr (ir:int-expr 0))))
+     (let ((ty (types:actual-ty (types:get-type type-env type-id))))
+       (trivia:let-match1 (types:record-ty _) ty
+         (list ty
+               (let ((m (temp:new-temp "record-memeory")))
+                 (ir:stm-then-expr
+                  (apply #'stms->compound-stm
+                         (ir:move-stm
+                          (ir:temp-expr m)
+                          (frame:external-call
+                           "allocRecord"
+                           (list (* (length fields) (frame:word-size target)))
+                           target))
+                         (loop for field in fields
+                               for index from 0
+                               collect
+                               (trivia:let-match1 (list _ field-tagged-ir)
+                                   (translate-expr type-env ir-env level target break-target (second field))
+                                 (ir:move-stm
+                                  (ir:mem-expr
+                                   (ir:bin-op-expr (ir:temp-expr m)
+                                                   ir:plus-bin-op
+                                                   (ir:int-expr (* index (frame:word-size target)))))
+                                  (tagged-ir->expr field-tagged-ir)))))
+                  (ir:temp-expr m)))))))
     ((ast:seq-expr exprs)
      (trivia:let-match1 (list ty tagged-irs)
          (reduce (lambda (acc expr-with-pos)
                    ;; expr-with-pos form: (expr pos).
                    (trivia:let-match1 (list _ acc-tagged-irs) acc
                      (trivia:let-match1 (list ty tagged-ir)
-                         (translate-expr type-env ir-env level target (first expr-with-pos))
+                         (translate-expr type-env ir-env level target break-target (first expr-with-pos))
                        (list ty (cons tagged-ir acc-tagged-irs)))))
                  exprs
                  :initial-value (types:get-unnamed-base-type (symbol:get-sym "unit")))
-       (list ty (reverse tagged-irs))))
+       (list ty (apply #'stms->compound-stm (reverse tagged-irs)))))
     ((ast:assign-expr var expr _)
-     (trivia:let-match (((list _ _) (translate-var type-env ir-env level target var))
-                        ((list _ _) (translate-expr type-env ir-env level target expr)))
-       (list (types:get-unnamed-base-type (symbol:get-sym "unit")) (tagged-expr (ir:int-expr 0)))))
+     (trivia:let-match (((list _ var-tagged-ir)
+                         (translate-var type-env ir-env level target break-target var))
+                        ((list _ expr-tagged-ir)
+                         (translate-expr type-env ir-env level target break-target expr)))
+       (list (types:get-unnamed-base-type (symbol:get-sym "unit"))
+             (tagged-stm
+              (ir:move-stm
+               (tagged-ir->expr var-tagged-ir)
+               (tagged-ir->expr expr-tagged-ir))))))
     ((ast:if-expr test then else _)
-     (trivia:let-match (((list _ _) (translate-expr type-env ir-env level target test))
-                        ((list then-ty _) (translate-expr type-env ir-env level target then))
-                        ((list else-ty _) (if else
-                                              (translate-expr type-env ir-env level target else)
-                                              (list nil (tagged-expr (ir:int-expr 0))))))
+     (trivia:let-match (((list _ test-tagged-ir)
+                         (translate-expr type-env ir-env level target break-target test))
+                        ((list then-ty then-tagged-ir)
+                         (translate-expr type-env ir-env level target break-target then))
+                        ((list else-ty else-tagged-ir) (if else
+                                                           (translate-expr type-env ir-env level target break-target else)
+                                                           (list nil (tagged-expr (ir:int-expr 0))))))
        (list
         (if else
             (types:upgrade-from-compatible-types then-ty else-ty)
             (types:get-unnamed-base-type (symbol:get-sym "unit")))
-        (tagged-expr (ir:int-expr 0)))))
+        (if else
+            (tagged-expr
+             (let ((true-target (temp:new-label "true-target"))
+                   (false-target (temp:new-label "false-target"))
+                   (join-target (temp:new-label "join-target"))
+                   (result-temp (temp:new-temp "result")))
+               (ir:stm-then-expr
+                (stms->compound-stm
+                 (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
+                               ir:neq-rel-op
+                               (ir:int-expr 0)
+                               true-target
+                               false-target)
+                 (ir:label-stm true-target)
+                 (ir:move-stm (ir:temp-expr result-temp) (tagged-ir->expr then-tagged-ir))
+                 (ir:jump-stm (ir:label-expr join-target) (list join-target))
+                 (ir:label-stm false-target)
+                 (ir:move-stm (ir:temp-expr result-temp) (tagged-ir->expr else-tagged-ir))
+                 (ir:label-stm join-target))
+                (ir:temp-expr result-temp))))
+            (tagged-stm
+             (let ((true-target (temp:new-label "true-target"))
+                   (false-target (temp:new-label "false-target")))
+               (stms->compound-stm
+                (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
+                              ir:neq-rel-op
+                              (ir:int-expr 0)
+                              true-target
+                              false-target)
+                (ir:label-stm true-target)
+                (tagged-ir->stm then-tagged-ir)
+                (ir:label-stm false-target))))))))
     ((ast:while-expr test body _)
-     (trivia:let-match (((list _ _) (translate-expr type-env ir-env level target test))
-                        ((list body-ty _) (translate-expr type-env ir-env level target body)))
-       (list body-ty (tagged-expr (ir:int-expr 0)))))
+     (let ((break-target (temp:new-label "break-target")))
+       (trivia:let-match (((list _ test-tagged-ir)
+                           (translate-expr type-env ir-env level target break-target test))
+                          ((list body-ty body-tagged-ir)
+                           (translate-expr type-env ir-env level target break-target body)))
+         (let ((test-target (temp:new-label "test"))
+               (body-target (temp:new-label "body-target")))
+           (list body-ty
+                 (tagged-stm
+                  (stms->compound-stm
+                   (ir:label-stm test-target)
+                   (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
+                                 ir:neq-rel-op
+                                 (ir:int-expr 0)
+                                 body-target
+                                 break-target)
+                   (ir:label-stm body-target)
+                   (tagged-ir->stm body-tagged-ir)
+                   (ir:jump-stm test-target (list test-target))
+                   (ir:label-stm break-target))))))))
     ((ast:for-expr var low high body _ escape-ref)
-     (trivia:let-match (((list _ _) (translate-expr type-env ir-env level target low))
-                        ((list _ _) (translate-expr type-env ir-env level target high)))
-       (let ((int-ty (types:get-type types:*base-type-env* (symbol:get-sym "int"))))
-         (let ((new-ir-env
-                 (insert-ir-entry
-                  ir-env var
-                  (ir-var-entry
-                   int-ty
-                   (alloc-local level (ast:escape-ref-value escape-ref) target)))))
-           (translate-expr type-env new-ir-env level target body)))))
+     (let ((break-target (temp:new-label "break-target")))
+       (trivia:let-match (((list _ low-tagged-ir)
+                           (translate-expr type-env ir-env level target break-target low))
+                          ((list _ high-tagged-ir)
+                           (translate-expr type-env ir-env level target break-target high)))
+         (let ((int-ty (types:get-type types:*base-type-env* (symbol:get-sym "int"))))
+           (let ((new-ir-env
+                   (insert-ir-entry
+                    ir-env var
+                    (ir-var-entry
+                     int-ty
+                     (alloc-local level (ast:escape-ref-value escape-ref) target)))))
+             (trivia:let-match1 (list body-ty body-tagged-ir)
+                 (translate-expr type-env new-ir-env level target break-target body)
+               (let ((var-temp (temp:new-temp "var"))
+                     (high-temp (temp:new-temp "high"))
+                     (pre-inc-test-temp (temp:new-temp "pre-inc-test"))
+                     (body-target (temp:new-label "body-target")))
+                 (list body-ty
+                       (tagged-ir->stm
+                        (stms->compound-stm
+                         (ir:move-stm
+                          (ir:temp-expr var-temp)
+                          (tagged-ir->expr low-tagged-ir))
+                         (ir:move-stm
+                          (ir:temp-expr high-temp)
+                          (tagged-ir->expr high-tagged-ir))
+                         (ir:cjump-stm
+                          (ir:temp-expr var-temp)
+                          ir:le-rel-op
+                          (ir:temp-expr high-temp)
+                          body-target
+                          break-target)
+                         (ir:label-stm body-target)
+                         (tagged-ir->stm body-tagged-ir)
+                         (ir:move-stm
+                          (ir:temp-expr pre-inc-test-temp)
+                          (tagged-ir->expr
+                           (tagged-condi
+                            (lambda (true-target false-target)
+                              (ir:cjump-stm
+                               (ir:temp-expr var-temp)
+                               ir:lt-rel-op
+                               (ir:temp-expr high-temp)
+                               true-target
+                               false-target)))))
+                         (ir:move-stm
+                          (ir:temp-expr var-temp)
+                          (ir:bin-op-expr
+                           (ir:temp-expr var-temp)
+                           ir:plus-bin-op
+                           (ir:int-expr 1)))
+                         (ir:cjump-stm
+                          (ir:temp-expr pre-inc-test-temp)
+                          ir:neq-rel-op
+                          (ir:int-expr 0)
+                          body-target
+                          break-target)
+                         (ir:label-stm break-target)))))))))))
     ((ast:break-expr _)
-     (list (types:get-unnamed-base-type (symbol:get-sym "unit")) (tagged-expr (ir:int-expr 0))))
+     (list (types:get-unnamed-base-type (symbol:get-sym "unit"))
+           (tagged-stm
+            (ir:jump-stm break-target (list break-target)))))
     ((ast:array-expr type-id size init _)
-     (list
-      (let ((ty (types:actual-ty (types:get-type type-env type-id))))
-        (trivia:let-match1 (types:array-ty _) ty
-          (trivia:let-match (((list _ _) (translate-expr type-env ir-env level target size))
-                             ((list _ _) (translate-expr type-env ir-env level target init)))))
-        ty)
-      (tagged-expr (ir:int-expr 0))))
+     (let ((ty (types:actual-ty (types:get-type type-env type-id))))
+       (trivia:let-match1 (types:array-ty _) ty
+         (trivia:let-match (((list _ size-tagged-ir)
+                             (translate-expr type-env ir-env level target break-target size))
+                            ((list _ init-tagged-ir)
+                             (translate-expr type-env ir-env level target break-target init)))
+           (list ty
+                 (tagged-expr
+                  (frame:external-call
+                   "initArray"
+                   (list
+                    (tagged-ir->expr size-tagged-ir)
+                    (tagged-ir->expr init-tagged-ir))
+                   target)))))))
     ((ast:let-expr decls body _)
-     (trivia:let-match1 (list new-type-env new-ir-env _)
-         (translate-decls type-env ir-env level target decls)
-       (translate-expr new-type-env new-ir-env level target body)))))
+     (trivia:let-match1 (list new-type-env new-ir-env tagged-irs)
+         (translate-decls type-env ir-env level target break-target decls)
+       (trivia:let-match1 (list body-ty body-tagged-ir)
+           (translate-expr new-type-env new-ir-env level target break-target body)
+         (list body-ty
+               (tagged-expr
+                (ir:stm-then-expr
+                 (apply #'stms->compound-stm tagged-irs)
+                 (tagged-ir->expr body-tagged-ir)))))))))
+
+;; A list of frame:frag.
+(defvar *frags* nil)
+
+(defun alloc-string (label str)
+  (setf *frags* (cons (frame:frag-str label str) *frags*)))
+
+(defun alloc-fun (body frame)
+  (setf *frags* (cons (frame:frag-fun body frame) *frags*)))
 
 (defun translate-program (prog target)
-  (translate-expr types:*base-type-env*
-                  (base-ir-env target)
-                  (new-level top-level (temp:new-label "_tiger_program") nil target)
-                  target
-                  prog))
+  (let ((*frags* nil)
+        (level (new-level top-level (temp:new-label "_tiger_program") nil target)))
+    (trivia:let-match1 (list _ prog-tagged-ir)
+        (translate-expr types:*base-type-env*
+                        (base-ir-env target)
+                        level
+                        target
+                        nil
+                        prog)
+      (let ((frame (inner-level-frame level)))
+        (alloc-fun
+         (frame:view-shift-for-fun-body
+          frame
+          (ir:move-stm
+           (ir:temp-expr (frame:rv target))
+           (tagged-ir->expr prog-tagged-ir))
+          target)
+         frame))
+      (reverse *frags*))))

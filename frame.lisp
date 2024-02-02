@@ -12,15 +12,28 @@
    #:new-frame
    #:alloc-local
    #:fp
+   #:rv
    #:word-size
    #:access-expr
+   #:external-call
+   #:view-shift-for-fun-body
+   #:frag
+   #:frag-str
+   #:frag-str-label
+   #:frag-str-str
+   #:frag-fun
+   #:frag-fun-body
+   #:frag-fun-frame
 
    ;; internal functions:
    #:new-frame%
    #:alloc-local%
    #:fp%
+   #:rv%
    #:word-size%
-   #:access-expr%))
+   #:access-expr%
+   #:external-call%
+   #:view-shift-for-fun-body%))
 
 (cl:in-package :cl-tiger/frame)
 
@@ -54,11 +67,17 @@
 
 (defgeneric alloc-local% (frame escape target-arch target-os))
 
+;; Returns an temp:temp
 (defun fp (target)
   (fp% (target:target-arch target) (target:target-os target)))
 
-;; Returns an temp:temp
 (defgeneric fp% (target-arch target-os))
+
+;; Returns an temp:temp
+(defun rv (target)
+  (rv% (target:target-arch target) (target:target-os target)))
+
+(defgeneric rv% (target-arch target-os))
 
 (defun word-size (target)
   (word-size% (target:target-arch target) (target:target-os target)))
@@ -69,3 +88,22 @@
   (access-expr% access fp-expr (target:target-arch target) (target:target-os target)))
 
 (defgeneric access-expr% (access fp-expr target-arch target-os))
+
+(defun external-call (name args target)
+  (external-call% name args  (target:target-arch target) (target:target-os target)))
+
+(defgeneric external-call% (name args target-arch target-os))
+
+;; Returns an new body-stm
+(defun view-shift-for-fun-body (frame body-stm target)
+  (view-shift-for-fun-body% frame body-stm (target:target-arch target) (target:target-os target)))
+
+(defgeneric view-shift-for-fun-body% (frame body-stm target-arch target-os))
+
+(serapeum:defunion frag
+  (frag-str
+   (label temp:label)
+   (str string))
+  (frag-fun
+   (body ir:stm)
+   (frame frame)))
