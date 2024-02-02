@@ -119,7 +119,7 @@
           (symbol:sym-name base-type-id)))
        (types:array-ty ty)))))
 
-(defun type-check-var (type-env type-check-env var within-loop)
+(defun type-check-var (type-env type-check-env within-loop var)
   (serapeum:match-of ast:var var
     ((ast:simple-var sym pos)
      (alexandria:if-let (type-check-entry (get-type-check-entry type-check-env sym))
@@ -134,7 +134,7 @@
         pos *line-map*
         "Undefined variable: ~A." (symbol:sym-name sym))))
     ((ast:field-var var sym pos)
-     (let ((ty (type-check-var type-env type-check-env var within-loop)))
+     (let ((ty (type-check-var type-env type-check-env within-loop var)))
        (serapeum:match-of types:ty ty
          ((types:record-ty fields)
           (alexandria:if-let
@@ -152,20 +152,20 @@
              "You can only access the field of a record.")))))
     ((ast:subscript-var var expr pos)
      (prog1
-         (let ((ty (type-check-var type-env type-check-env var within-loop)))
+         (let ((ty (type-check-var type-env type-check-env within-loop var)))
            (serapeum:match-of types:ty ty
              ((types:array-ty base-type)
               (types:actual-ty base-type))
              (_ (type-check-error
                  pos *line-map*
                  "You can only subscript an array."))))
-       (let ((index-ty (type-check-expr type-env type-check-env expr within-loop)))
+       (let ((index-ty (type-check-expr type-env type-check-env within-loop expr)))
          (unless (types:type-compatible index-ty (types:get-type types:*base-type-env* (symbol:get-sym "int")))
            (type-check-error
             pos *line-map*
             "The type of the subscript expression of an array should be int.")))))))
 
-(defun type-check-decl (type-env type-check-env decl within-loop)
+(defun type-check-decl (type-env type-check-env within-loop decl)
   (serapeum:match-of ast:decl decl
     ((ast:var-decl name typ init pos _)
      ;; typ form: (sym pos) or nil.
@@ -174,7 +174,7 @@
          (type-check-error
           (second typ) *line-map*
           "Undefined type: ~A." (symbol:sym-name (first typ)))))
-     (let ((init-ty (type-check-expr type-env type-check-env init within-loop)))
+     (let ((init-ty (type-check-expr type-env type-check-env within-loop init)))
        (when typ
          (unless (types:type-compatible init-ty (types:actual-ty (types:get-type type-env (first typ))))
            (type-check-error
@@ -269,26 +269,27 @@
                           for formal-type in formal-types
                           for param-field in (ast:function-decl-params function-decl)
                           do (setf acc-type-check-env
-                                   (insert-type-check-entry acc-type-check-env
-                                                            (ast:field-name param-field)
-                                                            (type-check-var-entry formal-type)))
+                                   (insert-type-check-entry
+                                    acc-type-check-env
+                                    (ast:field-name param-field)
+                                    (type-check-var-entry formal-type)))
                           finally (return acc-type-check-env))
-                    (ast:function-decl-body function-decl)
                     ;; Cannot break into the outer function.
-                    nil))))
+                    nil
+                    (ast:function-decl-body function-decl)))))
              function-decls)
        (list type-env new-type-check-env)))))
 
-(defun type-check-decls (type-env type-check-env decls within-loop)
+(defun type-check-decls (type-env type-check-env within-loop decls)
   (reduce (lambda (acc decl)
-            (type-check-decl (first acc) (second acc) decl within-loop))
+            (type-check-decl (first acc) (second acc) within-loop decl))
           decls
           :initial-value (list type-env type-check-env)))
 
-(defun type-check-expr (type-env type-check-env expr within-loop)
+(defun type-check-expr (type-env type-check-env within-loop expr)
   (serapeum:match-of ast:expr expr
     ((ast:var-expr var)
-     (type-check-var type-env type-check-env var within-loop))
+     (type-check-var type-env type-check-env within-loop var))
     ((ast:nil-expr)
      (types:get-unnamed-base-type (symbol:get-sym "nil")))
     ((ast:int-expr _)
@@ -306,7 +307,7 @@
              (symbol:sym-name fun) (length formal-types) (length args)))
           (loop for formal-type in formal-types
                 for arg-type in (mapcar (lambda (arg)
-                                          (type-check-expr type-env type-check-env arg within-loop))
+                                          (type-check-expr type-env type-check-env within-loop arg))
                                         args)
                 for i from 1
                 do (unless (types:type-compatible (types:actual-ty formal-type) arg-type)
@@ -322,8 +323,8 @@
         pos *line-map*
         "Undefined function ~A." (symbol:sym-name fun))))
     ((ast:op-expr left op right pos)
-     (let ((left-ty (type-check-expr type-env type-check-env left within-loop))
-           (right-ty (type-check-expr type-env type-check-env right within-loop)))
+     (let ((left-ty (type-check-expr type-env type-check-env within-loop left))
+           (right-ty (type-check-expr type-env type-check-env within-loop right)))
        (trivia:match (list left-ty right-ty)
          ((list (types:int-ty) (types:int-ty))
           (types:get-type types:*base-type-env* (symbol:get-sym "int")))
@@ -362,7 +363,7 @@
                                           (eql (first field) decl-field-sym))
                                         fields))
                       (let ((field-ty (type-check-expr
-                                       type-env type-check-env (second field) within-loop)))
+                                       type-env type-check-env within-loop (second field))))
                         (unless (types:type-compatible field-ty (types:actual-ty decl-field-ty))
                           (type-check-error
                            (third field) *line-map*
@@ -394,21 +395,21 @@ doesn't match the expected type."
      (reduce (lambda (acc-type expr-with-pos)
                ;; expr-with-pos form: (expr pos).
                (declare (ignore acc-type))
-               (type-check-expr type-env type-check-env (first expr-with-pos) within-loop))
+               (type-check-expr type-env type-check-env within-loop (first expr-with-pos)))
              exprs
              :initial-value (types:get-unnamed-base-type (symbol:get-sym "unit"))))
     ((ast:assign-expr var expr pos)
-     (let ((var-ty (type-check-var type-env type-check-env var within-loop))
-           (expr-ty (type-check-expr type-env type-check-env expr within-loop)))
+     (let ((var-ty (type-check-var type-env type-check-env within-loop var))
+           (expr-ty (type-check-expr type-env type-check-env within-loop expr)))
        (unless (types:type-compatible var-ty expr-ty)
          (type-check-error
           pos *line-map*
           "Assignment type mismatch."))
        (types:get-unnamed-base-type (symbol:get-sym "unit"))))
     ((ast:if-expr test then else pos)
-     (let ((test-ty (type-check-expr type-env type-check-env test within-loop))
-           (then-ty (type-check-expr type-env type-check-env then within-loop))
-           (else-ty (when else (type-check-expr type-env type-check-env else within-loop))))
+     (let ((test-ty (type-check-expr type-env type-check-env within-loop test))
+           (then-ty (type-check-expr type-env type-check-env within-loop then))
+           (else-ty (when else (type-check-expr type-env type-check-env within-loop else))))
        (unless (types:type-compatible test-ty (types:get-type types:*base-type-env* (symbol:get-sym "int")))
          (type-check-error
           pos *line-map*
@@ -425,8 +426,8 @@ doesn't match the expected type."
        (if else (types:upgrade-from-compatible-types then-ty else-ty)
            (types:get-unnamed-base-type (symbol:get-sym "unit")))))
     ((ast:while-expr test body pos)
-     (let ((test-ty (type-check-expr type-env type-check-env test within-loop))
-           (body-ty (type-check-expr type-env type-check-env body t)))
+     (let ((test-ty (type-check-expr type-env type-check-env within-loop test))
+           (body-ty (type-check-expr type-env type-check-env t body)))
        (unless (types:type-compatible test-ty (types:get-type types:*base-type-env* (symbol:get-sym "int")))
          (type-check-error
           pos *line-map*
@@ -437,8 +438,8 @@ doesn't match the expected type."
           "The body expression of a while expression should product no value."))
        body-ty))
     ((ast:for-expr var low high body pos _)
-     (let ((low-ty (type-check-expr type-env type-check-env low within-loop))
-           (high-ty (type-check-expr type-env type-check-env high within-loop)))
+     (let ((low-ty (type-check-expr type-env type-check-env within-loop low))
+           (high-ty (type-check-expr type-env type-check-env within-loop high)))
        (let ((int-ty (types:get-type types:*base-type-env* (symbol:get-sym "int"))))
          (unless (types:type-compatible low-ty int-ty)
            (type-check-error
@@ -450,7 +451,7 @@ doesn't match the expected type."
             "The type of the high expression of a for expression should be int."))
          (let ((new-type-check-env
                  (insert-type-check-entry type-check-env var (type-check-var-entry int-ty))))
-           (let ((body-ty (type-check-expr type-env new-type-check-env body t)))
+           (let ((body-ty (type-check-expr type-env new-type-check-env t body)))
              (unless (types:type-compatible body-ty (types:get-unnamed-base-type (symbol:get-sym "unit")))
                (type-check-error
                 pos *line-map*
@@ -465,8 +466,8 @@ doesn't match the expected type."
     ((ast:array-expr type-id size init pos)
      (let ((ty (types:actual-ty (types:get-type type-env type-id))))
        (trivia:if-match (types:array-ty base-type) ty
-         (let ((size-ty (type-check-expr type-env type-check-env size within-loop))
-               (init-ty (type-check-expr type-env type-check-env init within-loop)))
+         (let ((size-ty (type-check-expr type-env type-check-env within-loop size))
+               (init-ty (type-check-expr type-env type-check-env within-loop init)))
            (unless (types:type-compatible size-ty (types:get-type types:*base-type-env* (symbol:get-sym "int")))
              (type-check-error
               pos *line-map*
@@ -482,12 +483,12 @@ doesn't match the base type of the type ~A." type-id)))
        ty))
     ((ast:let-expr decls body _)
      (trivia:let-match1 (list new-type-env new-type-check-env)
-         (type-check-decls type-env type-check-env decls within-loop)
-       (type-check-expr new-type-env new-type-check-env body within-loop)))))
+         (type-check-decls type-env type-check-env within-loop decls)
+       (type-check-expr new-type-env new-type-check-env within-loop body)))))
 
 (defun type-check-program (prog &optional line-map)
   (let ((*line-map* line-map))
     (type-check-expr types:*base-type-env*
                      *base-type-check-env*
-                     prog
-                     nil)))
+                     nil
+                     prog)))
