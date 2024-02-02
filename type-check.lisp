@@ -151,18 +151,19 @@
              pos *line-map*
              "You can only access the field of a record.")))))
     ((ast:subscript-var var expr pos)
-     (let ((index-ty (type-check-expr type-env type-check-env expr within-loop)))
-       (unless (types:type-compatible index-ty (types:get-type types:*base-type-env* (symbol:get-sym "int")))
-         (type-check-error
-          pos *line-map*
-          "The type of the subscript expression of an array should be int.")))
-     (let ((ty (type-check-var type-env type-check-env var within-loop)))
-       (serapeum:match-of types:ty ty
-         ((types:array-ty base-type)
-          (types:actual-ty base-type))
-         (_ (type-check-error
-             pos *line-map*
-             "You can only subscript an array.")))))))
+     (prog1
+         (let ((ty (type-check-var type-env type-check-env var within-loop)))
+           (serapeum:match-of types:ty ty
+             ((types:array-ty base-type)
+              (types:actual-ty base-type))
+             (_ (type-check-error
+                 pos *line-map*
+                 "You can only subscript an array."))))
+       (let ((index-ty (type-check-expr type-env type-check-env expr within-loop)))
+         (unless (types:type-compatible index-ty (types:get-type types:*base-type-env* (symbol:get-sym "int")))
+           (type-check-error
+            pos *line-map*
+            "The type of the subscript expression of an array should be int.")))))))
 
 (defun type-check-decl (type-env type-check-env decl within-loop)
   (serapeum:match-of ast:decl decl
