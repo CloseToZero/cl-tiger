@@ -534,7 +534,7 @@
                            (ir:temp-expr m)
                            (frame:external-call
                             "allocRecord"
-                            (list (* (length fields) (frame:word-size target)))
+                            (list (ir:int-expr (* (length fields) (frame:word-size target))))
                             target))
                           (loop for field in fields
                                 for index from 0
