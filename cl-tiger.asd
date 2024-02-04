@@ -21,4 +21,5 @@
                (:file "parse")
                (:file "types")
                (:file "type-check")
-               (:file "translate")))
+               (:file "translate")
+               (:file "normalize")))
