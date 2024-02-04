@@ -556,7 +556,7 @@
                          (translate-expr type-env ir-env level target break-target (first expr-with-pos))
                        (list ty (cons tagged-ir acc-tagged-irs)))))
                  exprs
-                 :initial-value (types:get-unnamed-base-type (symbol:get-sym "unit")))
+                 :initial-value (list (types:get-unnamed-base-type (symbol:get-sym "unit")) nil))
        (list ty (apply #'stms->compound-stm (reverse tagged-irs)))))
     ((ast:assign-expr var expr _)
      (trivia:let-match (((list _ var-tagged-ir)
