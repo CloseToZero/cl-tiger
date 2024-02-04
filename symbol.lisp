@@ -13,7 +13,7 @@
          :accessor sym-name)))
 
 (defmethod print-object ((sym sym) stream)
-  (format stream "sym(~A)" (sym-name sym)))
+  (format stream "(sym ~A)" (sym-name sym)))
 
 (defun make-sym (name)
   (make-instance 'sym :name name))
