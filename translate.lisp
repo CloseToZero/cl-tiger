@@ -318,7 +318,7 @@
      (trivia:let-match (((list (types:array-ty base-type) var-tagged-ir)
                          (translate-var type-env ir-env level target break-target var))
                         ((list _ expr-tagged-ir)
-                         (translate-expr type-env ir-env level target expr break-target)))
+                         (translate-expr type-env ir-env level target break-target expr)))
        (list (types:actual-ty base-type)
              (tagged-expr (ir:mem-expr
                            (ir:bin-op-expr
@@ -332,7 +332,7 @@
   (serapeum:match-of ast:decl decl
     ((ast:var-decl name _ init _ escape-ref)
      (trivia:let-match1 (list init-ty init-tagged-ir)
-         (translate-expr type-env ir-env level target init break-target)
+         (translate-expr type-env ir-env level target break-target init)
        (list type-env
              (insert-ir-entry
               ir-env name
@@ -391,7 +391,7 @@
        (mapc (lambda (function-decl)
                (let ((ir-entry (get-ir-entry new-ir-env (ast:function-decl-name function-decl))))
                  (trivia:let-match1 (ir-fun-entry formal-types _ _ level) ir-entry
-                   (trivia:let-match1 (list body-ty body-tagged-ir)
+                   (trivia:let-match1 (list _ body-tagged-ir)
                        (translate-expr
                         type-env
                         (loop with acc-ir-env = new-ir-env
@@ -408,8 +408,8 @@
                               finally (return acc-ir-env))
                         level
                         target
-                        (ast:function-decl-body function-decl)
-                        break-target)
+                        break-target
+                        (ast:function-decl-body function-decl))
                      (let ((frame (inner-level-frame level)))
                        (alloc-fun
                         (frame:view-shift-for-fun-body
