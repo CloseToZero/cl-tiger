@@ -482,11 +482,11 @@
         (cond ((member op (list ast:plus-op ast:minus-op ast:times-op ast:div-op))
                (tagged-expr
                 (ir:bin-op-expr (tagged-ir->expr left-tagged-ir)
-                                (ecase op
-                                  (ast:plus-op ir:plus-bin-op)
-                                  (ast:minus-op ir:minus-bin-op)
-                                  (ast:times-op ir:times-bin-op)
-                                  (ast:div-op ir:div-bin-op))
+                                (trivia:ematch op
+                                  ((ast:plus-op) ir:plus-bin-op)
+                                  ((ast:minus-op) ir:minus-bin-op)
+                                  ((ast:times-op) ir:times-bin-op)
+                                  ((ast:div-op) ir:div-bin-op))
                                 (tagged-ir->expr right-tagged-ir))))
               (t
                (trivia:match (list left-ty right-ty)
