@@ -101,12 +101,28 @@
       (lambda (exprs)
         (trivia:let-match1 (list* value) exprs
           (ir:expr-stm value)))))
-    (_
+    ((ir:jump-stm target possible-labels)
+     (normalize-exprs-as-stms
+      (list target)
+      (lambda (exprs)
+        (trivia:let-match1 (list target) exprs
+          (ir:jump-stm target possible-labels)))))
+    ((ir:cjump-stm left op right true-target false-target)
+     (normalize-exprs-as-stms
+      (list left right)
+      (lambda (exprs)
+        (trivia:let-match1 (list left right) exprs
+          (ir:cjump-stm left op right true-target false-target)))))
+    ((ir:compound-stm first second)
+     (concat-stms
+      (normalize-stm first)
+      (normalize-stm second)))
+    ((ir:label-stm name)
      (normalize-exprs-as-stms
       nil
       (lambda (exprs)
         (declare (ignore exprs))
-        stm)))))
+        (ir:label-stm name))))))
 
 (defun normalize-exprs (exprs)
   (trivia:ematch exprs
