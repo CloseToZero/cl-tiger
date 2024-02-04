@@ -42,16 +42,16 @@
              (offset (+ (* (frame-num-formal-allocated frame) word-size)
                         ;; 2 * word-size for return address and saved static link
                         (* 2 word-size))))
-        (access-in-frame offset)
-        (incf (frame-num-formal-allocated frame)))
+        (incf (frame-num-formal-allocated frame))
+        (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
 
 (defun alloc-local (frame escape target)
   (if escape
       (let* ((word-size (frame:word-size target))
              (offset (- (+ (* (frame-num-local-allocated frame) word-size) word-size))))
-        (access-in-frame offset)
-        (incf (frame-num-local-allocated frame)))
+        (incf (frame-num-local-allocated frame))
+        (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
 
 (defmethod frame:new-frame% (name formals target
