@@ -631,7 +631,7 @@
                                  break-target)
                    (ir:label-stm body-target)
                    (tagged-ir->stm body-tagged-ir)
-                   (ir:jump-stm test-target (list test-target))
+                   (ir:jump-stm (ir:label-expr test-target) (list test-target))
                    (ir:label-stm break-target))))))))
     ((ast:for-expr var low high body _ escape-ref)
      (let ((break-target (temp:new-label "break-target")))
@@ -696,7 +696,7 @@
     ((ast:break-expr _)
      (list (types:get-unnamed-base-type (symbol:get-sym "unit"))
            (tagged-stm
-            (ir:jump-stm break-target (list break-target)))))
+            (ir:jump-stm (ir:label-expr break-target) (list break-target)))))
     ((ast:array-expr type-id size init _)
      (let ((ty (types:actual-ty (types:get-type type-env type-id))))
        (trivia:let-match1 (types:array-ty _) ty
