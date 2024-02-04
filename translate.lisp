@@ -527,26 +527,27 @@
        (trivia:let-match1 (types:record-ty _) ty
          (list ty
                (let ((m (temp:new-temp "record-memeory")))
-                 (ir:stm-then-expr
-                  (apply #'stms->compound-stm
-                         (ir:move-stm
-                          (ir:temp-expr m)
-                          (frame:external-call
-                           "allocRecord"
-                           (list (* (length fields) (frame:word-size target)))
-                           target))
-                         (loop for field in fields
-                               for index from 0
-                               collect
-                               (trivia:let-match1 (list _ field-tagged-ir)
-                                   (translate-expr type-env ir-env level target break-target (second field))
-                                 (ir:move-stm
-                                  (ir:mem-expr
-                                   (ir:bin-op-expr (ir:temp-expr m)
-                                                   ir:plus-bin-op
-                                                   (ir:int-expr (* index (frame:word-size target)))))
-                                  (tagged-ir->expr field-tagged-ir)))))
-                  (ir:temp-expr m)))))))
+                 (tagged-expr
+                  (ir:stm-then-expr
+                   (apply #'stms->compound-stm
+                          (ir:move-stm
+                           (ir:temp-expr m)
+                           (frame:external-call
+                            "allocRecord"
+                            (list (* (length fields) (frame:word-size target)))
+                            target))
+                          (loop for field in fields
+                                for index from 0
+                                collect
+                                (trivia:let-match1 (list _ field-tagged-ir)
+                                    (translate-expr type-env ir-env level target break-target (second field))
+                                  (ir:move-stm
+                                   (ir:mem-expr
+                                    (ir:bin-op-expr (ir:temp-expr m)
+                                                    ir:plus-bin-op
+                                                    (ir:int-expr (* index (frame:word-size target)))))
+                                   (tagged-ir->expr field-tagged-ir)))))
+                   (ir:temp-expr m))))))))
     ((ast:seq-expr exprs)
      (trivia:let-match1 (list ty tagged-irs)
          (reduce (lambda (acc expr-with-pos)
@@ -557,7 +558,19 @@
                        (list ty (cons tagged-ir acc-tagged-irs)))))
                  exprs
                  :initial-value (list (types:get-unnamed-base-type (symbol:get-sym "unit")) nil))
-       (list ty (apply #'stms->compound-stm (reverse tagged-irs)))))
+       (list ty
+             (labels ((rec (tagged-irs)
+                        (trivia:ematch tagged-irs
+                          (nil
+                           (tagged-stm (ir:expr-stm (ir:int-expr 0))))
+                          ((list tagged-ir)
+                           tagged-ir)
+                          ((list* tagged-ir rest-tagged-irs)
+                           (tagged-expr
+                            (ir:stm-then-expr
+                             (tagged-ir->stm tagged-ir)
+                             (tagged-ir->expr (rec rest-tagged-irs))))))))
+               (rec (reverse tagged-irs))))))
     ((ast:assign-expr var expr _)
      (trivia:let-match (((list _ var-tagged-ir)
                          (translate-var type-env ir-env level target break-target var))
@@ -581,11 +594,11 @@
             (types:upgrade-from-compatible-types then-ty else-ty)
             (types:get-unnamed-base-type (symbol:get-sym "unit")))
         (if else
-            (tagged-expr
-             (let ((true-target (temp:new-label "true-target"))
-                   (false-target (temp:new-label "false-target"))
-                   (join-target (temp:new-label "join-target"))
-                   (result-temp (temp:new-temp "result")))
+            (let ((true-target (temp:new-label "true-target"))
+                  (false-target (temp:new-label "false-target"))
+                  (join-target (temp:new-label "join-target"))
+                  (result-temp (temp:new-temp "result")))
+              (tagged-expr
                (ir:stm-then-expr
                 (stms->compound-stm
                  (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
@@ -720,7 +733,8 @@
          (list body-ty
                (tagged-expr
                 (ir:stm-then-expr
-                 (apply #'stms->compound-stm tagged-irs)
+                 (apply #'stms->compound-stm
+                        (mapcar #'tagged-ir->stm tagged-irs))
                  (tagged-ir->expr body-tagged-ir)))))))))
 
 ;; A list of frame:frag.
