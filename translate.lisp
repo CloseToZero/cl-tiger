@@ -734,7 +734,7 @@
 
 (defun translate-program (prog target)
   (let ((*frags* nil)
-        (level (new-level top-level (temp:new-label "_tiger_program") nil target)))
+        (level (new-level top-level (temp:new-named-label "_tiger_program") nil target)))
     (trivia:let-match1 (list _ prog-tagged-ir)
         (translate-expr types:*base-type-env*
                         (base-ir-env target)
