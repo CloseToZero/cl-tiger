@@ -26,6 +26,7 @@
    #:frag-fun-frame
 
    ;; internal functions:
+   #:frame-formals%
    #:new-frame%
    #:alloc-local%
    #:fp%
@@ -48,57 +49,64 @@
    (formals
     ;; A list of access (not a list of boolean).
     :type list
+    :initform nil
     :initarg :formals
-    :reader frame-formals)))
+    :reader frame-formals)
+   (target
+    :type target:target
+    :initarg :target
+    :reader frame-target)))
+
+(defun (setf frame-formals%) (formals frame)
+  (with-slots ((frame-formals formals)) frame
+    (setf frame-formals formals)))
 
 ;; formals: A list of boolean to specify the number of arguments and
 ;; whether the corresponding argument can only reside in memory (which
 ;; we call it: escape).
 (defun new-frame (name formals target)
-  (new-frame% name formals
-              (target:target-arch target) (target:target-os target)))
+  (new-frame% name formals target (target:target-arch target) (target:target-os target)))
 
-(defgeneric new-frame% (name formals target-arch target-os))
+(defgeneric new-frame% (name formals target target-arch target-os))
 
 ;; Returns an access.
 (defun alloc-local (frame escape target)
-  (alloc-local% frame escape
-                (target:target-arch target) (target:target-os target)))
+  (alloc-local% frame escape target (target:target-arch target) (target:target-os target)))
 
-(defgeneric alloc-local% (frame escape target-arch target-os))
+(defgeneric alloc-local% (frame escape target target-arch target-os))
 
 ;; Returns an temp:temp
 (defun fp (target)
-  (fp% (target:target-arch target) (target:target-os target)))
+  (fp% target (target:target-arch target) (target:target-os target)))
 
-(defgeneric fp% (target-arch target-os))
+(defgeneric fp% (target target-arch target-os))
 
 ;; Returns an temp:temp
 (defun rv (target)
-  (rv% (target:target-arch target) (target:target-os target)))
+  (rv% target (target:target-arch target) (target:target-os target)))
 
-(defgeneric rv% (target-arch target-os))
+(defgeneric rv% (target target-arch target-os))
 
 (defun word-size (target)
-  (word-size% (target:target-arch target) (target:target-os target)))
+  (word-size% target (target:target-arch target) (target:target-os target)))
 
-(defgeneric word-size% (target-arch target-os))
+(defgeneric word-size% (target target-arch target-os))
 
 (defun access-expr (access fp-expr target)
-  (access-expr% access fp-expr (target:target-arch target) (target:target-os target)))
+  (access-expr% access fp-expr target (target:target-arch target) (target:target-os target)))
 
-(defgeneric access-expr% (access fp-expr target-arch target-os))
+(defgeneric access-expr% (access fp-expr target target-arch target-os))
 
 (defun external-call (name args target)
-  (external-call% name args  (target:target-arch target) (target:target-os target)))
+  (external-call% name args target (target:target-arch target) (target:target-os target)))
 
-(defgeneric external-call% (name args target-arch target-os))
+(defgeneric external-call% (name args target target-arch target-os))
 
 ;; Returns an new body-stm
 (defun view-shift-for-fun-body (frame body-stm target)
-  (view-shift-for-fun-body% frame body-stm (target:target-arch target) (target:target-os target)))
+  (view-shift-for-fun-body% frame body-stm target (target:target-arch target) (target:target-os target)))
 
-(defgeneric view-shift-for-fun-body% (frame body-stm target-arch target-os))
+(defgeneric view-shift-for-fun-body% (frame body-stm target target-arch target-os))
 
 (serapeum:defunion frag
   (frag-str

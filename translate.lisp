@@ -146,9 +146,8 @@
    (value (function (temp:label temp:label) ir:stm))))
 
 (defun new-level (parent name formals target)
-  (let* ((frame (frame:new-frame name (cons t formals) target))
-         (level (inner-level parent name frame)))
-    level))
+  (let ((frame (frame:new-frame name (cons t formals) target)))
+    (inner-level parent name frame)))
 
 (defun level-formals (level)
   (rest (mapcar (lambda (frame-access)

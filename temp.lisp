@@ -7,6 +7,7 @@
    #:temp-num
    #:temp-name
    #:new-temp
+   #:new-named-temp
 
    #:label
    #:new-label
@@ -15,7 +16,8 @@
 
 (cl:in-package :cl-tiger/temp)
 
-(defvar *temp-count* 0)
+;; The count 0 is reserved for named temps.
+(defvar *temp-count* 1)
 
 (serapeum:defconstructor temp
   (num integer)
@@ -27,6 +29,9 @@
   (let ((count *temp-count*))
     (incf *temp-count*)
     (temp count (format nil "t~A~D" base-name count))))
+
+(defun new-named-temp (name)
+  (temp 0 name))
 
 (deftype label () 'symbol:sym)
 
