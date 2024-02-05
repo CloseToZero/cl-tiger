@@ -326,7 +326,7 @@
                             ir:plus-bin-op
                             (ir:bin-op-expr (tagged-ir->expr expr-tagged-ir)
                                             ir:times-bin-op
-                                            (frame:word-size target))))))))))
+                                            (ir:int-expr (frame:word-size target)))))))))))
 
 (defun translate-decl (type-env ir-env level target break-target decl)
   (serapeum:match-of ast:decl decl
@@ -666,7 +666,7 @@
                      (pre-inc-test-temp (temp:new-temp "pre-inc-test"))
                      (body-target (temp:new-label "body-target")))
                  (list body-ty
-                       (tagged-ir->stm
+                       (tagged-stm
                         (stms->compound-stm
                          (ir:move-stm
                           (ir:temp-expr var-temp)
