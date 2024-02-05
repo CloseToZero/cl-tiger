@@ -17,7 +17,7 @@
                (:file "target")
                (:file "ir")
                (:file "frame")
-               (:file "x86-64-frame.lisp")
+               (:file "x86-64-frame")
                (:file "ast")
                (:file "parse")
                (:file "types")
