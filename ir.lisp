@@ -68,6 +68,8 @@
    #:label-stm
    #:label-stm-name
 
+   #:not-rel-op
+
    #:pretty-print))
 
 (cl:in-package :cl-tiger/ir)
@@ -138,6 +140,19 @@
    (second stm))
   (label-stm
    (name temp:label)))
+
+(defun not-rel-op (rel-op)
+  (serapeum:match-of rel-op rel-op
+    (eq-rel-op neq-rel-op)
+    (neq-rel-op eq-rel-op)
+    (lt-rel-op ge-rel-op)
+    (le-rel-op gt-rel-op)
+    (gt-rel-op le-rel-op)
+    (ge-rel-op lt-rel-op)
+    (ult-rel-op uge-rel-op)
+    (ule-rel-op ugt-rel-op)
+    (ugt-rel-op ule-rel-op)
+    (uge-rel-op ult-rel-op)))
 
 (defun pretty-print-expr (stream expr cur-indent indent)
   (format stream "~v:<~>" cur-indent)

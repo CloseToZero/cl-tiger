@@ -2,10 +2,13 @@
   (:use :cl)
   (:local-nicknames
    (:temp :cl-tiger/temp)
-   (:ir :cl-tiger/ir))
+   (:ir :cl-tiger/ir)
+   (:cl-ds :cl-data-structures)
+   (:cl-ds.hamt :cl-data-structures.dicts.hamt))
   (:export
    #:normalize
-   #:split-into-basic-blocks))
+   #:split-into-basic-blocks
+   #:trace-schedule))
 
 (cl:in-package :cl-tiger/normalize)
 
@@ -219,3 +222,76 @@
                  (nil
                   (nreverse acc-blocks)))))
       (list (collect-blocks stms nil) exit-label))))
+
+(defun trace-schedule (blocks exit-label)
+  (labels ((schedule-blocks (block-table blocks)
+             (trivia:match blocks
+               ((list* block rest-blocks)
+                (trivia:let-match1 (list* (ir:label-stm name) _) block
+                  ;; Note that (cl-ds:at block-table name) returns a nil value
+                  ;; means the block is already scheduled by schedule-block-by-trace,
+                  ;; we should skip the block in that case.
+                  (if (cl-ds:at block-table name)
+                      (schedule-block-by-trace block-table block rest-blocks)
+                      (schedule-blocks block-table rest-blocks))))
+               (nil
+                nil)))
+           (schedule-block-by-trace (block-table cur-block blocks)
+             (trivia:let-match1 (list* (ir:label-stm name) _) cur-block
+               (let ((block-table (cl-ds:insert block-table name nil)))
+                 (trivia:ematch (split-last cur-block)
+                   ((list front-stms (ir:jump-stm (ir:label-expr name) _))
+                    (let ((opt-target-block (cl-ds:at block-table name)))
+                      (cond ((null opt-target-block)
+                             ;; The target block have been scheduled,
+                             ;; so the current trace is interrupted/finished,
+                             ;; we just prepend the statements of cur-block to
+                             ;; the rest scheduled result.
+                             (nconc cur-block (schedule-blocks block-table blocks)))
+                            (t
+                             ;; The target block haven't been scheduled,
+                             ;; so we can schedule the target block after the cur-block,
+                             ;; so the ir:jump-stm become useless and can be eliminated,
+                             ;; that's why we only prepend the front-stms rather than
+                             ;; prepend the whole cur-block.
+                             (nconc front-stms (schedule-block-by-trace block-table opt-target-block blocks))))))
+                   ((list front-stms (ir:cjump-stm left op right true-target false-target))
+                    ;; 1. Try to schedule the false-target after the cur-block.
+                    ;; 2. Try to schedule the true-target after the cur-block and reverse the condition.
+                    ;; 3. Otherwise, create a new false-target and schedule it after the cur-block.
+                    (let ((opt-true-block (cl-ds:at block-table true-target))
+                          (opt-false-block (cl-ds:at block-table false-target)))
+                      (trivia:match (list opt-true-block opt-false-block)
+                        ((list _ (not nil))
+                         (nconc cur-block (schedule-block-by-trace block-table opt-false-block blocks)))
+                        ((list (not nil) _)
+                         (nconc front-stms
+                                (list (ir:cjump-stm left (ir:not-rel-op op) right false-target true-target))
+                                (schedule-block-by-trace block-table opt-true-block blocks)))
+                        (_
+                         (let ((new-false-target (temp:new-label "false-target")))
+                           (nconc front-stms
+                                  (list (ir:cjump-stm left op right true-target new-false-target)
+                                        (ir:label-stm new-false-target)
+                                        (ir:jump-stm (ir:label-expr false-target) (list false-target)))
+                                  (schedule-blocks block-table blocks)))))))
+                   ((list _ (ir:jump-stm _))
+                    ;; Unknown destination, terminate the current trace.
+                    (nconc cur-block (schedule-blocks block-table blocks)))))))
+           (split-last (list)
+             (trivia:ematch list
+               ((list x)
+                (list nil x))
+               ((list* x xs)
+                (trivia:let-match1 (list f l) (split-last xs)
+                  (list (cons x f) l))))))
+    (nconc
+     (schedule-blocks
+      (reduce (lambda (acc-block-table block)
+                (trivia:let-match1 (list* (ir:label-stm name) _) block
+                  (cl-ds:insert acc-block-table name block)))
+              blocks
+              :initial-value
+              (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq))
+      blocks)
+     (list (ir:label-stm exit-label)))))
