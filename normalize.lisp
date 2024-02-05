@@ -42,8 +42,9 @@
     ((ir:mem-expr value)
      (normalize-exprs-as-stms-and-expr
       (list value)
-      (lambda (value)
-        (ir:mem-expr value))))
+      (lambda (exprs)
+        (trivia:let-match1 (list value) exprs
+          (ir:mem-expr value)))))
     ((ir:call-expr fun args)
      (normalize-exprs-as-stms-and-expr
       (cons fun args)
@@ -99,7 +100,7 @@
      (normalize-exprs-as-stms
       (list value)
       (lambda (exprs)
-        (trivia:let-match1 (list* value) exprs
+        (trivia:let-match1 (list value) exprs
           (ir:expr-stm value)))))
     ((ir:jump-stm target possible-labels)
      (normalize-exprs-as-stms
