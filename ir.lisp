@@ -212,6 +212,7 @@
     ((cjump-stm left op right true-target false-target)
      (format stream "(cjump~%")
      (pretty-print-expr stream left (+ cur-indent indent) indent)
+     (format stream "~%")
      (format stream "~v:<~>" (+ cur-indent indent))
      (format stream "~A~%" (serapeum:match-of rel-op op
                              (eq-rel-op "=")
