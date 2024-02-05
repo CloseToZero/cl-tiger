@@ -4,7 +4,8 @@
    (:temp :cl-tiger/temp)
    (:ir :cl-tiger/ir))
   (:export
-   #:normalize))
+   #:normalize
+   #:split-into-basic-blocks))
 
 (cl:in-package :cl-tiger/normalize)
 
@@ -182,3 +183,39 @@
 
 (defun normalize (stm)
   (linearize-stm (normalize-stm stm)))
+
+(defun split-into-basic-blocks (stms)
+  (let ((exit-label (temp:new-label "exit")))
+    (labels ((collect-block-stms (stms cur-block acc-blocks)
+               (trivia:match stms
+                 ((list* stm rest-stms)
+                  (trivia:match stm
+                    ((or (ir:jump-stm _ _)
+                         (ir:cjump-stm _ _ _ _ _))
+                     (collect-blocks
+                      rest-stms
+                      (cons (nreverse (cons stm cur-block))
+                            acc-blocks)))
+                    ((ir:label-stm name)
+                     (collect-blocks
+                      (cons (ir:jump-stm (ir:label-expr name) (list name)) stms)
+                      acc-blocks))
+                    (_
+                     (collect-block-stms rest-stms (cons stm cur-block) acc-blocks))))
+                 (nil
+                  (collect-block-stms
+                   (list (ir:jump-stm (ir:label-expr exit-label) (list exit-label)))
+                   cur-block
+                   acc-blocks))))
+             (collect-blocks (stms acc-blocks)
+               (trivia:match stms
+                 ((list* stm rest-stms)
+                  (trivia:match stm
+                    ((ir:label-stm _)
+                     (collect-block-stms rest-stms (list stm) acc-blocks))
+                    (_
+                     (collect-blocks (cons (ir:label-stm (temp:new-label)) stms)
+                                     acc-blocks))))
+                 (nil
+                  (nreverse acc-blocks)))))
+      (list (collect-blocks stms nil) exit-label))))
