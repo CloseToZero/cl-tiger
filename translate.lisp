@@ -570,7 +570,7 @@
                             (ir:stm-then-expr
                              (tagged-ir->stm tagged-ir)
                              (tagged-ir->expr (rec rest-tagged-irs))))))))
-               (rec (reverse tagged-irs))))))
+               (rec (nreverse tagged-irs))))))
     ((ast:assign-expr var expr _)
      (trivia:let-match (((list _ var-tagged-ir)
                          (translate-var type-env ir-env level target break-target var))
@@ -765,4 +765,4 @@
            (tagged-ir->expr prog-tagged-ir))
           target)
          frame))
-      (reverse *frags*))))
+      (nreverse *frags*))))

@@ -81,7 +81,7 @@
                   (when (gethash sym visited)
                     (type-check-error
                      pos *line-map*
-                     "Circular type dependencie: ~{~A~^ -> ~}." (reverse path)))
+                     "Circular type dependencie: ~{~A~^ -> ~}." (nreverse path)))
                   (alexandria:when-let (type-ref-value (types:ty-ref-value ty-ref))
                     (setf (gethash sym visited) t)
                     (rec type-ref-value)))
