@@ -28,24 +28,24 @@
     ((or (ir:int-expr _)
          (ir:label-expr _)
          (ir:temp-expr _))
-     (normalize-exprs-as-stms-and-exprs
+     (normalize-exprs-as-stms-and-expr
       nil
       (lambda (exprs)
         (declare (ignore exprs))
         expr)))
     ((ir:bin-op-expr left op right)
-     (normalize-exprs-as-stms-and-exprs
+     (normalize-exprs-as-stms-and-expr
       (list left right)
       (lambda (exprs)
         (trivia:let-match1 (list left right) exprs
           (ir:bin-op-expr left op right)))))
     ((ir:mem-expr value)
-     (normalize-exprs-as-stms-and-exprs
+     (normalize-exprs-as-stms-and-expr
       (list value)
       (lambda (value)
         (ir:mem-expr value))))
     ((ir:call-expr fun args)
-     (normalize-exprs-as-stms-and-exprs
+     (normalize-exprs-as-stms-and-expr
       (cons fun args)
       (lambda (exprs)
         (trivia:let-match1 (list* fun args) exprs
@@ -160,7 +160,7 @@
   (trivia:let-match1 (list stms exprs2) (normalize-exprs exprs)
     (concat-stms stms (funcall rebuild-fun exprs2))))
 
-(defun normalize-exprs-as-stms-and-exprs (exprs rebuild-fun)
+(defun normalize-exprs-as-stms-and-expr (exprs rebuild-fun)
   (trivia:let-match1 (list stms exprs2) (normalize-exprs exprs)
     (list stms (funcall rebuild-fun exprs2))))
 
