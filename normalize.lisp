@@ -66,6 +66,12 @@
           (ir:move-stm
            (ir:temp-expr value)
            (ir:call-expr fun args))))))
+    ;; Note that for (move temp ...) and (move (mem ...) ...),
+    ;; we should not pass down the temp or (mem ...) to
+    ;; normalize-exprs-as-stms since these l-values may have no value right now,
+    ;; pass them down may product wrong result (reference to uninitialized temporary or memory).
+    ;; As for (move (stm-then-expr ...) ...), we fallback it to other cases
+    ;; (transform to use a "smaller" expr as the left-expr of a ir:move-stm).
     ((ir:move-stm (ir:temp-expr value) right)
      (normalize-exprs-as-stms
       (list right)
