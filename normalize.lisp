@@ -57,7 +57,7 @@
        (list (concat-stms stm-stms expr-stms) expr-expr)))))
 
 (defun normalize-stm (stm)
-  (serapeum:match-of ir:stm stm
+  (trivia:ematch stm
     ((ir:move-stm (ir:temp-expr value) (ir:call-expr fun args))
      (normalize-exprs-as-stms
       (cons fun args)
