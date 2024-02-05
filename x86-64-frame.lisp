@@ -8,30 +8,31 @@
 
 (cl:in-package :cl-tiger/x86-64-frame)
 
-(defclass frame (frame:frame)
-  ((num-formal-allocated
-    :type fixnum
-    :initform 0
-    :accessor frame-num-formal-allocated)
-   (num-local-allocated
-    :type fixnum
-    :initform 0
-    :accessor frame-num-local-allocated)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass frame (frame:frame)
+    ((num-formal-allocated
+      :type fixnum
+      :initform 0
+      :accessor frame-num-formal-allocated)
+     (num-local-allocated
+      :type fixnum
+      :initform 0
+      :accessor frame-num-local-allocated)))
 
-(defclass access-in-frame (frame:access)
-  ((offset
-    :type fixnum
-    :initarg :offset
-    :reader access-in-frame-offset)))
+  (defclass access-in-frame (frame:access)
+    ((offset
+      :type fixnum
+      :initarg :offset
+      :reader access-in-frame-offset)))
 
-(defun access-in-frame (offset)
-  (make-instance 'access-in-frame :offset offset))
+  (defun access-in-frame (offset)
+    (make-instance 'access-in-frame :offset offset))
 
-(defclass access-in-reg (frame:access)
-  ((reg
-    :type temp:temp
-    :initarg :reg
-    :reader access-in-reg-reg)))
+  (defclass access-in-reg (frame:access)
+    ((reg
+      :type temp:temp
+      :initarg :reg
+      :reader access-in-reg-reg))))
 
 (defun access-in-reg (reg)
   (make-instance 'access-in-reg :reg reg))
