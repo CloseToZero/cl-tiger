@@ -25,4 +25,6 @@
                (:file "type-check")
                (:file "translate")
                (:file "normalize")
-               (:file "asm")))
+               (:file "asm")
+               (:file "instr-select")
+               (:file "x86-64-instr-select")))
