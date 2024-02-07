@@ -27,7 +27,8 @@
     (ir:ugt-rel-op "ja")
     (ir:uge-rel-op "jae")))
 
-(defmethod select-instrs% (stm frame target (target-arch target:arch-x86-64) (target-os target:os-windows))
+(defmethod instr-select:select-instrs% (stm frame target
+                                        (target-arch target:arch-x86-64) (target-os target:os-windows))
   (let ((*instrs* nil))
     (select-instr-stm stm frame target)
     (nreverse *instrs*)))
