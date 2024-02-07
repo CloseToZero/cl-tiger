@@ -307,7 +307,9 @@
     ((ir:label-stm name)
      (emit
       (asm:label-instr
-       "'j0: " name)))))
+       (format nil "~A: "
+               (temp:label-name name))
+       name)))))
 
 (defun select-instr-expr (expr frame target)
   (declare (ignore expr frame target))

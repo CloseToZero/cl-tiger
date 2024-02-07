@@ -38,8 +38,7 @@
    ;; A list of temp:label
    (jumps list))
   (label-instr
-   (template string)
-   ;; Note that the name slot can be referred as 'j0
+   (str string)
    (name temp:label))
   (move-instr
    (template string)
@@ -61,28 +60,31 @@
                   (check-index template match datas index name)
                   (funcall data->str (nth index datas))))
               :simple-calls t)))
-    (let ((result (serapeum:match-of instr instr
-                    ((op-instr template _ _ _)
-                     template)
-                    ((label-instr template _)
-                     template)
-                    ((move-instr template _ _)
-                     template))))
-      (setf result
-            (format-core result "'s(\\d+)" srcs #'temp:temp-name "source"))
-      (setf result
-            (format-core result "'d(\\d+)" dsts #'temp:temp-name "destination"))
-      (setf result
-            (format-core result "'j(\\d+)" jumps #'temp:label-name "jump-target"))
-      (cl-ppcre:regex-replace-all "''" result "'"))))
+    (let* ((template? t)
+           (result (serapeum:match-of instr instr
+                     ((op-instr template _ _ _)
+                      template)
+                     ((label-instr str _)
+                      (setf template? nil)
+                      str)
+                     ((move-instr template _ _)
+                      template))))
+      (when template?
+        (setf result
+              (format-core result "'s(\\d+)" srcs #'temp:temp-name "source"))
+        (setf result
+              (format-core result "'d(\\d+)" dsts #'temp:temp-name "destination"))
+        (setf result
+              (format-core result "'j(\\d+)" jumps #'temp:label-name "jump-target"))
+        (cl-ppcre:regex-replace-all "''" result "'")))))
 
 (defun format-instr (instr)
   (trivia:let-match1 (list dsts srcs jumps) 
       (serapeum:match-of instr instr
         ((op-instr _ dsts srcs jumps)
          (list dsts srcs jumps))
-        ((label-instr _ name)
-         (list nil nil (list name)))
+        ((label-instr _ _)
+         (list nil nil nil))
         ((move-instr _ dst src)
          (list (list dst) (list src) nil)))
     (format-instr-with instr dsts srcs jumps)))
