@@ -76,7 +76,8 @@
               (format-core result "'d(\\d+)" dsts #'temp:temp-name "destination"))
         (setf result
               (format-core result "'j(\\d+)" jumps #'temp:label-name "jump-target"))
-        (cl-ppcre:regex-replace-all "''" result "'")))))
+        (cl-ppcre:regex-replace-all "''" result "'"))
+      result)))
 
 (defun format-instr (instr)
   (trivia:let-match1 (list dsts srcs jumps) 
