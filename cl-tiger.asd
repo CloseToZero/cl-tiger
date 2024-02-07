@@ -3,7 +3,8 @@
   :version "0.0.1"
   :author "Zhexuan Chen <2915234902@qq.com>"
   :licence "MIT"
-  :depends-on ("trivial-package-local-nicknames"
+  :depends-on ("cl-ppcre"
+               "trivial-package-local-nicknames"
                "alexandria"
                "serapeum"
                "trivia"
@@ -23,4 +24,5 @@
                (:file "types")
                (:file "type-check")
                (:file "translate")
-               (:file "normalize")))
+               (:file "normalize")
+               (:file "asm")))
