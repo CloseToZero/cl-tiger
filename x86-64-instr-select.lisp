@@ -280,7 +280,7 @@
       _)
      (emit
       (asm:op-instr
-       "jump 'j0"
+       "jmp 'j0"
        nil
        nil
        (list target))))
@@ -289,14 +289,14 @@
       _)
      (emit
       (asm:op-instr
-       "jump 's0"
+       "jmp 's0"
        nil
        (list (select-instr-expr expr frame target))
        nil)))
     ((ir:cjump-stm left op right true-target false-target)
      (emit
       (asm:op-instr
-       (format nil "cmp 's0, 's1~%~A 'j0~%jump 'j1"
+       (format nil "cmp 's0, 's1~%~A 'j0~%jmp 'j1"
                (rel-op->jump-asm op))
        nil
        (list (select-instr-expr left frame target)
