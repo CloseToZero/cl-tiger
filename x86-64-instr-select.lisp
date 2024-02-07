@@ -116,11 +116,9 @@
       (ir:temp-expr d)
       (ir:temp-expr s))
      (emit
-      (asm:op-instr
+      (asm:move-instr
        "mov 'd0, 's0"
-       (list d)
-       (list s)
-       nil)))
+       d s)))
     ((ir:move-stm
       (ir:temp-expr d)
       right)
