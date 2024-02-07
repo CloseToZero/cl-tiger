@@ -586,9 +586,10 @@
                          (translate-expr type-env ir-env level target break-target test))
                         ((list then-ty then-tagged-ir)
                          (translate-expr type-env ir-env level target break-target then))
-                        ((list else-ty else-tagged-ir) (if else
-                                                           (translate-expr type-env ir-env level target break-target else)
-                                                           (list nil (tagged-expr (ir:int-expr 0))))))
+                        ((list else-ty else-tagged-ir)
+                         (if else
+                             (translate-expr type-env ir-env level target break-target else)
+                             (list nil (tagged-expr (ir:int-expr 0))))))
        (list
         (if else
             (types:upgrade-from-compatible-types then-ty else-ty)
