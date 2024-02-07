@@ -200,8 +200,9 @@
                       (cons (nreverse (cons stm cur-block))
                             acc-blocks)))
                     ((ir:label-stm name)
-                     (collect-blocks
+                     (collect-block-stms
                       (cons (ir:jump-stm (ir:label-expr name) (list name)) stms)
+                      cur-block
                       acc-blocks))
                     (_
                      (collect-block-stms rest-stms (cons stm cur-block) acc-blocks))))
