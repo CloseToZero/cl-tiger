@@ -10,6 +10,10 @@
 
 (cl:in-package :cl-tiger/x86-64-instr-select)
 
+;; NOTE: This module is highly coupled with x86-64-frame,
+;; use lots of implicit knowledge of x86-64-frame,
+;; like how to pass arguments properly.
+
 (defvar *instrs* nil)
 
 (defun emit (instr)
@@ -548,12 +552,7 @@
           (asm:move-instr
            "mov 'd0, 's0"
            r
-           ;; Instead of call frame:rv,
-           ;; here we simply know that the return value
-           ;; is passed in rax,
-           ;; Since this module and the module x86-64-frame
-           ;; are highly coupled, this is fine.
-           (temp:new-named-temp "rax")))
+           (frame:rv target)))
          ;; Pass back the rax directly is a bad idea,
          ;; in many places, we assume the value of the temp
          ;; return by select-instr-expr won't be overwritten,
@@ -567,11 +566,8 @@
   ;; The first four arguments are passed in rcx, rdx, r8, r9,
   ;; remaining arguments get pushed on the stack in right to left,
   ;; see https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention for details.
-  (let* ((regs (list (temp:new-named-temp "rcx")
-                     (temp:new-named-temp "rdx")
-                     (temp:new-named-temp "r8")
-                     (temp:new-named-temp "r9")))
-         (regs-len (length regs))
+  (let* ((arg-regs (frame:arg-regs target))
+         (arg-regs-len (length arg-regs))
          (args-len (length args))
          (arg-temps (loop for arg in args
                           collect (let ((r (temp:new-temp)))
@@ -584,11 +580,11 @@
           for i from (- args-len 1) downto 0
           ;; iterate in reverse arg order, so we can push the arg in reversed order.
           for arg in (reverse args)
-          do (cond ((< i regs-len)
+          do (cond ((< i arg-regs-len)
                     (emit
                      (asm:move-instr
                       "mov 'd0, 's0"
-                      (let ((reg (nth i regs)))
+                      (let ((reg (nth i arg-regs)))
                         (push reg result)
                         reg)
                       (nth i arg-temps))))

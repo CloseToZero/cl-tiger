@@ -160,16 +160,6 @@
     ((inner-level _ _ frame)
      (access level (frame:alloc-local frame escape target)))))
 
-(defun stms->compound-stm (&rest stms)
-  (cond ((null stms)
-         (ir:expr-stm (ir:int-expr 0)))
-        ((null (cdr stms))
-         ;; A list of length 1.
-         (car stms))
-        (t
-         (ir:compound-stm
-          (car stms) (apply #'stms->compound-stm (rest stms))))))
-
 (defun tagged-ir->expr (tagged-ir)
   (serapeum:match-of tagged-ir tagged-ir
     ((tagged-expr value)
@@ -181,7 +171,7 @@
            (true-label (temp:new-label "true"))
            (false-label (temp:new-label "false")))
        (ir:stm-then-expr
-        (stms->compound-stm
+        (ir:stms->compound-stm
          (ir:move-stm (ir:temp-expr result-temp) (ir:int-expr 1))
          (funcall value true-label false-label)
          (ir:label-stm false-label)
@@ -198,7 +188,7 @@
     ((tagged-condi value)
      (let ((true-label (temp:new-label "true"))
            (false-label (temp:new-label "false")))
-       (stms->compound-stm
+       (ir:stms->compound-stm
         (funcall value true-label false-label)
         (ir:label-stm true-label)
         (ir:label-stm false-label))))))
@@ -529,7 +519,7 @@
                (let ((m (temp:new-temp "record-memeory")))
                  (tagged-expr
                   (ir:stm-then-expr
-                   (apply #'stms->compound-stm
+                   (apply #'ir:stms->compound-stm
                           (ir:move-stm
                            (ir:temp-expr m)
                            (frame:external-call
@@ -601,7 +591,7 @@
                   (result-temp (temp:new-temp "result")))
               (tagged-expr
                (ir:stm-then-expr
-                (stms->compound-stm
+                (ir:stms->compound-stm
                  (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
                                ir:neq-rel-op
                                (ir:int-expr 0)
@@ -617,7 +607,7 @@
             (tagged-stm
              (let ((true-target (temp:new-label "true-target"))
                    (false-target (temp:new-label "false-target")))
-               (stms->compound-stm
+               (ir:stms->compound-stm
                 (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
                               ir:neq-rel-op
                               (ir:int-expr 0)
@@ -636,7 +626,7 @@
                (body-target (temp:new-label "body-target")))
            (list body-ty
                  (tagged-stm
-                  (stms->compound-stm
+                  (ir:stms->compound-stm
                    (ir:label-stm test-target)
                    (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
                                  ir:neq-rel-op
@@ -668,7 +658,7 @@
                      (body-target (temp:new-label "body-target")))
                  (list body-ty
                        (tagged-stm
-                        (stms->compound-stm
+                        (ir:stms->compound-stm
                          (ir:move-stm
                           (ir:temp-expr var-temp)
                           (tagged-ir->expr low-tagged-ir))
@@ -734,7 +724,7 @@
          (list body-ty
                (tagged-expr
                 (ir:stm-then-expr
-                 (apply #'stms->compound-stm
+                 (apply #'ir:stms->compound-stm
                         (mapcar #'tagged-ir->stm tagged-irs))
                  (tagged-ir->expr body-tagged-ir)))))))))
 

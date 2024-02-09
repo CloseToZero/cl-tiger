@@ -8,6 +8,16 @@
 
 (cl:in-package :cl-tiger/x86-64-frame)
 
+(defvar *word-size* 8)
+(defvar *fp* (temp:new-named-temp "rbp"))
+(defvar *rv* (temp:new-named-temp "rax"))
+(defvar *arg-regs*
+  (mapcar #'temp:new-named-temp
+          (list "rcx"
+                "rdx"
+                "r8"
+                "r9")))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass frame (frame:frame)
     ((num-formal-allocated
@@ -17,22 +27,30 @@
      (num-local-allocated
       :type fixnum
       :initform 0
-      :accessor frame-num-local-allocated)))
+      :accessor frame-num-local-allocated)
+     (next-offset
+      :type fixnum
+      :initform (- *word-size*)
+      :accessor frame-next-offset)
+     (size
+      :type fixnum
+      :initform 0
+      :accessor frame-size)))
 
   (defclass access-in-frame (frame:access)
     ((offset
       :type fixnum
       :initarg :offset
       :reader access-in-frame-offset)))
-
-  (defun access-in-frame (offset)
-    (make-instance 'access-in-frame :offset offset))
-
+  
   (defclass access-in-reg (frame:access)
     ((reg
       :type temp:temp
       :initarg :reg
       :reader access-in-reg-reg))))
+
+(defun access-in-frame (offset)
+  (make-instance 'access-in-frame :offset offset))
 
 (defun access-in-reg (reg)
   (make-instance 'access-in-reg :reg reg))
@@ -40,9 +58,9 @@
 (defun alloc-formal (frame escape target)
   (if escape
       (let* ((word-size (frame:word-size target))
-             (offset (+ (* (frame-num-formal-allocated frame) word-size)
-                        ;; 2 * word-size for return address and saved static link
-                        (* 2 word-size))))
+             (offset (frame-next-offset frame)))
+        (decf (frame-next-offset frame) word-size)
+        (incf (frame-size frame) word-size)
         (incf (frame-num-formal-allocated frame))
         (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
@@ -50,7 +68,9 @@
 (defun alloc-local (frame escape target)
   (if escape
       (let* ((word-size (frame:word-size target))
-             (offset (- (+ (* (frame-num-local-allocated frame) word-size) word-size))))
+             (offset (frame-next-offset frame)))
+        (decf (frame-next-offset frame) word-size)
+        (incf (frame-size frame) word-size)
         (incf (frame-num-local-allocated frame))
         (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
@@ -68,8 +88,9 @@
                                (target-arch target:arch-x86-64) (target-os target:os-windows))
   (alloc-local frame escape target))
 
-(defvar *fp* (temp:new-named-temp "rbp"))
-(defvar *rv* (temp:new-named-temp "rax"))
+(defmethod frame:word-size% (target
+                             (target-arch target:arch-x86-64) (target-os target:os-windows))
+  *word-size*)
 
 (defmethod frame:fp% (target
                       (target-arch target:arch-x86-64) (target-os target:os-windows))
@@ -79,9 +100,9 @@
                       (target-arch target:arch-x86-64) (target-os target:os-windows))
   *rv*)
 
-(defmethod frame:word-size% (target
-                             (target-arch target:arch-x86-64) (target-os target:os-windows))
-  8)
+(defmethod frame:arg-regs% (target
+                            (target-arch target:arch-x86-64) (target-os target:os-windows))
+  *arg-regs*)
 
 (defmethod frame:access-expr% (access fp-expr target
                                (target-arch target:arch-x86-64) (target-os target:os-windows))
@@ -103,4 +124,24 @@
 
 (defmethod frame:view-shift-for-fun-body% (frame body-stm target
                                            (target-arch target:arch-x86-64) (target-os target:os-windows))
-  body-stm)
+  (ir:compound-stm
+   (apply
+    #'ir:stms->compound-stm
+    (loop with word-size = (frame:word-size target)
+          for i from 0
+          for formal-access in (frame:frame-formals frame)
+          collect (cond ((< i (length *arg-regs*))
+                         (ir:move-stm
+                          (frame:access-expr formal-access (ir:temp-expr (frame:fp target)) target)
+                          (ir:temp-expr (nth i *arg-regs*))))
+                        (t
+                         (ir:move-stm
+                          (frame:access-expr formal-access (ir:temp-expr (frame:fp target)) target)
+                          (frame:access-expr
+                           (access-in-frame
+                            (+ (* i word-size)
+                               ;; 2 * word-size for saved static link and return address
+                               (* 2 word-size)))
+                           (ir:temp-expr (frame:fp target))
+                           target))))))
+   body-stm))

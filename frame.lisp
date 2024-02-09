@@ -11,9 +11,10 @@
    #:frame-formals
    #:new-frame
    #:alloc-local
+   #:word-size
    #:fp
    #:rv
-   #:word-size
+   #:arg-regs
    #:access-expr
    #:external-call
    #:view-shift-for-fun-body
@@ -29,9 +30,10 @@
    #:frame-formals%
    #:new-frame%
    #:alloc-local%
+   #:word-size%
    #:fp%
    #:rv%
-   #:word-size%
+   #:arg-regs%
    #:access-expr%
    #:external-call%
    #:view-shift-for-fun-body%))
@@ -75,6 +77,11 @@
 
 (defgeneric alloc-local% (frame escape target target-arch target-os))
 
+(defun word-size (target)
+  (word-size% target (target:target-arch target) (target:target-os target)))
+
+(defgeneric word-size% (target target-arch target-os))
+
 ;; Returns an temp:temp
 (defun fp (target)
   (fp% target (target:target-arch target) (target:target-os target)))
@@ -87,10 +94,10 @@
 
 (defgeneric rv% (target target-arch target-os))
 
-(defun word-size (target)
-  (word-size% target (target:target-arch target) (target:target-os target)))
+(defun arg-regs (target)
+  (arg-regs% target (target:target-arch target) (target:target-os target)))
 
-(defgeneric word-size% (target target-arch target-os))
+(defgeneric arg-regs% (target target-arch target-os))
 
 (defun access-expr (access fp-expr target)
   (access-expr% access fp-expr target (target:target-arch target) (target:target-os target)))

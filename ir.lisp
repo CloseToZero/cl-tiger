@@ -70,6 +70,8 @@
 
    #:not-rel-op
 
+   #:stms->compound-stm
+
    #:pretty-print))
 
 (cl:in-package :cl-tiger/ir)
@@ -153,6 +155,16 @@
     (ule-rel-op ugt-rel-op)
     (ugt-rel-op ule-rel-op)
     (uge-rel-op ult-rel-op)))
+
+(defun stms->compound-stm (&rest stms)
+  (cond ((null stms)
+         (expr-stm (int-expr 0)))
+        ((null (cdr stms))
+         ;; A list of length 1.
+         (car stms))
+        (t
+         (compound-stm
+          (car stms) (apply #'stms->compound-stm (rest stms))))))
 
 (defun pretty-print-expr (stream expr cur-indent indent)
   (format stream "~v:<~>" cur-indent)
