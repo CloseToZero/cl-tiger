@@ -15,11 +15,10 @@
 
 (cl:in-package :cl-tiger)
 
-(defun compile-tiger-file (file &key (stream t) (string-literal-as-comment t))
+(defun compile-tiger-file (file target &key (stream t) (string-literal-as-comment t))
   (let* ((text (uiop:read-file-string file))
          (line-map (utils:get-line-map text))
-         (ast (parse:parse-program text))
-         (target (target:target target:arch-x86-64 target:os-windows)))
+         (ast (parse:parse-program text)))
     (type-check:type-check-program ast line-map)
     (let ((frags (translate:translate-program ast target)))
       (trivia:let-match1 (list frag-strs frag-funs)
