@@ -32,6 +32,7 @@
         (dolist (frag-str frag-strs)
           (format stream "~A~%" (frame:frag-str->definition frag-str string-literal-as-comment target)))
         (dolist (frag-fun frag-funs)
+          (format stream "~%")
           (trivia:let-match1 (frame:frag-fun body frame) frag-fun
             (trivia:let-match1 (list blocks exit-label)
                 (normalize:split-into-basic-blocks (normalize:normalize body))
