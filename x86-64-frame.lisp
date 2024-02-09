@@ -4,7 +4,8 @@
    (:target :cl-tiger/target)
    (:temp :cl-tiger/temp)
    (:ir :cl-tiger/ir)
-   (:frame :cl-tiger/frame)))
+   (:frame :cl-tiger/frame)
+   (:asm :cl-tiger/asm)))
 
 (cl:in-package :cl-tiger/x86-64-frame)
 
@@ -186,3 +187,16 @@
     "pop rbp"
     (format nil "ret ~A" (* (length (frame:frame-formals frame))
                             (frame:word-size target))))))
+
+(defmethod frame:preserve-liveout% (frame body-instrs target
+                                    (target-arch target:arch-x86-64) (target-os target:os-windows))
+  (append
+   body-instrs
+   (list
+    (asm:op-instr
+     ""
+     nil
+     (append (list (frame:rv target) (temp:new-named-temp "rsp"))
+             (frame:callee-saves target))
+     ;; FIXME the jumps slot cannot express the concept of SOME[].
+     nil))))

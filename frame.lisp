@@ -21,6 +21,7 @@
    #:external-call
    #:view-shift-for-fun-body
    #:wrap-entry-exit
+   #:preserve-liveout
    #:frag
    #:frag-str
    #:frag-str-label
@@ -42,7 +43,8 @@
    #:access-expr%
    #:external-call%
    #:view-shift-for-fun-body%
-   #:wrap-entry-exit%))
+   #:wrap-entry-exit%
+   #:preserve-liveout%))
 
 (cl:in-package :cl-tiger/frame)
 
@@ -131,12 +133,6 @@
 
 (defgeneric view-shift-for-fun-body% (frame body-stm target target-arch target-os))
 
-;; Returns a list of the form ((prolog list-of-string) (body-instrs list-of-asm:instr) (epilog list-of-string))
-(defun wrap-entry-exit (frame body-instrs target)
-  (wrap-entry-exit% frame body-instrs target (target:target-arch target) (target:target-os target)))
-
-(defgeneric wrap-entry-exit% (frame body-instrs target target-arch target-os))
-
 (serapeum:defunion frag
   (frag-str
    (label temp:label)
@@ -144,3 +140,15 @@
   (frag-fun
    (body ir:stm)
    (frame frame)))
+
+;; Returns a list of the form ((prolog list-of-string) (body-instrs list-of-asm:instr) (epilog list-of-string))
+(defun wrap-entry-exit (frame body-instrs target)
+  (wrap-entry-exit% frame body-instrs target (target:target-arch target) (target:target-os target)))
+
+(defgeneric wrap-entry-exit% (frame body-instrs target target-arch target-os))
+
+;; Returns a list of asm:instr
+(defun preserve-liveout (frame body-instrs target)
+  (preserve-liveout% frame body-instrs target (target:target-arch target) (target:target-os target)))
+
+(defgeneric preserve-liveout% (frame body-instrs target target-arch target-os))
