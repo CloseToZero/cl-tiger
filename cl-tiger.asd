@@ -10,6 +10,7 @@
                "trivia"
                "esrap"
                "cl-data-structures"
+               "uiop"
                "trivial-utf-8")
   :serial t
   :components ((:file "straight-line")
@@ -28,4 +29,5 @@
                (:file "translate")
                (:file "normalize")
                (:file "instr-select")
-               (:file "x86-64-instr-select")))
+               (:file "x86-64-instr-select")
+               (:file "cl-tiger")))
