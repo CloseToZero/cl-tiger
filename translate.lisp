@@ -323,15 +323,14 @@
     ((ast:var-decl name _ init _ escape-ref)
      (trivia:let-match1 (list init-ty init-tagged-ir)
          (translate-expr type-env ir-env level target break-target init)
-       (list type-env
-             (insert-ir-entry
-              ir-env name
-              (ir-var-entry
-               init-ty
-               (alloc-local
-                level (ast:escape-ref-value escape-ref) target)))
-             (list
-              (let ((var-access (alloc-local level (ast:escape-ref-value escape-ref) target)))
+       (let ((var-access (alloc-local level (ast:escape-ref-value escape-ref) target)))
+         (list type-env
+               (insert-ir-entry
+                ir-env name
+                (ir-var-entry
+                 init-ty
+                 var-access))
+               (list
                 (tagged-stm
                  (ir:move-stm
                   (frame:access-expr (access-frame-access var-access)
