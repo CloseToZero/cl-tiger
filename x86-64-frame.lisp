@@ -200,7 +200,7 @@
              (frame:callee-saves target))
      (asm:is-jump nil)))))
 
-(defmethod frame:frag-str->definition% (frag-str target
+(defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
   (trivia:let-match1 (frame:frag-str label str) frag-str
     (with-output-to-string (out)
@@ -211,4 +211,7 @@
               do (if first?
                      (setf first? nil)
                      (format out ", "))
-                 (format out "~A" byte))))))
+                 (format out "~A" byte)))
+      (when string-literal-as-comment
+        (format out " ; ~S"
+                (cl-ppcre:regex-replace-all "\\n" (cl-ppcre:regex-replace-all "\\r" str "\\r") "\\n"))))))
