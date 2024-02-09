@@ -172,8 +172,8 @@
                            target))))))
    body-stm))
 
-(defmethod frame:wrap-entry-exit-for-fun-body% (frame body-instrs target
-                                                (target-arch target:arch-x86-64) (target-os target:os-windows))
+(defmethod frame:wrap-entry-exit% (frame body-instrs target
+                                   (target-arch target:arch-x86-64) (target-os target:os-windows))
   (list
    (list
     (format nil "~A:" (temp:label-name (frame:frame-name frame)))

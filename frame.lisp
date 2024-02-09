@@ -20,7 +20,7 @@
    #:access-expr
    #:external-call
    #:view-shift-for-fun-body
-   #:wrap-entry-exit-for-fun-body
+   #:wrap-entry-exit
    #:frag
    #:frag-str
    #:frag-str-label
@@ -42,7 +42,7 @@
    #:access-expr%
    #:external-call%
    #:view-shift-for-fun-body%
-   #:wrap-entry-exit-for-fun-body%))
+   #:wrap-entry-exit%))
 
 (cl:in-package :cl-tiger/frame)
 
@@ -132,10 +132,10 @@
 (defgeneric view-shift-for-fun-body% (frame body-stm target target-arch target-os))
 
 ;; Returns a list of the form ((prolog list-of-string) (body-instrs list-of-asm:instr) (epilog list-of-string))
-(defun wrap-entry-exit-for-fun-body (frame body-instrs target)
-  (wrap-entry-exit-for-fun-body% frame body-instrs target (target:target-arch target) (target:target-os target)))
+(defun wrap-entry-exit (frame body-instrs target)
+  (wrap-entry-exit% frame body-instrs target (target:target-arch target) (target:target-os target)))
 
-(defgeneric wrap-entry-exit-for-fun-body% (frame body-instrs target target-arch target-os))
+(defgeneric wrap-entry-exit% (frame body-instrs target target-arch target-os))
 
 (serapeum:defunion frag
   (frag-str
