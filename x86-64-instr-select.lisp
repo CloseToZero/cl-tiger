@@ -71,7 +71,7 @@
        (format nil "mov 'd0, qword ptr ['s0 + 's1 * ~A]" c)
        (list d)
        (list s0 s1)
-       nil)))
+       asm:not-jump)))
     ((or
       (ir:move-stm
        (ir:temp-expr d)
@@ -96,7 +96,7 @@
                c)
        (list d)
        (list s0)
-       nil)))
+       asm:not-jump)))
     ((ir:move-stm
       (ir:temp-expr d)
       (ir:mem-expr
@@ -109,7 +109,7 @@
        "mov 'd0, qword ptr ['s0 + 's1]"
        (list d)
        (list s0 s1)
-       nil)))
+       asm:not-jump)))
     ((ir:move-stm
       (ir:temp-expr d)
       (ir:int-expr c))
@@ -118,7 +118,7 @@
        (format nil "mov 'd0, ~A" c)
        (list d)
        nil
-       nil)))
+       asm:not-jump)))
     ((ir:move-stm
       (ir:temp-expr d)
       (ir:temp-expr s))
@@ -134,7 +134,7 @@
        "mov 'd0, 's0"
        (list d)
        (list (select-instr-expr right frame target))
-       nil)))
+       asm:not-jump)))
     ((or
       (trivia:guard
        (ir:move-stm
@@ -165,7 +165,7 @@
        (format nil "mov qword ptr ['s1 + 's2 * ~A], 's0" c)
        nil
        (list s0 s1 s2)
-       nil)))
+       asm:not-jump)))
     ((or
       (trivia:guard
        (ir:move-stm
@@ -196,7 +196,7 @@
        (format nil "mov qword ptr ['s0 + 's1 * ~A], ~A" c0 c1)
        nil
        (list s0 s1)
-       nil)))
+       asm:not-jump)))
     ((or
       (ir:move-stm
        (ir:mem-expr
@@ -221,7 +221,7 @@
                c)
        nil
        (list s0 s1)
-       nil)))
+       asm:not-jump)))
     ((ir:move-stm
       (ir:mem-expr
        (ir:bin-op-expr
@@ -234,7 +234,7 @@
        (format nil "mov qword ptr ['s0 + 's1], ~A" c)
        nil
        (list s0 s1)
-       nil)))
+       asm:not-jump)))
     ((ir:move-stm
       (ir:mem-expr
        (ir:bin-op-expr
@@ -247,7 +247,7 @@
        "mov qword ptr ['s1 + 's2], 's0"
        nil
        (list s0 s1 s2)
-       nil)))
+       asm:not-jump)))
     ((ir:move-stm
       (ir:mem-expr
        (ir:temp-expr s))
@@ -257,7 +257,7 @@
        (format nil "mov qword ptr ['s], ~A" c)
        nil
        (list s)
-       nil)))
+       asm:not-jump)))
     ((ir:move-stm
       (ir:mem-expr
        (ir:temp-expr s1))
@@ -267,7 +267,7 @@
        "mov qword ptr ['s1], 's0"
        nil
        (list s0 s1)
-       nil)))
+       asm:not-jump)))
     ((ir:move-stm
       (ir:mem-expr mem)
       right)
@@ -277,7 +277,7 @@
        nil
        (list (select-instr-expr mem frame target)
              (select-instr-expr right frame target))
-       nil)))
+       asm:not-jump)))
     ((ir:expr-stm expr)
      (select-instr-expr expr frame target)
      nil)
@@ -289,16 +289,14 @@
        "jmp 'j0"
        nil
        nil
-       (list target))))
-    ((ir:jump-stm
-      expr
-      _)
+       (asm:is-jump (list target)))))
+    ((ir:jump-stm expr possible-labels)
      (emit
       (asm:op-instr
        "jmp 's0"
        nil
        (list (select-instr-expr expr frame target))
-       nil)))
+       (asm:is-jump possible-labels))))
     ((ir:cjump-stm left op right true-target false-target)
      (emit
       (asm:op-instr
@@ -307,7 +305,7 @@
        nil
        (list (select-instr-expr left frame target)
              (select-instr-expr right frame target))
-       (list true-target false-target))))
+       (asm:is-jump (list true-target false-target)))))
     ((ir:compound-stm first second)
      (select-instr-stm first frame target)
      (select-instr-stm second frame target))
@@ -325,7 +323,7 @@
        (emit
         (asm:op-instr
          (format nil "mov 'd0, ~A" value)
-         (list r) nil nil))
+         (list r) nil asm:not-jump))
        r))
     ((ir:label-expr label)
      (let ((r (temp:new-temp)))
@@ -335,7 +333,7 @@
                  (temp:label-name label))
          (list r)
          nil
-         nil))
+         asm:not-jump))
        r))
     ((ir:temp-expr temp)
      temp)
@@ -354,7 +352,7 @@
                (temp:new-named-temp "rdx"))
          (list (select-instr-expr right frame target)
                (temp:new-named-temp "rax"))
-         nil))
+         asm:not-jump))
        (emit
         (asm:move-instr
          "mov 'd0, 's0"
@@ -389,7 +387,7 @@
                    ((ir:xor-bin-op) "xor")))
          (list r)
          (list (select-instr-expr right frame target) r)
-         nil))
+         asm:not-jump))
        r))
     ((ir:bin-op-expr left
                      (trivia:<>
@@ -417,7 +415,7 @@
                  c)
          (list r)
          (list r)
-         nil))
+         asm:not-jump))
        r))
     ((ir:bin-op-expr left
                      (trivia:<>
@@ -447,7 +445,7 @@
                    ((ir:arshift-bin-op) "sar")))
          (list r)
          (list (temp:new-named-temp "rcx") r)
-         nil))
+         asm:not-jump))
        r))
     ((or
       (trivia:guard
@@ -476,7 +474,7 @@
          (format nil "mov 'd0, qword ptr ['s0 + 's1 * ~A]" c)
          (list r)
          (list s0 s1)
-         nil))
+         asm:not-jump))
        r))
     ((or
       (ir:mem-expr
@@ -499,7 +497,7 @@
                  c)
          (list r)
          (list s0)
-         nil))
+         asm:not-jump))
        r))
     ((ir:mem-expr
       (ir:bin-op-expr
@@ -512,7 +510,7 @@
          "mov 'd0, qword ptr ['s0 + 's1]"
          (list r)
          (list s0 s1)
-         nil))
+         asm:not-jump))
        r))
     ((ir:mem-expr
       expr)
@@ -522,7 +520,7 @@
          "mov 'd0, qword ptr ['s0]"
          (list r)
          (list (select-instr-expr expr frame target))
-         nil))
+         asm:not-jump))
        r))
     ((ir:call-expr fun args)
      (let ((f (temp:new-temp "fun")))
@@ -537,7 +535,7 @@
            "call 's0"
            (frame:caller-saves target)
            (cons f arg-temps)
-           nil))
+           asm:not-jump))
          (emit
           (asm:move-instr
            "mov 'd0, 's0"
@@ -587,5 +585,5 @@
                        (let ((r (nth i arg-temps)))
                          (push r result)
                          r))
-                      nil))))
+                      asm:not-jump))))
           finally (return result))))

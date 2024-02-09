@@ -3,6 +3,9 @@
   (:local-nicknames
    (:temp :cl-tiger/temp))
   (:export
+   #:maybe-jump
+   #:is-jump
+   #:not-jump
    #:instr
    #:op-instr
    #:op-instr-template
@@ -28,6 +31,12 @@
 ;; 'j0, 'j1 ... refer to jump0, jump1 ...
 ;; '' stands for the single quote character '
 
+(serapeum:defunion maybe-jump
+  (is-jump
+   ;; A list of temp:label
+   (targets list))
+  not-jump)
+
 (serapeum:defunion instr
   (op-instr
    (template string)
@@ -35,8 +44,7 @@
    (dsts list)
    ;; A list of temp:temp
    (srcs list)
-   ;; A list of temp:label
-   (jumps list))
+   (jumps maybe-jump))
   (label-instr
    (str string)
    (name temp:label))
@@ -83,7 +91,9 @@
   (trivia:let-match1 (list dsts srcs jumps) 
       (serapeum:match-of instr instr
         ((op-instr _ dsts srcs jumps)
-         (list dsts srcs jumps))
+         (list dsts srcs (serapeum:match-of maybe-jump jumps
+                           ((is-jump targets) targets)
+                           (not-jump nil))))
         ((label-instr _ _)
          (list nil nil nil))
         ((move-instr _ dst src)

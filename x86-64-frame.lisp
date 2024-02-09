@@ -198,5 +198,4 @@
      nil
      (append (list (frame:rv target) (temp:new-named-temp "rsp"))
              (frame:callee-saves target))
-     ;; FIXME the jumps slot cannot express the concept of SOME[].
-     nil))))
+     (asm:is-jump nil)))))
