@@ -194,7 +194,7 @@
    body-instrs
    (list
     (asm:op-instr
-     ""
+     ";; A fake instruction used to preserve liveout temporaries."
      nil
      (append (list (frame:rv target) (temp:new-named-temp "rsp"))
              (frame:callee-saves target))
