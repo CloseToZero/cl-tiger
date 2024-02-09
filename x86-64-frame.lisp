@@ -17,6 +17,15 @@
                 "rdx"
                 "r8"
                 "r9")))
+(defvar *caller-saves*
+  (mapcar #'temp:new-named-temp
+          (list "rax"
+                "rcx"
+                "rdx"
+                "r8"
+                "r9"
+                "r10"
+                "r11")))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass frame (frame:frame)
@@ -103,6 +112,10 @@
 (defmethod frame:arg-regs% (target
                             (target-arch target:arch-x86-64) (target-os target:os-windows))
   *arg-regs*)
+
+(defmethod frame:caller-saves% (target
+                                (target-arch target:arch-x86-64) (target-os target:os-windows))
+  *caller-saves*)
 
 (defmethod frame:access-expr% (access fp-expr target
                                (target-arch target:arch-x86-64) (target-os target:os-windows))

@@ -15,6 +15,7 @@
    #:fp
    #:rv
    #:arg-regs
+   #:caller-saves
    #:access-expr
    #:external-call
    #:view-shift-for-fun-body
@@ -35,6 +36,7 @@
    #:fp%
    #:rv%
    #:arg-regs%
+   #:caller-saves%
    #:access-expr%
    #:external-call%
    #:view-shift-for-fun-body%
@@ -100,6 +102,11 @@
   (arg-regs% target (target:target-arch target) (target:target-os target)))
 
 (defgeneric arg-regs% (target target-arch target-os))
+
+(defun caller-saves (target)
+  (caller-saves% target (target:target-arch target) (target:target-os target)))
+
+(defgeneric caller-saves% (target target-arch target-os))
 
 (defun access-expr (access fp-expr target)
   (access-expr% access fp-expr target (target:target-arch target) (target:target-os target)))

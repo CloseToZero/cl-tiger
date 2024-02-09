@@ -33,16 +33,6 @@
     (ir:ugt-rel-op "ja")
     (ir:uge-rel-op "jae")))
 
-(defvar *caller-saves*
-  (mapcar #'temp:new-named-temp
-          (list "rax"
-                "rcx"
-                "rdx"
-                "r8"
-                "r9"
-                "r10"
-                "r11")))
-
 (defmethod instr-select:select-instrs% (stm frame target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
   (let ((*instrs* nil))
@@ -545,7 +535,7 @@
          (emit
           (asm:op-instr
            "call 's0"
-           *caller-saves*
+           (frame:caller-saves target)
            (cons f arg-temps)
            nil))
          (emit
