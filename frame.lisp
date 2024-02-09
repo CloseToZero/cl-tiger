@@ -22,6 +22,7 @@
    #:view-shift-for-fun-body
    #:wrap-entry-exit
    #:preserve-liveout
+   #:frag-str->definition
    #:frag
    #:frag-str
    #:frag-str-label
@@ -44,7 +45,8 @@
    #:external-call%
    #:view-shift-for-fun-body%
    #:wrap-entry-exit%
-   #:preserve-liveout%))
+   #:preserve-liveout%
+   #:frag-str->definition%))
 
 (cl:in-package :cl-tiger/frame)
 
@@ -152,3 +154,9 @@
   (preserve-liveout% frame body-instrs target (target:target-arch target) (target:target-os target)))
 
 (defgeneric preserve-liveout% (frame body-instrs target target-arch target-os))
+
+;; Returns the string's defintion (an ASM instruction)
+(defun frag-str->definition (frag-str target)
+  (frag-str->definition% frag-str target (target:target-arch target) (target:target-os target)))
+
+(defgeneric frag-str->definition% (frag-str target target-arch target-os))

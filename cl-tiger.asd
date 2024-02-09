@@ -9,7 +9,8 @@
                "serapeum"
                "trivia"
                "esrap"
-               "cl-data-structures")
+               "cl-data-structures"
+               "trivial-utf-8")
   :serial t
   :components ((:file "straight-line")
                (:file "symbol")

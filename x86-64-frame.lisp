@@ -199,3 +199,16 @@
      (append (list (frame:rv target) (temp:new-named-temp "rsp"))
              (frame:callee-saves target))
      (asm:is-jump nil)))))
+
+(defmethod frame:frag-str->definition% (frag-str target
+                                        (target-arch target:arch-x86-64) (target-os target:os-windows))
+  (trivia:let-match1 (frame:frag-str label str) frag-str
+    (with-output-to-string (out)
+      (format out "~A db " (temp:label-name label))
+      (let ((bytes (trivial-utf-8:string-to-utf-8-bytes str :null-terminate t)))
+        (loop with first? = t
+              for byte across bytes
+              do (if first?
+                     (setf first? nil)
+                     (format out ", "))
+                 (format out "~A" byte))))))
