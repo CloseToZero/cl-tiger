@@ -145,3 +145,18 @@
                            (ir:temp-expr (frame:fp target))
                            target))))))
    body-stm))
+
+(defmethod frame:wrap-entry-exit-for-fun-body% (frame body-instrs target
+                                                (target-arch target:arch-x86-64) (target-os target:os-windows))
+  (list
+   (list
+    (format nil "~A:" (temp:label-name (frame:frame-name frame)))
+    "push rbp"
+    "mov rbp, rsp"
+    (format nil "sub rsp, ~A" (frame-size frame)))
+   body-instrs
+   (list
+    (format nil "add rsp, ~A" (frame-size frame))
+    "pop rbp"
+    (format nil "ret ~A" (* (length (frame:frame-formals frame))
+                            (frame:word-size target))))))
