@@ -3,7 +3,7 @@
   (:local-nicknames
    (:symbol :cl-tiger/symbol)
    (:cl-ds :cl-data-structures)
-   (:cl-ds.hamt :cl-data-structures.dicts.hamt))
+   (:hamt :cl-data-structures.dicts.hamt))
   (:export
    #:ty
    #:int-ty
@@ -79,7 +79,7 @@
 
 ;; A map from symbol:sym to ty
 (defvar *base-type-env*
-  (let ((env (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
+  (let ((env (hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
     (reduce (lambda (env binding)
               (cl-ds:insert env (first binding) (second binding)))
             (list (list (symbol:get-sym "int")
@@ -89,7 +89,7 @@
             :initial-value env)))
 
 (defvar *unnamed-base-type-env*
-  (let ((env (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
+  (let ((env (hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
     (reduce (lambda (env binding)
               (cl-ds:insert env (first binding) (second binding)))
             (list (list (symbol:get-sym "nil")

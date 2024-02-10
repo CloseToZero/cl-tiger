@@ -9,7 +9,7 @@
    (:ast :cl-tiger/ast)
    (:types :cl-tiger/types)
    (:cl-ds :cl-data-structures)
-   (:cl-ds.hamt :cl-data-structures.dicts.hamt))
+   (:hamt :cl-data-structures.dicts.hamt))
   (:export
    #:find-and-fill-escapes
    #:translate-program))
@@ -18,7 +18,7 @@
 
 ;; A map from symbol:sym to (depth ast:escape-ref)
 (defvar *base-escape-ref-env*
-  (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq))
+  (hamt:make-functional-hamt-dictionary #'sxhash #'eq))
 
 (defun insert-escape-ref (escape-ref-env sym depth escape-ref)
   (cl-ds:insert escape-ref-env sym (list depth escape-ref)))
@@ -244,7 +244,7 @@
    (level level)))
 
 (defun base-ir-env (target)
-  (let ((env (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
+  (let ((env (hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
     (reduce (lambda (env binding)
               (trivia:let-match1 (list name formal-types result-type) binding
                 (let ((level (new-level top-level

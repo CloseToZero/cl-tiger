@@ -6,7 +6,7 @@
    (:ast :cl-tiger/ast)
    (:types :cl-tiger/types)
    (:cl-ds :cl-data-structures)
-   (:cl-ds.hamt :cl-data-structures.dicts.hamt))
+   (:hamt :cl-data-structures.dicts.hamt))
   (:export
    #:type-check-program))
 
@@ -62,7 +62,7 @@
   (cl-ds:insert type-check-env sym type-check-entry))
 
 (defvar *base-type-check-env*
-  (let ((env (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
+  (let ((env (hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
     (reduce (lambda (env binding)
               (trivia:let-match1 (list name formal-types result-type) binding
                 (cl-ds:insert env

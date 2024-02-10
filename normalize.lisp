@@ -4,7 +4,7 @@
    (:temp :cl-tiger/temp)
    (:ir :cl-tiger/ir)
    (:cl-ds :cl-data-structures)
-   (:cl-ds.hamt :cl-data-structures.dicts.hamt))
+   (:hamt :cl-data-structures.dicts.hamt))
   (:export
    #:normalize
    #:split-into-basic-blocks
@@ -293,6 +293,6 @@
                   (cl-ds:insert acc-block-table name block)))
               blocks
               :initial-value
-              (cl-ds.hamt:make-functional-hamt-dictionary #'sxhash #'eq))
+              (hamt:make-functional-hamt-dictionary #'sxhash #'eq))
       blocks)
      (list (ir:label-stm exit-label)))))
