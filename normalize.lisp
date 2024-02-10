@@ -2,9 +2,7 @@
   (:use :cl)
   (:local-nicknames
    (:temp :cl-tiger/temp)
-   (:ir :cl-tiger/ir)
-   (:cl-ds :cl-data-structures)
-   (:hamt :cl-data-structures.dicts.hamt))
+   (:ir :cl-tiger/ir))
   (:export
    #:normalize
    #:split-into-basic-blocks
@@ -229,20 +227,20 @@
              (trivia:match blocks
                ((list* block rest-blocks)
                 (trivia:let-match1 (list* (ir:label-stm name) _) block
-                  ;; Note that (cl-ds:at block-table name) returns a nil value
+                  ;; Note that (fset:@ block-table name) returns a nil value
                   ;; means the block is already scheduled by schedule-block-by-trace,
                   ;; we should skip the block in that case.
-                  (if (cl-ds:at block-table name)
+                  (if (fset:@ block-table name)
                       (schedule-block-by-trace block-table block rest-blocks)
                       (schedule-blocks block-table rest-blocks))))
                (nil
                 nil)))
            (schedule-block-by-trace (block-table cur-block blocks)
              (trivia:let-match1 (list* (ir:label-stm name) _) cur-block
-               (let ((block-table (cl-ds:insert block-table name nil)))
+               (let ((block-table (fset:with block-table name nil)))
                  (trivia:ematch (split-last cur-block)
                    ((list front-stms (ir:jump-stm (ir:label-expr name) _))
-                    (let ((opt-target-block (cl-ds:at block-table name)))
+                    (let ((opt-target-block (fset:@ block-table name)))
                       (cond ((null opt-target-block)
                              ;; The target block have been scheduled,
                              ;; so the current trace is interrupted/finished,
@@ -260,8 +258,8 @@
                     ;; 1. Try to schedule the false-target after the cur-block.
                     ;; 2. Try to schedule the true-target after the cur-block and reverse the condition.
                     ;; 3. Otherwise, create a new false-target and schedule it after the cur-block.
-                    (let ((opt-true-block (cl-ds:at block-table true-target))
-                          (opt-false-block (cl-ds:at block-table false-target)))
+                    (let ((opt-true-block (fset:@ block-table true-target))
+                          (opt-false-block (fset:@ block-table false-target)))
                       (trivia:match (list opt-true-block opt-false-block)
                         ((list _ (not nil))
                          (nconc cur-block (schedule-block-by-trace block-table opt-false-block blocks)))
@@ -290,9 +288,9 @@
      (schedule-blocks
       (reduce (lambda (acc-block-table block)
                 (trivia:let-match1 (list* (ir:label-stm name) _) block
-                  (cl-ds:insert acc-block-table name block)))
+                  (fset:with acc-block-table name block)))
               blocks
               :initial-value
-              (hamt:make-functional-hamt-dictionary #'sxhash #'eq))
+              (fset:empty-map))
       blocks)
      (list (ir:label-stm exit-label)))))
