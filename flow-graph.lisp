@@ -1,6 +1,7 @@
 (cl:defpackage :cl-tiger/flow-graph
   (:use :cl)
   (:local-nicknames
+   (:utils :cl-tiger/utils)
    (:temp :cl-tiger/temp)
    (:asm :cl-tiger/asm)
    (:graph :cl-tiger/graph))
@@ -10,7 +11,7 @@
    #:flow-graph-fake-node
    #:flow-graph-defs-table
    #:flow-graph-uses-table
-   #:flow-graph-is-move-table
+   #:flow-graph-is-move-set
    #:is-fake-node
    #:instrs->flow-graph))
 
@@ -25,20 +26,20 @@
     :type graph:node
     :reader flow-graph-fake-node)
    (defs-table
-    ;; A map from a node to a list of temp:temp
+    ;; A map from a node to a set of temp:temp
     :type fset:map
     :initform (fset:empty-map)
     :reader flow-graph-defs-table)
    (uses-table
-    ;; A map from a node to a list of temp:temp
+    ;; A map from a node to a set of temp:temp
     :type fset:map
     :initform (fset:empty-map)
     :reader flow-graph-uses-table)
-   (is-move-table
-    ;; A map from a node to a boolean
-    :type fset:map
-    :initform (fset:empty-map)
-    :reader flow-graph-is-move-table)))
+   (is-move-set
+    ;; A set of move nodes
+    :type fset:set
+    :initform (fset:empty-set)
+    :reader flow-graph-is-move-set)))
 
 (defun is-fake-node (flow-graph node)
   (eq (flow-graph-fake-node flow-graph) node))
@@ -52,7 +53,7 @@
                       node))
          (defs-table (fset:empty-map))
          (uses-table (fset:empty-map))
-         (is-move-table (fset:empty-map))
+         (is-move-set (fset:empty-set))
          (label->node-table (fset:empty-map))
          (instr->node-table (fset:empty-map)))
     ;; Create all nodes first.
@@ -82,9 +83,8 @@
             do (serapeum:match-of asm:instr instr
                  ((asm:op-instr _ dsts srcs jumps)
                   (let ((node (instr->node instr)))
-                    (fset:includef defs-table node dsts)
-                    (fset:includef uses-table node srcs)
-                    (fset:includef is-move-table node nil)
+                    (fset:includef defs-table node (utils:list->set dsts))
+                    (fset:includef uses-table node (utils:list->set srcs))
                     (serapeum:match-of asm:maybe-jump jumps
                       ((asm:is-jump targets)
                        (cond ((null targets)
@@ -97,18 +97,17 @@
                        (add-fall-through-edge node rest-instrs)))))
                  ((asm:label-instr _ _)
                   (let ((node (instr->node instr)))
-                    (fset:includef defs-table node nil)
-                    (fset:includef uses-table node nil)
-                    (fset:includef is-move-table node nil)
+                    (fset:includef defs-table node (fset:empty-set))
+                    (fset:includef uses-table node (fset:empty-set))
                     (add-fall-through-edge node rest-instrs)))
                  ((asm:move-instr _ dst src)
                   (let ((node (instr->node instr)))
-                    (fset:includef defs-table node (list dst))
-                    (fset:includef uses-table node (list src))
-                    (fset:includef is-move-table node t)
+                    (fset:includef defs-table node (fset:with (fset:empty-set) dst))
+                    (fset:includef uses-table node (fset:with (fset:empty-set) src))
+                    (fset:includef is-move-set node)
                     (add-fall-through-edge node rest-instrs)))))
-      (with-slots ((d defs-table) (u uses-table) (m is-move-table)) flow-graph
+      (with-slots ((d defs-table) (u uses-table) (m is-move-set)) flow-graph
         (setf d defs-table)
         (setf u uses-table)
-        (setf m is-move-table))
+        (setf m is-move-set))
       flow-graph)))

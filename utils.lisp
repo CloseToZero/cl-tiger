@@ -3,7 +3,8 @@
   (:export
    #:get-line-map
    #:pos->line-info
-   #:str-without-newlines))
+   #:str-without-newlines
+   #:list->set))
 
 (cl:in-package :cl-tiger/utils)
 
@@ -51,3 +52,9 @@ line-n without an newline."
 
 (defun str-without-newlines (str)
   (cl-ppcre:regex-replace-all "\\n" (cl-ppcre:regex-replace-all "\\r" str "\\r") "\\n") )
+
+(defun list->set (list)
+  (reduce (lambda (set e)
+            (fset:with set e))
+          list
+          :initial-value (fset:empty-set)))
