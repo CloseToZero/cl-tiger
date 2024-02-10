@@ -7,9 +7,7 @@
    (:ir :cl-tiger/ir)
    (:frame :cl-tiger/frame)
    (:ast :cl-tiger/ast)
-   (:types :cl-tiger/types)
-   (:cl-ds :cl-data-structures)
-   (:hamt :cl-data-structures.dicts.hamt))
+   (:types :cl-tiger/types))
   (:export
    #:find-and-fill-escapes
    #:translate-program))
@@ -17,14 +15,13 @@
 (cl:in-package :cl-tiger/translate)
 
 ;; A map from symbol:sym to (depth ast:escape-ref)
-(defvar *base-escape-ref-env*
-  (hamt:make-functional-hamt-dictionary #'sxhash #'eq))
+(defvar *base-escape-ref-env* (fset:empty-map))
 
 (defun insert-escape-ref (escape-ref-env sym depth escape-ref)
-  (cl-ds:insert escape-ref-env sym (list depth escape-ref)))
+  (fset:with escape-ref-env sym (list depth escape-ref)))
 
 (defun get-escape-ref (escape-ref-env sym)
-  (cl-ds:at escape-ref-env sym))
+  (fset:@ escape-ref-env sym))
 
 ;; prog is the expression of the whole program with the type
 ;; of ast:expr.
@@ -244,7 +241,7 @@
    (level level)))
 
 (defun base-ir-env (target)
-  (let ((env (hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
+  (let ((env (fset:empty-map)))
     (reduce (lambda (env binding)
               (trivia:let-match1 (list name formal-types result-type) binding
                 (let ((level (new-level top-level
@@ -253,20 +250,20 @@
                                                   (declare (ignore formal-type)) nil)
                                                 formal-types)
                                         target)))
-                  (cl-ds:insert env
-                                (symbol:get-sym name)
-                                (ir-fun-entry formal-types
-                                              result-type
-                                              (temp:new-named-label name)
-                                              level)))))
+                  (fset:with env
+                             (symbol:get-sym name)
+                             (ir-fun-entry formal-types
+                                           result-type
+                                           (temp:new-named-label name)
+                                           level)))))
             types:*built-in-function-bindings*
             :initial-value env)))
 
 (defun get-ir-entry (ir-env sym)
-  (cl-ds:at ir-env sym))
+  (fset:@ ir-env sym))
 
 (defun insert-ir-entry (ir-env sym ir-entry)
-  (cl-ds:insert ir-env sym ir-entry))
+  (fset:with ir-env sym ir-entry))
 
 (defun translate-ty (type-env ty)
   (serapeum:match-of ast:ty ty
