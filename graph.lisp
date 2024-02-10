@@ -41,11 +41,11 @@
    (succs
     :type fset:set
     :initform (fset:empty-set)
-    :accessor node-succs)
+    :reader node-succs)
    (pres
     :type fset:set
     :initform (fset:empty-set)
-    :accessor node-pres)))
+    :reader node-pres)))
 
 (defmethod fset:compare ((x node) (y node))
   (cond ((eq (node-graph x) (node-graph y))
@@ -61,21 +61,25 @@
   ((nodes
     :type fset:set
     :initform (fset:empty-set)
-    :accessor graph-nodes)
+    :reader graph-nodes)
    (next-index
     :type fixnum
     :initform 0
-    :accessor graph-next-index)))
+    :reader graph-next-index)))
 
 (defun graph ()
   (make-instance 'graph))
 
 (defun new-node (graph name)
-  (let* ((next-index (graph-next-index graph))
-         (node (make-instance 'node :name name :graph graph :index next-index)))
-    (fset:includef (graph-nodes graph) node)
-    (incf (graph-next-index graph))
-    node))
+  (with-slots (next-index) graph
+    (let ((node (make-instance 'node
+                               :name name
+                               :graph graph
+                               :index next-index)))
+      (with-slots (nodes) graph
+        (fset:includef nodes node))
+      (incf next-index)
+      node)))
 
 (defun check-same-graph (node-1 node-2 allow-null-graph)
   (unless (or allow-null-graph (node-graph node-1))
@@ -87,8 +91,10 @@
 
 (defun add-edge (from-node to-node)
   (check-same-graph from-node to-node nil)
-  (fset:includef (node-succs from-node) to-node)
-  (fset:includef (node-pres to-node) from-node)
+  (with-slots (succs) from-node
+    (fset:includef succs to-node))
+  (with-slots (pres) to-node
+    (fset:includef pres from-node))
   (values))
 
 (defun remove-edge (from-node to-node &optional (error-if-not-exists t))
@@ -96,8 +102,10 @@
       (unless (edge-exists from-node to-node)
         (error "Edge ~A -> ~A doesn't exist" from-node to-node))
       (check-same-graph from-node to-node nil))
-  (fset:excludef (node-succs from-node) to-node)
-  (fset:excludef (node-pres to-node) from-node)
+  (with-slots (succs) from-node
+    (fset:excludef succs to-node))
+  (with-slots (pres) to-node
+    (fset:excludef pres from-node))
   (values))
 
 (defun edge-exists (from-node to-node)
