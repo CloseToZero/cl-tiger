@@ -9,7 +9,9 @@
    (:type-check :cl-tiger/type-check)
    (:translate :cl-tiger/translate)
    (:normalize :cl-tiger/normalize)
-   (:instr-select :cl-tiger/instr-select))
+   (:instr-select :cl-tiger/instr-select)
+   (:graph :cl-tiger/graph)
+   (:flow-graph :cl-tiger/flow-graph))
   (:export
    #:compile-tiger-file))
 
@@ -49,4 +51,7 @@
                   (dolist (instr instrs)
                     (format t "~A~%" (asm:format-instr instr)))
                   (dolist (instr epilog)
-                    (format t "~A~%" instr)))))))))))
+                    (format t "~A~%" instr)))
+                (format t "~%flow graph:~%")
+                (let ((flow-graph (flow-graph:instrs->flow-graph instrs)))
+                  (graph:graph->graphviz (flow-graph:flow-graph-graph flow-graph) t))))))))))

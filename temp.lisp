@@ -8,6 +8,8 @@
    #:temp-name
    #:new-temp
    #:new-named-temp
+   #:temp<
+   #:temp-eq
 
    #:label
    #:new-label
@@ -32,6 +34,13 @@
 
 (defun new-named-temp (name)
   (temp 0 name))
+
+(defun temp< (temp-1 temp-2)
+  (< (temp-num temp-1) (temp-num temp-2)))
+
+(defun temp-eq (temp-1 temp-2)
+  ;; We can also compare temp-num.
+  (eq temp-1 temp-2))
 
 (deftype label () 'symbol:sym)
 

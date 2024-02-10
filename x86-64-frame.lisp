@@ -1,6 +1,7 @@
 (cl:defpackage :cl-tiger/x86-64-frame
   (:use :cl)
   (:local-nicknames
+   (:utils :cl-tiger/utils)
    (:target :cl-tiger/target)
    (:temp :cl-tiger/temp)
    (:ir :cl-tiger/ir)
@@ -213,5 +214,4 @@
                      (format out ", "))
                  (format out "~A" byte)))
       (when string-literal-as-comment
-        (format out " ; ~S"
-                (cl-ppcre:regex-replace-all "\\n" (cl-ppcre:regex-replace-all "\\r" str "\\r") "\\n"))))))
+        (format out " ; ~S" (utils:str-without-newlines str))))))

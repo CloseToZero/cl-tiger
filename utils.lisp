@@ -2,7 +2,8 @@
   (:use :cl)
   (:export
    #:get-line-map
-   #:pos->line-info))
+   #:pos->line-info
+   #:str-without-newlines))
 
 (cl:in-package :cl-tiger/utils)
 
@@ -47,3 +48,6 @@ line-n without an newline."
           (when (and (<= start pos)
                      (<= pos end))
             (return (list line-number (1+ (- pos start)) line))))))))
+
+(defun str-without-newlines (str)
+  (cl-ppcre:regex-replace-all "\\n" (cl-ppcre:regex-replace-all "\\r" str "\\r") "\\n") )

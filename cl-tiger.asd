@@ -30,4 +30,6 @@
                (:file "normalize")
                (:file "instr-select")
                (:file "x86-64-instr-select")
+               (:file "graph")
+               (:file "flow-graph")
                (:file "cl-tiger")))
