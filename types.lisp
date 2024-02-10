@@ -1,9 +1,7 @@
 (cl:defpackage :cl-tiger/types
   (:use :cl)
   (:local-nicknames
-   (:symbol :cl-tiger/symbol)
-   (:cl-ds :cl-data-structures)
-   (:hamt :cl-data-structures.dicts.hamt))
+   (:symbol :cl-tiger/symbol))
   (:export
    #:ty
    #:int-ty
@@ -79,33 +77,31 @@
 
 ;; A map from symbol:sym to ty
 (defvar *base-type-env*
-  (let ((env (hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
-    (reduce (lambda (env binding)
-              (cl-ds:insert env (first binding) (second binding)))
-            (list (list (symbol:get-sym "int")
-                        int-ty)
-                  (list (symbol:get-sym "string")
-                        string-ty))
-            :initial-value env)))
+  (reduce (lambda (env binding)
+            (fset:with env (first binding) (second binding)))
+          (list (list (symbol:get-sym "int")
+                      int-ty)
+                (list (symbol:get-sym "string")
+                      string-ty))
+          :initial-value (fset:empty-map)))
 
 (defvar *unnamed-base-type-env*
-  (let ((env (hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
-    (reduce (lambda (env binding)
-              (cl-ds:insert env (first binding) (second binding)))
-            (list (list (symbol:get-sym "nil")
-                        nil-ty)
-                  (list (symbol:get-sym "unit")
-                        unit-ty))
-            :initial-value env)))
+  (reduce (lambda (env binding)
+            (fset:with env (first binding) (second binding)))
+          (list (list (symbol:get-sym "nil")
+                      nil-ty)
+                (list (symbol:get-sym "unit")
+                      unit-ty))
+          :initial-value (fset:empty-map)))
 
 (defun get-type (type-env sym)
-  (cl-ds:at type-env sym))
+  (fset:@ type-env sym))
 
 (defun get-unnamed-base-type (sym)
-  (cl-ds:at *unnamed-base-type-env* sym))
+  (fset:@ *unnamed-base-type-env* sym))
 
 (defun insert-type (type-env sym ty)
-  (cl-ds:insert type-env sym ty))
+  (fset:with type-env sym ty))
 
 (defvar *built-in-function-bindings*
   (let ((unit-ty (get-unnamed-base-type (symbol:get-sym "unit")))
