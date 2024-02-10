@@ -3,10 +3,7 @@
   (:local-nicknames
    (:temp :cl-tiger/temp)
    (:asm :cl-tiger/asm)
-   (:graph :cl-tiger/graph)
-   (:cl-ds :cl-data-structures)
-   (:skip-list :cl-ds.sets.skip-list)
-   (:hamt :cl-data-structures.dicts.hamt))
+   (:graph :cl-tiger/graph))
   (:export
    #:flow-graph
    #:flow-graph-graph
@@ -28,25 +25,20 @@
     :reader flow-graph-fake-node)
    (defs-table
     ;; A map from a node to a list of temp:temp
-    :type hamt:mutable-hamt-dictionary
-    :initform (empty-node-dict)
+    :type fset:map
+    :initform (fset:empty-map)
     :reader flow-graph-defs-table)
    (uses-table
     ;; A map from a node to a list of temp:temp
-    :type hamt:mutable-hamt-dictionary
-    :initform (empty-node-dict)
+    :type fset:map
+    :initform (fset:empty-map)
     :reader flow-graph-uses-table)
    (is-move-table
     ;; A map from a node to a boolean
-    :type skip-list:mutable-skip-list-set
-    :initform (empty-node-set)
+    :type fset:map
+    :initform (fset:empty-map)
     :reader flow-graph-is-move-table)))
 
-(defun empty-node-dict ()
-  (hamt:make-mutable-hamt-dictionary #'sxhash #'graph:node-eq))
-
-(defun empty-node-set ()
-  (skip-list:make-mutable-skip-list-set #'graph:node< #'graph:node-eq))
 
 (defun instrs->flow-graph (instrs)
   (let* ((flow-graph (make-instance 'flow-graph))
@@ -58,22 +50,22 @@
          (defs-table (flow-graph-defs-table flow-graph))
          (uses-table (flow-graph-uses-table flow-graph))
          (is-move-table (flow-graph-is-move-table flow-graph))
-         (label->node-table (hamt:make-mutable-hamt-dictionary #'sxhash #'eq))
-         (instr->node-table (hamt:make-mutable-hamt-dictionary #'sxhash #'eq)))
+         (label->node-table (fset:empty-map))
+         (instr->node-table (fset:empty-map)))
     ;; Create all nodes first.
     (loop for instr in instrs
           do (let* ((name (asm:format-instr instr))
                     (node (graph:new-node graph name)))
-               (cl-ds:insert! instr->node-table instr node)
+               (fset:includef instr->node-table instr node)
                (trivia:when-match (asm:label-instr _ name) instr
-                 (cl-ds:insert! label->node-table name node))))
+                 (fset:includef label->node-table name node))))
     (labels ((instr->node (instr)
-               (let ((node (cl-ds:at instr->node-table instr)))
+               (let ((node (fset:@ instr->node-table instr)))
                  (unless node
                    (error "Undefined node of the instr: ~A" (asm:format-instr instr)))
                  node))
              (label->node (label)
-               (let ((node (cl-ds:at label->node-table label)))
+               (let ((node (fset:@ label->node-table label)))
                  (unless node
                    (error "Undefined node of the label: ~A" (temp:label-name label)))
                  node))
@@ -87,9 +79,9 @@
             do (serapeum:match-of asm:instr instr
                  ((asm:op-instr _ dsts srcs jumps)
                   (let ((node (instr->node instr)))
-                    (cl-ds:insert! defs-table node dsts)
-                    (cl-ds:insert! uses-table node srcs)
-                    (cl-ds:put! is-move-table node)
+                    (fset:includef defs-table node dsts)
+                    (fset:includef uses-table node srcs)
+                    (fset:includef is-move-table node nil)
                     (serapeum:match-of asm:maybe-jump jumps
                       ((asm:is-jump targets)
                        (cond ((null targets)
@@ -102,14 +94,14 @@
                        (add-fall-through-edge node rest-instrs)))))
                  ((asm:label-instr _ _)
                   (let ((node (instr->node instr)))
-                    (cl-ds:insert! defs-table node nil)
-                    (cl-ds:insert! uses-table node nil)
-                    (cl-ds:put! is-move-table node)
+                    (fset:includef defs-table node nil)
+                    (fset:includef uses-table node nil)
+                    (fset:includef is-move-table node nil)
                     (add-fall-through-edge node rest-instrs)))
                  ((asm:move-instr _ dst src)
                   (let ((node (instr->node instr)))
-                    (cl-ds:insert! defs-table node (list dst))
-                    (cl-ds:insert! uses-table node (list src))
-                    (cl-ds:put! is-move-table node)
+                    (fset:includef defs-table node (list dst))
+                    (fset:includef uses-table node (list src))
+                    (fset:includef is-move-table node t)
                     (add-fall-through-edge node rest-instrs)))))
       flow-graph)))
