@@ -4,9 +4,7 @@
    (:symbol :cl-tiger/symbol)
    (:utils :cl-tiger/utils)
    (:ast :cl-tiger/ast)
-   (:types :cl-tiger/types)
-   (:cl-ds :cl-data-structures)
-   (:hamt :cl-data-structures.dicts.hamt))
+   (:types :cl-tiger/types))
   (:export
    #:type-check-program))
 
@@ -56,18 +54,18 @@
    (result-type types:ty)))
 
 (defun get-type-check-entry (type-check-env sym)
-  (cl-ds:at type-check-env sym))
+  (fset:@ type-check-env sym))
 
 (defun insert-type-check-entry (type-check-env sym type-check-entry)
-  (cl-ds:insert type-check-env sym type-check-entry))
+  (fset:with type-check-env sym type-check-entry))
 
 (defvar *base-type-check-env*
-  (let ((env (hamt:make-functional-hamt-dictionary #'sxhash #'eq)))
+  (let ((env (fset:empty-map)))
     (reduce (lambda (env binding)
               (trivia:let-match1 (list name formal-types result-type) binding
-                (cl-ds:insert env
-                              (symbol:get-sym name)
-                              (type-check-fun-entry formal-types result-type))))
+                (fset:with env
+                           (symbol:get-sym name)
+                           (type-check-fun-entry formal-types result-type))))
             types:*built-in-function-bindings*
             :initial-value env)))
 
