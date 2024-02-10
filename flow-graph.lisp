@@ -11,6 +11,7 @@
    #:flow-graph-defs-table
    #:flow-graph-uses-table
    #:flow-graph-is-move-table
+   #:is-fake-node
    #:instrs->flow-graph))
 
 (cl:in-package :cl-tiger/flow-graph)
@@ -39,6 +40,8 @@
     :initform (fset:empty-map)
     :reader flow-graph-is-move-table)))
 
+(defun is-fake-node (flow-graph node)
+  (eq (flow-graph-fake-node flow-graph) node))
 
 (defun instrs->flow-graph (instrs)
   (let* ((flow-graph (make-instance 'flow-graph))
