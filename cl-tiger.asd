@@ -32,4 +32,5 @@
                (:file "x86-64-instr-select")
                (:file "graph")
                (:file "flow-graph")
+               (:file "liveness")
                (:file "cl-tiger")))

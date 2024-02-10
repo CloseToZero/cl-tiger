@@ -11,7 +11,8 @@
    (:normalize :cl-tiger/normalize)
    (:instr-select :cl-tiger/instr-select)
    (:graph :cl-tiger/graph)
-   (:flow-graph :cl-tiger/flow-graph))
+   (:flow-graph :cl-tiger/flow-graph)
+   (:liveness :cl-tiger/liveness))
   (:export
    #:compile-tiger-file))
 
@@ -54,4 +55,6 @@
                     (format t "~A~%" instr)))
                 (format t "~%flow graph:~%")
                 (let ((flow-graph (flow-graph:instrs->flow-graph instrs)))
-                  (graph:graph->graphviz (flow-graph:flow-graph-graph flow-graph) t))))))))))
+                  (graph:graph->graphviz (flow-graph:flow-graph-graph flow-graph) t)
+                  (format t "~%liveness:~%")
+                  (format t "~S~%" (liveness:liveness flow-graph)))))))))))
