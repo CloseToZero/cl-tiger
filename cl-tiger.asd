@@ -9,7 +9,6 @@
                "serapeum"
                "trivia"
                "esrap"
-               "cl-data-structures"
                "fset"
                "uiop"
                "trivial-utf-8")
