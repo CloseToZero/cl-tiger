@@ -50,9 +50,9 @@
                       (with-slots (fake-node) flow-graph
                         (setf fake-node node))
                       node))
-         (defs-table (flow-graph-defs-table flow-graph))
-         (uses-table (flow-graph-uses-table flow-graph))
-         (is-move-table (flow-graph-is-move-table flow-graph))
+         (defs-table (fset:empty-map))
+         (uses-table (fset:empty-map))
+         (is-move-table (fset:empty-map))
          (label->node-table (fset:empty-map))
          (instr->node-table (fset:empty-map)))
     ;; Create all nodes first.
@@ -107,4 +107,8 @@
                     (fset:includef uses-table node (list src))
                     (fset:includef is-move-table node t)
                     (add-fall-through-edge node rest-instrs)))))
+      (with-slots ((d defs-table) (u uses-table) (m is-move-table)) flow-graph
+        (setf d defs-table)
+        (setf u uses-table)
+        (setf m is-move-table))
       flow-graph)))
