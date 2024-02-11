@@ -130,11 +130,10 @@
       (ir:temp-expr d)
       right)
      (emit
-      (asm:op-instr
+      (asm:move-instr
        "mov 'd0, 's0"
-       (list d)
-       (list (select-instr-expr right frame target))
-       asm:not-jump)))
+       d
+       (select-instr-expr right frame target))))
     ((or
       (trivia:guard
        (ir:move-stm
