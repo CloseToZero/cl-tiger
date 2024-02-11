@@ -57,6 +57,10 @@
                 (format t "~%flow graph:~%")
                 (let ((flow-graph (flow-graph:instrs->flow-graph instrs)))
                   (graph:graph->graphviz (flow-graph:flow-graph-graph flow-graph) t)
+                  (format t "~%defs-table:~%~S~%" (flow-graph:flow-graph-defs-table flow-graph))
+                  (format t "~%uses-table:~%~S~%" (flow-graph:flow-graph-uses-table flow-graph))
+                  (format t "~%is-move-set:~%~S~%" (flow-graph:flow-graph-is-move-set flow-graph))
+
                   (format t "~%liveness:~%")
                   (trivia:let-match1 (list live-in-set live-out-set) (liveness:liveness flow-graph)
                     (format t "~%live-in-set:~%~S~%" live-in-set)
@@ -69,5 +73,5 @@
                               (interference:interference-graph-temp->node-table interference-graph))
                       (format t "~%node->temp:~%~S~%"
                               (interference:interference-graph-node->temp-table interference-graph))
-                      (format t "~%move-nodes:~%~S~%"
+                      (format t "~%moves:~%~S~%"
                               (interference:interference-graph-move-nodes interference-graph)))))))))))))
