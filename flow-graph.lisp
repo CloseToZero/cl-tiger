@@ -28,29 +28,22 @@
    (defs-table
     ;; A map from a node to a set of temp:temp
     :type fset:map
-    :initform (fset:empty-map)
     :reader flow-graph-defs-table)
    (uses-table
     ;; A map from a node to a set of temp:temp
     :type fset:map
-    :initform (fset:empty-map)
     :reader flow-graph-uses-table)
    (is-move-set
     ;; A set of move nodes
     :type fset:set
-    :initform (fset:empty-set)
     :reader flow-graph-is-move-set)))
 
 (defun is-fake-node (flow-graph node)
   (eq (flow-graph-fake-node flow-graph) node))
 
 (defun instrs->flow-graph (instrs)
-  (let* ((flow-graph (make-instance 'flow-graph))
-         (graph (flow-graph-graph flow-graph))
-         (fake-node (let ((node (graph:new-node graph "--fake--")))
-                      (with-slots (fake-node) flow-graph
-                        (setf fake-node node))
-                      node))
+  (let* ((graph (graph:graph))
+         (fake-node (graph:new-node graph "--fake--"))
          (defs-table (fset:empty-map))
          (uses-table (fset:empty-map))
          (is-move-set (fset:empty-set))
@@ -106,8 +99,16 @@
                     (fset:includef uses-table node (fset:with (fset:empty-set) src))
                     (fset:includef is-move-set node)
                     (add-fall-through-edge node rest-instrs)))))
-      (with-slots ((d defs-table) (u uses-table) (m is-move-set)) flow-graph
-        (setf d defs-table)
-        (setf u uses-table)
-        (setf m is-move-set))
-      flow-graph)))
+      (let ((flow-graph (make-instance 'flow-graph)))
+        (with-slots ((g graph)
+                     (f fake-node)
+                     (d defs-table)
+                     (u uses-table)
+                     (m is-move-set))
+            flow-graph
+          (setf g graph)
+          (setf f fake-node)
+          (setf d defs-table)
+          (setf u uses-table)
+          (setf m is-move-set))
+        flow-graph))))
