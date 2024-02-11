@@ -116,12 +116,17 @@
   (let ((visited (fset:empty-set)))
     (labels ((print-node (node)
                (fset:includef visited node)
-               (fset:do-set (succ (node-succs node))
-                 (format stream "  \"(~A, ~A)\" -> \"(~A, ~A)\"~%"
-                         (utils:str-without-newlines (node-name node)) (node-index node)
-                         (utils:str-without-newlines (node-name succ)) (node-index succ))
-                 (unless (fset:contains? visited succ)
-                   (print-node succ)))))
+               (cond ((and (fset:empty? (node-succs node))
+                           (fset:empty? (node-pres node)))
+                      (format stream "  \"(~A, ~A)\"~%"
+                              (utils:str-without-newlines (node-name node)) (node-index node)))
+                     (t
+                      (fset:do-set (succ (node-succs node))
+                        (format stream "  \"(~A, ~A)\" -> \"(~A, ~A)\"~%"
+                                (utils:str-without-newlines (node-name node)) (node-index node)
+                                (utils:str-without-newlines (node-name succ)) (node-index succ))
+                        (unless (fset:contains? visited succ)
+                          (print-node succ)))))))
       (format stream "digraph G {~%")
       (fset:do-set (node (graph-nodes graph))
         (unless (fset:contains? visited node)
