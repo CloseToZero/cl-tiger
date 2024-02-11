@@ -33,4 +33,5 @@
                (:file "graph")
                (:file "flow-graph")
                (:file "liveness")
+               (:file "interference")
                (:file "cl-tiger")))

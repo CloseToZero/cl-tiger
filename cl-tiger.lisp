@@ -12,7 +12,8 @@
    (:instr-select :cl-tiger/instr-select)
    (:graph :cl-tiger/graph)
    (:flow-graph :cl-tiger/flow-graph)
-   (:liveness :cl-tiger/liveness))
+   (:liveness :cl-tiger/liveness)
+   (:interference :cl-tiger/interference ))
   (:export
    #:compile-tiger-file))
 
@@ -57,4 +58,16 @@
                 (let ((flow-graph (flow-graph:instrs->flow-graph instrs)))
                   (graph:graph->graphviz (flow-graph:flow-graph-graph flow-graph) t)
                   (format t "~%liveness:~%")
-                  (format t "~S~%" (liveness:liveness flow-graph)))))))))))
+                  (trivia:let-match1 (list live-in-set live-out-set) (liveness:liveness flow-graph)
+                    (format t "~%live-in-set:~%~S~%" live-in-set)
+                    (format t "~%live-out-set:~%~S~%" live-out-set)
+                    (format t "~%interference-graph:~%")
+                    (let ((interference-graph (interference:interference-graph flow-graph live-out-set)))
+                      (format t "~%igraph:~%")
+                      (graph:graph->graphviz (interference:interference-graph-graph interference-graph))
+                      (format t "~%temp->node:~%~S~%"
+                              (interference:interference-graph-temp->node-table interference-graph))
+                      (format t "~%node->temp:~%~S~%"
+                              (interference:interference-graph-node->temp-table interference-graph))
+                      (format t "~%move-nodes:~%~S~%"
+                              (interference:interference-graph-move-nodes interference-graph)))))))))))))

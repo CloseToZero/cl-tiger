@@ -4,7 +4,8 @@
    #:get-line-map
    #:pos->line-info
    #:str-without-newlines
-   #:list->set))
+   #:list->set
+   #:set-singleton))
 
 (cl:in-package :cl-tiger/utils)
 
@@ -58,3 +59,9 @@ line-n without an newline."
             (fset:with set e))
           list
           :initial-value (fset:empty-set)))
+
+(defun set-singleton (set)
+  (unless (= (fset:size set) 1)
+    (error "The size of the set ~S is not 1." set))
+  (fset:do-set (e set)
+    (return e)))
