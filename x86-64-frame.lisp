@@ -142,26 +142,47 @@
 
 (defmethod frame:wrap-ir-entry-exit% (frame body-stm target
                                       (target-arch target:arch-x86-64) (target-os target:os-windows))
-  (ir:compound-stm
-   (apply
-    #'ir:stms->compound-stm
-    (loop for i from 0
-          for formal-access in (frame:frame-formals frame)
-          collect (cond ((< i (length *arg-regs*))
-                         (ir:move-stm
-                          (frame:access-expr formal-access (ir:temp-expr *fp*) target)
-                          (ir:temp-expr (nth i *arg-regs*))))
-                        (t
-                         (ir:move-stm
-                          (frame:access-expr formal-access (ir:temp-expr *fp*) target)
-                          (frame:access-expr
-                           (access-in-frame
-                            (+ (* i *word-size*)
-                               ;; 2 * *word-size* for saved static link and return address
-                               (* 2 *word-size*)))
-                           (ir:temp-expr *fp*)
-                           target))))))
-   body-stm))
+  (let ((saved-reg-temp-accesses
+          (mapcar (lambda (reg)
+                    (declare (ignore reg))
+                    (frame:alloc-local frame nil target))
+                  *callee-saves*)))
+    (ir:compound-stm
+     (apply
+      #'ir:stms->compound-stm
+      (loop for reg in *callee-saves*
+            for reg-temp-access in saved-reg-temp-accesses
+            collect (ir:move-stm
+                     (frame:access-expr reg-temp-access (ir:temp-expr *fp*) target)
+                     (ir:temp-expr reg))))
+     (ir:compound-stm
+      (apply
+       #'ir:stms->compound-stm
+       (loop for i from 0
+             for formal-access in (frame:frame-formals frame)
+             collect (cond ((< i (length *arg-regs*))
+                            (ir:move-stm
+                             (frame:access-expr formal-access (ir:temp-expr *fp*) target)
+                             (ir:temp-expr (nth i *arg-regs*))))
+                           (t
+                            (ir:move-stm
+                             (frame:access-expr formal-access (ir:temp-expr *fp*) target)
+                             (frame:access-expr
+                              (access-in-frame
+                               (+ (* i *word-size*)
+                                  ;; 2 * *word-size* for saved static link and return address
+                                  (* 2 *word-size*)))
+                              (ir:temp-expr *fp*)
+                              target))))))
+      (ir:compound-stm
+       body-stm
+       (apply
+        #'ir:stms->compound-stm
+        (loop for reg in *callee-saves*
+              for reg-temp-access in saved-reg-temp-accesses
+              collect (ir:move-stm
+                       (ir:temp-expr reg)
+                       (frame:access-expr reg-temp-access (ir:temp-expr *fp*) target)))))))))
 
 (defmethod frame:preserve-live-out% (frame body-instrs target
                                     (target-arch target:arch-x86-64) (target-os target:os-windows))
