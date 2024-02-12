@@ -77,7 +77,7 @@
 
 (defun alloc-formal (frame escape target)
   (if escape
-      (let* ((word-size (frame:word-size target))
+      (let* ((word-size *word-size*)
              (offset (frame-next-offset frame)))
         (decf (frame-next-offset frame) word-size)
         (incf (frame-size frame) word-size)
@@ -87,7 +87,7 @@
 
 (defun alloc-local (frame escape target)
   (if escape
-      (let* ((word-size (frame:word-size target))
+      (let* ((word-size *word-size*)
              (offset (frame-next-offset frame)))
         (decf (frame-next-offset frame) word-size)
         (incf (frame-size frame) word-size)
@@ -155,22 +155,22 @@
   (ir:compound-stm
    (apply
     #'ir:stms->compound-stm
-    (loop with word-size = (frame:word-size target)
+    (loop with word-size = *word-size*
           for i from 0
           for formal-access in (frame:frame-formals frame)
           collect (cond ((< i (length *arg-regs*))
                          (ir:move-stm
-                          (frame:access-expr formal-access (ir:temp-expr (frame:fp target)) target)
+                          (frame:access-expr formal-access (ir:temp-expr *fp*) target)
                           (ir:temp-expr (nth i *arg-regs*))))
                         (t
                          (ir:move-stm
-                          (frame:access-expr formal-access (ir:temp-expr (frame:fp target)) target)
+                          (frame:access-expr formal-access (ir:temp-expr *fp*) target)
                           (frame:access-expr
                            (access-in-frame
                             (+ (* i word-size)
                                ;; 2 * word-size for saved static link and return address
                                (* 2 word-size)))
-                           (ir:temp-expr (frame:fp target))
+                           (ir:temp-expr *fp*)
                            target))))))
    body-stm))
 
@@ -182,8 +182,7 @@
     (asm:op-instr
      ";; A fake instruction used to preserve live-out temporaries."
      nil
-     (append (list (frame:rv target) (temp:new-named-temp "rsp"))
-             (frame:callee-saves target))
+     (append (list *rv* (temp:new-named-temp "rsp")) *callee-saves*)
      (asm:is-jump nil)))))
 
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
@@ -199,7 +198,7 @@
     (format nil "add rsp, ~A" (frame-size frame))
     "pop rbp"
     (format nil "ret ~A" (* (length (frame:frame-formals frame))
-                            (frame:word-size target))))))
+                            *word-size*)))))
 
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
