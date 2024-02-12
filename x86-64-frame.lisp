@@ -68,20 +68,20 @@
   (make-instance 'access-in-reg :reg reg))
 
 (defun alloc-formal (frame escape target)
+  (declare (ignore target))
   (if escape
-      (let* ((word-size *word-size*)
-             (offset (frame-next-offset frame)))
-        (decf (frame-next-offset frame) word-size)
-        (incf (frame-size frame) word-size)
+      (let ((offset (frame-next-offset frame)))
+        (decf (frame-next-offset frame) *word-size*)
+        (incf (frame-size frame) *word-size*)
         (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
 
 (defun alloc-local (frame escape target)
+  (declare (ignore target))
   (if escape
-      (let* ((word-size *word-size*)
-             (offset (frame-next-offset frame)))
-        (decf (frame-next-offset frame) word-size)
-        (incf (frame-size frame) word-size)
+      (let ((offset (frame-next-offset frame)))
+        (decf (frame-next-offset frame) *word-size*)
+        (incf (frame-size frame) *word-size*)
         (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
 
@@ -145,8 +145,7 @@
   (ir:compound-stm
    (apply
     #'ir:stms->compound-stm
-    (loop with word-size = *word-size*
-          for i from 0
+    (loop for i from 0
           for formal-access in (frame:frame-formals frame)
           collect (cond ((< i (length *arg-regs*))
                          (ir:move-stm
@@ -157,9 +156,9 @@
                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
                           (frame:access-expr
                            (access-in-frame
-                            (+ (* i word-size)
-                               ;; 2 * word-size for saved static link and return address
-                               (* 2 word-size)))
+                            (+ (* i *word-size*)
+                               ;; 2 * *word-size* for saved static link and return address
+                               (* 2 *word-size*)))
                            (ir:temp-expr *fp*)
                            target))))))
    body-stm))
