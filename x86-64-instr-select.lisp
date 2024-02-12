@@ -527,8 +527,7 @@
         (asm:move-instr
          "mov 'd0, 's0"
          f (select-instr-expr fun frame target)))
-       (let ((caller-save-temps (select-instr-save-caller-saves target))
-             (arg-temps (select-instr-args args frame target))
+       (let ((arg-temps (select-instr-args args frame target))
              (r (temp:new-temp)))
          (emit
           (asm:op-instr
@@ -541,7 +540,6 @@
            "mov 'd0, 's0"
            r
            (frame:rv target)))
-         (select-instr-restore-caller-saves caller-save-temps target)
          ;; Pass back the rax directly is a bad idea,
          ;; in many places, we assume the value of the temp
          ;; return by select-instr-expr won't be overwritten,
@@ -550,23 +548,6 @@
     ((ir:stm-then-expr stm expr)
      (select-instr-stm stm frame target)
      (select-instr-expr expr frame target))))
-
-(defun select-instr-save-caller-saves (target)
-  (loop for reg in (frame:caller-saves target)
-        collect (let ((r (temp:new-temp)))
-                  (emit
-                   (asm:move-instr
-                    "mov 'd0, 's0"
-                    r reg))
-                  r)))
-
-(defun select-instr-restore-caller-saves (caller-save-temps target)
-  (loop for i from 0
-        for reg in (frame:caller-saves target)
-        do (emit
-            (asm:move-instr
-             "mov 'd0, 's0"
-             reg (nth i caller-save-temps)))))
 
 (defun select-instr-args (args frame target)
   ;; The first four arguments are passed in rcx, rdx, r8, r9,
