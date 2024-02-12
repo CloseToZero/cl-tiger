@@ -40,7 +40,7 @@
             (trivia:let-match1 (list blocks exit-label)
                 (normalize:split-into-basic-blocks (normalize:normalize body))
               (let ((instrs
-                      (frame:preserve-liveout
+                      (frame:preserve-live-out
                        frame
                        (mapcan (lambda (stm)
                                  (instr-select:select-instrs stm frame target))
