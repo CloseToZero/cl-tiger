@@ -40,15 +40,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass frame (frame:frame)
-    ((num-formal-allocated
-      :type fixnum
-      :initform 0
-      :accessor frame-num-formal-allocated)
-     (num-local-allocated
-      :type fixnum
-      :initform 0
-      :accessor frame-num-local-allocated)
-     (next-offset
+    ((next-offset
       :type fixnum
       :initform (- *word-size*)
       :accessor frame-next-offset)
@@ -81,7 +73,6 @@
              (offset (frame-next-offset frame)))
         (decf (frame-next-offset frame) word-size)
         (incf (frame-size frame) word-size)
-        (incf (frame-num-formal-allocated frame))
         (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
 
@@ -91,7 +82,6 @@
              (offset (frame-next-offset frame)))
         (decf (frame-next-offset frame) word-size)
         (incf (frame-size frame) word-size)
-        (incf (frame-num-local-allocated frame))
         (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
 
