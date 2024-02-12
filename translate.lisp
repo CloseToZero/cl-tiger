@@ -398,7 +398,7 @@
                         (ast:function-decl-body function-decl))
                      (let ((frame (inner-level-frame level)))
                        (alloc-fun
-                        (frame:view-shift-for-fun-body
+                        (frame:wrap-ir-entry-exit
                          frame
                          (ir:move-stm
                           (ir:temp-expr (frame:rv target))
@@ -745,7 +745,7 @@
                         prog)
       (let ((frame (inner-level-frame level)))
         (alloc-fun
-         (frame:view-shift-for-fun-body
+         (frame:wrap-ir-entry-exit
           frame
           (ir:move-stm
            (ir:temp-expr (frame:rv target))

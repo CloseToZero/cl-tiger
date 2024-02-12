@@ -150,8 +150,8 @@
    (ir:label-expr (temp:new-named-label name))
    args))
 
-(defmethod frame:view-shift-for-fun-body% (frame body-stm target
-                                           (target-arch target:arch-x86-64) (target-os target:os-windows))
+(defmethod frame:wrap-ir-entry-exit% (frame body-stm target
+                                      (target-arch target:arch-x86-64) (target-os target:os-windows))
   (ir:compound-stm
    (apply
     #'ir:stms->compound-stm

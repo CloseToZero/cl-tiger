@@ -19,7 +19,7 @@
    #:callee-saves
    #:access-expr
    #:external-call
-   #:view-shift-for-fun-body
+   #:wrap-ir-entry-exit
    #:wrap-entry-exit
    #:preserve-live-out
    #:frag-str->definition
@@ -43,7 +43,7 @@
    #:callee-saves%
    #:access-expr%
    #:external-call%
-   #:view-shift-for-fun-body%
+   #:wrap-ir-entry-exit%
    #:wrap-entry-exit%
    #:preserve-live-out%
    #:frag-str->definition%))
@@ -130,10 +130,10 @@
 (defgeneric external-call% (name args target target-arch target-os))
 
 ;; Returns an new body-stm
-(defun view-shift-for-fun-body (frame body-stm target)
-  (view-shift-for-fun-body% frame body-stm target (target:target-arch target) (target:target-os target)))
+(defun wrap-ir-entry-exit (frame body-stm target)
+  (wrap-ir-entry-exit% frame body-stm target (target:target-arch target) (target:target-os target)))
 
-(defgeneric view-shift-for-fun-body% (frame body-stm target target-arch target-os))
+(defgeneric wrap-ir-entry-exit% (frame body-stm target target-arch target-os))
 
 (serapeum:defunion frag
   (frag-str
