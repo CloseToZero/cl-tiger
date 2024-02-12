@@ -174,6 +174,18 @@
                            target))))))
    body-stm))
 
+(defmethod frame:preserve-live-out% (frame body-instrs target
+                                    (target-arch target:arch-x86-64) (target-os target:os-windows))
+  (append
+   body-instrs
+   (list
+    (asm:op-instr
+     ";; A fake instruction used to preserve live-out temporaries."
+     nil
+     (append (list (frame:rv target) (temp:new-named-temp "rsp"))
+             (frame:callee-saves target))
+     (asm:is-jump nil)))))
+
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
                                    (target-arch target:arch-x86-64) (target-os target:os-windows))
   (list
@@ -188,18 +200,6 @@
     "pop rbp"
     (format nil "ret ~A" (* (length (frame:frame-formals frame))
                             (frame:word-size target))))))
-
-(defmethod frame:preserve-live-out% (frame body-instrs target
-                                    (target-arch target:arch-x86-64) (target-os target:os-windows))
-  (append
-   body-instrs
-   (list
-    (asm:op-instr
-     ";; A fake instruction used to preserve live-out temporaries."
-     nil
-     (append (list (frame:rv target) (temp:new-named-temp "rsp"))
-             (frame:callee-saves target))
-     (asm:is-jump nil)))))
 
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))

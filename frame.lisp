@@ -143,17 +143,17 @@
    (body ir:stm)
    (frame frame)))
 
-;; Returns a list of the form ((prolog list-of-string) (body-instrs list-of-asm:instr) (epilog list-of-string))
-(defun wrap-entry-exit (frame body-instrs target)
-  (wrap-entry-exit% frame body-instrs target (target:target-arch target) (target:target-os target)))
-
-(defgeneric wrap-entry-exit% (frame body-instrs target target-arch target-os))
-
 ;; Returns a list of asm:instr
 (defun preserve-live-out (frame body-instrs target)
   (preserve-live-out% frame body-instrs target (target:target-arch target) (target:target-os target)))
 
 (defgeneric preserve-live-out% (frame body-instrs target target-arch target-os))
+
+;; Returns a list of the form ((prolog list-of-string) (body-instrs list-of-asm:instr) (epilog list-of-string))
+(defun wrap-entry-exit (frame body-instrs target)
+  (wrap-entry-exit% frame body-instrs target (target:target-arch target) (target:target-os target)))
+
+(defgeneric wrap-entry-exit% (frame body-instrs target target-arch target-os))
 
 ;; Returns the string's defintion (an ASM instruction)
 (defun frag-str->definition (frag-str string-literal-as-comment target)
