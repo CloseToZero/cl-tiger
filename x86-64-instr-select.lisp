@@ -342,20 +342,20 @@
         ;; We select instrs for right later, shorten the live range.
         (asm:move-instr
          "mov 'd0, 's0"
-         (temp:new-named-temp "rax")
+         (temp:named-temp "rax")
          (select-instr-expr left frame target)))
        (emit
         (asm:op-instr
          "idiv 's0"
-         (list (temp:new-named-temp "rax")
-               (temp:new-named-temp "rdx"))
+         (list (temp:named-temp "rax")
+               (temp:named-temp "rdx"))
          (list (select-instr-expr right frame target)
-               (temp:new-named-temp "rax"))
+               (temp:named-temp "rax"))
          asm:not-jump))
        (emit
         (asm:move-instr
          "mov 'd0, 's0"
-         r (temp:new-named-temp "rax")))
+         r (temp:named-temp "rax")))
        r))
     ((ir:bin-op-expr left
                      (trivia:<>
@@ -433,7 +433,7 @@
        (emit
         (asm:move-instr
          "mov 'd0, 's0"
-         (temp:new-named-temp "rcx")
+         (temp:named-temp "rcx")
          (select-instr-expr right frame target)))
        (emit
         (asm:op-instr
@@ -443,7 +443,7 @@
                    ((ir:rshift-bin-op) "shr")
                    ((ir:arshift-bin-op) "sar")))
          (list r)
-         (list (temp:new-named-temp "rcx") r)
+         (list (temp:named-temp "rcx") r)
          asm:not-jump))
        r))
     ((or

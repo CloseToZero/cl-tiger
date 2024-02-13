@@ -11,16 +11,16 @@
 (cl:in-package :cl-tiger/x86-64-frame)
 
 (defvar *word-size* 8)
-(defvar *fp* (temp:new-named-temp "rbp"))
-(defvar *rv* (temp:new-named-temp "rax"))
+(defvar *fp* (temp:named-temp "rbp"))
+(defvar *rv* (temp:named-temp "rax"))
 (defvar *arg-regs*
-  (mapcar #'temp:new-named-temp
+  (mapcar #'temp:named-temp
           (list "rcx"
                 "rdx"
                 "r8"
                 "r9")))
 (defvar *caller-saves*
-  (mapcar #'temp:new-named-temp
+  (mapcar #'temp:named-temp
           (list "rax"
                 "rcx"
                 "rdx"
@@ -29,7 +29,7 @@
                 "r10"
                 "r11")))
 (defvar *callee-saves*
-  (mapcar #'temp:new-named-temp
+  (mapcar #'temp:named-temp
           (list "rbx"
                 "rdi"
                 "rsi"
@@ -192,7 +192,7 @@
     (asm:op-instr
      ";; A fake instruction used to preserve live-out temporaries."
      nil
-     (append (list *rv* (temp:new-named-temp "rsp")) *callee-saves*)
+     (append (list *rv* (temp:named-temp "rsp")) *callee-saves*)
      (asm:is-jump nil)))))
 
 (defmethod frame:wrap-entry-exit% (frame body-instrs target

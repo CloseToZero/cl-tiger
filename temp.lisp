@@ -7,7 +7,7 @@
    #:temp-num
    #:temp-name
    #:new-temp
-   #:new-named-temp
+   #:named-temp
 
    #:label
    #:new-label
@@ -30,8 +30,14 @@
     (incf *temp-count*)
     (temp count (format nil "t~A~D" base-name count))))
 
-(defun new-named-temp (name)
-  (temp 0 name))
+(defvar *name->temp-table* (make-hash-table :test #'equal))
+
+(defun named-temp (name)
+  (or (gethash name *name->temp-table*)
+      (let ((count *temp-count*))
+        (incf *temp-count*)
+        (setf (gethash name *name->temp-table*)
+              (temp count name)))))
 
 (defmethod fset:compare ((x temp) (y temp))
   (let ((num-x (temp-num x))
