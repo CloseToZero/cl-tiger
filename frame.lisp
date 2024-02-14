@@ -17,6 +17,7 @@
    #:arg-regs
    #:caller-saves
    #:callee-saves
+   #:regs
    #:access-expr
    #:external-call
    #:wrap-ir-entry-exit
@@ -41,6 +42,7 @@
    #:arg-regs%
    #:caller-saves%
    #:callee-saves%
+   #:regs%
    #:access-expr%
    #:external-call%
    #:wrap-ir-entry-exit%
@@ -118,6 +120,11 @@
   (callee-saves% target (target:target-arch target) (target:target-os target)))
 
 (defgeneric callee-saves% (target target-arch target-os))
+
+(defun regs (target)
+  (regs% target (target:target-arch target) (target:target-os target)))
+
+(defgeneric regs% (target target-arch target-os))
 
 (defun access-expr (access fp-expr target)
   (access-expr% access fp-expr target (target:target-arch target) (target:target-os target)))
