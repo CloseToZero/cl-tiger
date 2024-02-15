@@ -11,7 +11,9 @@
                "esrap"
                "fset"
                "uiop"
-               "trivial-utf-8")
+               "trivial-utf-8"
+               "queues.simple-queue"
+               "queues.priority-queue")
   :serial t
   :components ((:file "straight-line")
                (:file "symbol")
@@ -33,5 +35,5 @@
                (:file "graph")
                (:file "flow-graph")
                (:file "liveness")
-               (:file "interference")
+               (:file "reg-alloc")
                (:file "cl-tiger")))
