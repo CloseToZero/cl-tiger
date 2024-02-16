@@ -512,7 +512,7 @@
      (let ((ty (types:actual-ty (types:get-type type-env type-id))))
        (trivia:let-match1 (types:record-ty _) ty
          (list ty
-               (let ((m (temp:new-temp "record-memeory")))
+               (let ((m (temp:new-temp "record_memeory")))
                  (tagged-expr
                   (ir:stm-then-expr
                    (apply #'ir:stms->compound-stm
@@ -581,9 +581,9 @@
             (types:upgrade-from-compatible-types then-ty else-ty)
             (types:get-unnamed-base-type (symbol:get-sym "unit")))
         (if else
-            (let ((true-target (temp:new-label "true-target"))
-                  (false-target (temp:new-label "false-target"))
-                  (join-target (temp:new-label "join-target"))
+            (let ((true-target (temp:new-label "true_target"))
+                  (false-target (temp:new-label "false_target"))
+                  (join-target (temp:new-label "join_target"))
                   (result-temp (temp:new-temp "result")))
               (tagged-expr
                (ir:stm-then-expr
@@ -601,8 +601,8 @@
                  (ir:label-stm join-target))
                 (ir:temp-expr result-temp))))
             (tagged-stm
-             (let ((true-target (temp:new-label "true-target"))
-                   (false-target (temp:new-label "false-target")))
+             (let ((true-target (temp:new-label "true_target"))
+                   (false-target (temp:new-label "false_target")))
                (ir:stms->compound-stm
                 (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
                               ir:neq-rel-op
@@ -613,13 +613,13 @@
                 (tagged-ir->stm then-tagged-ir)
                 (ir:label-stm false-target))))))))
     ((ast:while-expr test body _)
-     (let ((break-target (temp:new-label "break-target")))
+     (let ((break-target (temp:new-label "break_target")))
        (trivia:let-match (((list _ test-tagged-ir)
                            (translate-expr type-env ir-env level target break-target test))
                           ((list body-ty body-tagged-ir)
                            (translate-expr type-env ir-env level target break-target body)))
          (let ((test-target (temp:new-label "test"))
-               (body-target (temp:new-label "body-target")))
+               (body-target (temp:new-label "body_target")))
            (list body-ty
                  (tagged-stm
                   (ir:stms->compound-stm
@@ -634,7 +634,7 @@
                    (ir:jump-stm (ir:label-expr test-target) (list test-target))
                    (ir:label-stm break-target))))))))
     ((ast:for-expr var low high body _ escape-ref)
-     (let ((break-target (temp:new-label "break-target")))
+     (let ((break-target (temp:new-label "break_target")))
        (trivia:let-match (((list _ low-tagged-ir)
                            (translate-expr type-env ir-env level target break-target low))
                           ((list _ high-tagged-ir)
@@ -650,8 +650,8 @@
                  (translate-expr type-env new-ir-env level target break-target body)
                (let ((var-temp (temp:new-temp "var"))
                      (high-temp (temp:new-temp "high"))
-                     (pre-inc-test-temp (temp:new-temp "pre-inc-test"))
-                     (body-target (temp:new-label "body-target")))
+                     (pre-inc-test-temp (temp:new-temp "pre_inc_test"))
+                     (body-target (temp:new-label "body_target")))
                  (list body-ty
                        (tagged-stm
                         (ir:stms->compound-stm

@@ -138,7 +138,7 @@
     ((list* expr exprs)
      (serapeum:match-of ir:expr expr
        ((ir:call-expr _ _)
-        (let ((call-result-temp (temp:new-temp "call-result")))
+        (let ((call-result-temp (temp:new-temp "call_result")))
           (normalize-exprs
            (cons
             (ir:stm-then-expr
@@ -268,7 +268,7 @@
                                 (list (ir:cjump-stm left (ir:not-rel-op op) right false-target true-target))
                                 (schedule-block-by-trace block-table opt-true-block blocks)))
                         (_
-                         (let ((new-false-target (temp:new-label "false-target")))
+                         (let ((new-false-target (temp:new-label "false_target")))
                            (nconc front-stms
                                   (list (ir:cjump-stm left op right true-target new-false-target)
                                         (ir:label-stm new-false-target)

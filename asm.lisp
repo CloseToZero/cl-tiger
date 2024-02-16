@@ -83,7 +83,7 @@
         (setf result
               (format-core result "'d(\\d+)" dsts #'temp:temp-name "destination"))
         (setf result
-              (format-core result "'j(\\d+)" jumps #'temp:label-name "jump-target"))
+              (format-core result "'j(\\d+)" jumps #'temp:label-name "jump_target"))
         (cl-ppcre:regex-replace-all "''" result "'"))
       result)))
 

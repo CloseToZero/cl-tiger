@@ -462,7 +462,7 @@
                                 (new-dsts nil))
                             (dolist (src srcs)
                               (alexandria:if-let (access (gethash src spilled-temp->access-table))
-                                (let ((temp (temp:new-temp "spilled-fetch")))
+                                (let ((temp (temp:new-temp "spilled_fetch")))
                                   (push temp new-srcs)
                                   (push
                                    (ir:move-stm
@@ -475,7 +475,7 @@
                                 (push src new-srcs)))
                             (dolist (dst dsts)
                               (alexandria:if-let (access (gethash dst spilled-temp->access-table))
-                                (let ((temp (temp:new-temp "spilled-restore")))
+                                (let ((temp (temp:new-temp "spilled_restore")))
                                   (push temp new-dsts)
                                   (push
                                    (ir:move-stm
