@@ -441,7 +441,7 @@
                                       (not
                                        (fset:find-if
                                         (lambda (adj)
-                                          (eq (gethash adj allocation) reg))
+                                          (eq (gethash (actual-temp adj) allocation) reg))
                                         (gethash temp temp->adjs-table))))
                                     regs)))
                           (if reg
