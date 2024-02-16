@@ -640,59 +640,66 @@
                           ((list _ high-tagged-ir)
                            (translate-expr type-env ir-env level target break-target high)))
          (let ((int-ty (types:get-type types:*base-type-env* (symbol:get-sym "int"))))
-           (let ((new-ir-env
-                   (insert-ir-entry
-                    ir-env var
-                    (ir-var-entry
-                     int-ty
-                     (alloc-local level (ast:escape-ref-value escape-ref) target)))))
+           (let* ((var-access
+                    (alloc-local level (ast:escape-ref-value escape-ref) target))
+                  (new-ir-env
+                    (insert-ir-entry
+                     ir-env
+                     var
+                     (ir-var-entry
+                      int-ty
+                      var-access))))
              (trivia:let-match1 (list body-ty body-tagged-ir)
                  (translate-expr type-env new-ir-env level target break-target body)
-               (let ((var-temp (temp:new-temp "var"))
-                     (high-temp (temp:new-temp "high"))
+               (let ((high-temp (temp:new-temp "high"))
                      (pre-inc-test-temp (temp:new-temp "pre_inc_test"))
                      (body-target (temp:new-label "body_target")))
-                 (list body-ty
-                       (tagged-stm
-                        (ir:stms->compound-stm
-                         (ir:move-stm
-                          (ir:temp-expr var-temp)
-                          (tagged-ir->expr low-tagged-ir))
-                         (ir:move-stm
-                          (ir:temp-expr high-temp)
-                          (tagged-ir->expr high-tagged-ir))
-                         (ir:cjump-stm
-                          (ir:temp-expr var-temp)
-                          ir:le-rel-op
-                          (ir:temp-expr high-temp)
-                          body-target
-                          break-target)
-                         (ir:label-stm body-target)
-                         (tagged-ir->stm body-tagged-ir)
-                         (ir:move-stm
-                          (ir:temp-expr pre-inc-test-temp)
-                          (tagged-ir->expr
-                           (tagged-condi
-                            (lambda (true-target false-target)
-                              (ir:cjump-stm
-                               (ir:temp-expr var-temp)
-                               ir:lt-rel-op
-                               (ir:temp-expr high-temp)
-                               true-target
-                               false-target)))))
-                         (ir:move-stm
-                          (ir:temp-expr var-temp)
-                          (ir:bin-op-expr
-                           (ir:temp-expr var-temp)
-                           ir:plus-bin-op
-                           (ir:int-expr 1)))
-                         (ir:cjump-stm
-                          (ir:temp-expr pre-inc-test-temp)
-                          ir:neq-rel-op
-                          (ir:int-expr 0)
-                          body-target
-                          break-target)
-                         (ir:label-stm break-target)))))))))))
+                 (flet ((var-access-expr ()
+                          (frame:access-expr
+                           (access-frame-access var-access)
+                           (fp-expr level (access-level var-access) target)
+                           target)))
+                   (list body-ty
+                         (tagged-stm
+                          (ir:stms->compound-stm
+                           (ir:move-stm
+                            (var-access-expr)
+                            (tagged-ir->expr low-tagged-ir))
+                           (ir:move-stm
+                            (ir:temp-expr high-temp)
+                            (tagged-ir->expr high-tagged-ir))
+                           (ir:cjump-stm
+                            (var-access-expr)
+                            ir:le-rel-op
+                            (ir:temp-expr high-temp)
+                            body-target
+                            break-target)
+                           (ir:label-stm body-target)
+                           (tagged-ir->stm body-tagged-ir)
+                           (ir:move-stm
+                            (ir:temp-expr pre-inc-test-temp)
+                            (tagged-ir->expr
+                             (tagged-condi
+                              (lambda (true-target false-target)
+                                (ir:cjump-stm
+                                 (var-access-expr)
+                                 ir:lt-rel-op
+                                 (ir:temp-expr high-temp)
+                                 true-target
+                                 false-target)))))
+                           (ir:move-stm
+                            (var-access-expr)
+                            (ir:bin-op-expr
+                             (var-access-expr)
+                             ir:plus-bin-op
+                             (ir:int-expr 1)))
+                           (ir:cjump-stm
+                            (ir:temp-expr pre-inc-test-temp)
+                            ir:neq-rel-op
+                            (ir:int-expr 0)
+                            body-target
+                            break-target)
+                           (ir:label-stm break-target))))))))))))
     ((ast:break-expr _)
      (list (types:get-unnamed-base-type (symbol:get-sym "unit"))
            (tagged-stm
