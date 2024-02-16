@@ -481,7 +481,7 @@
                    (lambda (true-target false-target)
                      (ir:cjump-stm
                       (frame:external-call
-                       "stringCompare"
+                       "StringCompare"
                        (list (tagged-ir->expr left-tagged-ir)
                              (tagged-ir->expr right-tagged-ir))
                        target)
@@ -519,7 +519,7 @@
                           (ir:move-stm
                            (ir:temp-expr m)
                            (frame:external-call
-                            "allocRecord"
+                            "AllocRecord"
                             (list (ir:int-expr (* (length fields) (frame:word-size target))))
                             target))
                           (loop for field in fields
@@ -707,7 +707,7 @@
            (list ty
                  (tagged-expr
                   (frame:external-call
-                   "initArray"
+                   "AllocArray"
                    (list
                     (tagged-ir->expr size-tagged-ir)
                     (tagged-ir->expr init-tagged-ir))
@@ -735,7 +735,7 @@
 
 (defun translate-program (prog target)
   (let ((*frags* nil)
-        (level (new-level top-level (temp:new-named-label "_tiger_program") nil target)))
+        (level (new-level top-level (temp:new-named-label "tiger_main") nil target)))
     (trivia:let-match1 (list _ prog-tagged-ir)
         (translate-expr types:*base-type-env*
                         (base-ir-env target)
