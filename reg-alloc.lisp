@@ -406,11 +406,11 @@
                        (do-check dst)
                        (do-check src))))
                  (cond (reduce-temp
-                        (freeze-moves-of-temp reduce-temp nil))
+                        (freeze-moves-of-temp reduce-temp))
                        (spill-temp
-                        (freeze-moves-of-temp spill-temp nil)))))
+                        (freeze-moves-of-temp spill-temp)))))
 
-             (freeze-moves-of-temp (temp coalesced-temp?)
+             (freeze-moves-of-temp (temp)
                (fset:do-set (move (gethash temp temp->moves-table))
                  (when (fset:contains? move-wait-coalesce-again-set move)
                    (fset:excludef move-wait-coalesce-again-set move)
@@ -423,8 +423,7 @@
                      ;; add it to reduce-queue or spill-queue if so.
                      (try-reduce-or-spill temp-2))))
                (remhash temp temp->moves-table)
-               (unless coalesced-temp?
-                 (try-reduce-or-spill temp)))
+               (try-reduce-or-spill temp))
 
              (do-spill ()
                ;; Just spill one temp.
