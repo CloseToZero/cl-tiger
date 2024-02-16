@@ -13,12 +13,15 @@
 (defvar *word-size* 8)
 (defvar *fp* (temp:named-temp "rbp"))
 (defvar *rv* (temp:named-temp "rax"))
-(defvar *arg-regs*
-  (mapcar #'temp:named-temp
-          (list "rcx"
-                "rdx"
-                "r8"
-                "r9")))
+(progn
+  (defvar *arg-regs*
+    (mapcar #'temp:named-temp
+            (list "rcx"
+                  "rdx"
+                  "r8"
+                  "r9")))
+  (defvar *num-of-arg-regs*
+    (length *arg-regs*)))
 (defvar *caller-saves*
   (mapcar #'temp:named-temp
           (list "rax"
@@ -231,8 +234,11 @@
    (list
     (format nil "add rsp, ~A" (frame-size frame))
     "pop rbp"
-    (format nil "ret ~A" (* (length (frame:frame-formals frame))
-                            *word-size*)))))
+    (let ((num-of-formals (length (frame:frame-formals frame))))
+      (cond ((<= num-of-formals *num-of-arg-regs*)
+             "ret")
+            (t
+             (format nil "ret ~A" (* (- num-of-formals *num-of-arg-regs*) *word-size*))))))))
 
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
