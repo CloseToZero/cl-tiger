@@ -359,6 +359,12 @@
   (:function second)
   (:text t)
   (:lambda (result esrap:&bounds start)
+    (loop for i from 0
+          for ch across result
+          do (let ((code (char-code ch)))
+               (unless (<= 0 code 255)
+                 (error "Invalid ~Ath character ~A of string ~S, the value of this character is ~A, out of range [0, 255]."
+                        i ch result code))))
     (ast:string-expr result start)))
 
 (esrap:defrule one-or-more-expr-by-comma
