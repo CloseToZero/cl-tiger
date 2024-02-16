@@ -286,11 +286,20 @@
                                (fset:includef move-wait-coalesce-again-set move)))))
 
              (actual-temp (temp)
-               (loop with pre-temp = temp
+               (loop with pre-pre-temp = nil
+                     with pre-temp = temp
+                     for i from 1
                      for next-temp = (gethash pre-temp temp->alias-table)
                      while next-temp
-                     do (setf pre-temp next-temp)
-                     finally (return pre-temp)))
+                     do (setf pre-pre-temp pre-temp)
+                        (setf pre-temp next-temp)
+                     finally
+                        (progn
+                          ;; compress alias path.
+                          (when (and pre-pre-temp (>= i 3))
+                            (setf (gethash pre-pre-temp temp->alias-table)
+                                  pre-temp))
+                          (return pre-temp))))
 
              (can-be-coalesced? (temp-1 temp-2)
                (and (not (and (gethash temp-1 precolored-table)
