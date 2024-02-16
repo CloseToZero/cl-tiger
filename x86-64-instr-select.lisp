@@ -253,7 +253,7 @@
       (ir:int-expr c))
      (emit
       (asm:op-instr
-       (format nil "mov qword ptr ['s], ~A" c)
+       (format nil "mov qword ptr ['s0], ~A" c)
        nil
        (list s)
        asm:not-jump)))
