@@ -344,25 +344,28 @@
                                  (gethash from-temp temp->moves-table)))
                (fset:excludef (gethash into-temp temp->moves-table) old-move)
                (fset:do-set (adj (gethash from-temp temp->filtered-adjs-table))
-                 (unless (eq adj into-temp)
-                   (add-edge adj into-temp))
-                 (remove-edge adj from-temp)
-                 ;; If adj just transfer from high-degree to low-degree,
-                 ;; we should retry the coalescing of related moves,
-                 ;; or move it into the reduce queue.
-                 (when (and (not (eq adj into-temp)) (= (degrees adj) (- num-of-regs 1)))
-                   (cond ((move-related? adj)
-                          ;; Briggs testing care about the degree of a node itself,
-                          ;; so the related moves of adj should be retried.
-                          (retry-coalesce-moves-of-temp adj)
-                          ;; George testing care about the degree of adjacent nodes,
-                          ;; so the related moves of adjacent nodes of adj should be
-                          ;; retried (as adj is one of their adjacent nodes).
-                          (fset:do-set (adj-adj (gethash adj temp->filtered-adjs-table))
-                            (when (move-related? adj-adj)
-                              (retry-coalesce-moves-of-temp adj-adj))))
-                         (t
-                          (try-move-from-spill-to-reduce adj)))))
+                 (let ((old-adj-degrees (degrees adj)))
+                   (unless (eq adj into-temp)
+                     (add-edge adj into-temp))
+                   (remove-edge adj from-temp)
+                   ;; If adj just transfer from high-degree to low-degree,
+                   ;; we should retry the coalescing of related moves,
+                   ;; or move it into the reduce queue.
+                   (when (and (not (eq adj into-temp))
+                              (>= old-adj-degrees num-of-regs)
+                              (< (degrees adj) num-of-regs))
+                     (cond ((move-related? adj)
+                            ;; Briggs testing care about the degree of a node itself,
+                            ;; so the related moves of adj should be retried.
+                            (retry-coalesce-moves-of-temp adj)
+                            ;; George testing care about the degree of adjacent nodes,
+                            ;; so the related moves of adjacent nodes of adj should be
+                            ;; retried (as adj is one of their adjacent nodes).
+                            (fset:do-set (adj-adj (gethash adj temp->filtered-adjs-table))
+                              (when (move-related? adj-adj)
+                                (retry-coalesce-moves-of-temp adj-adj))))
+                           (t
+                            (try-move-from-spill-to-reduce adj))))))
                (remhash from-temp temp->filtered-adjs-table)
                (remhash from-temp temp->moves-table)
                ;; into-temp may no longer move-related,
