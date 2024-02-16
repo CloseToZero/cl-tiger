@@ -9,7 +9,6 @@
    (:ast :cl-tiger/ast)
    (:types :cl-tiger/types))
   (:export
-   #:find-and-fill-escapes
    #:translate-program))
 
 (cl:in-package :cl-tiger/translate)
@@ -330,9 +329,10 @@
                (list
                 (tagged-stm
                  (ir:move-stm
-                  (frame:access-expr (access-frame-access var-access)
-                                     (fp-expr level (access-level var-access) target)
-                                     target)
+                  (frame:access-expr
+                   (access-frame-access var-access)
+                   (fp-expr level (access-level var-access) target)
+                   target)
                   (tagged-ir->expr init-tagged-ir))))))))
     ((ast:type-decls type-decls)
      (let ((new-type-env
@@ -741,6 +741,7 @@
   (setf *frags* (cons (frame:frag-fun body frame) *frags*)))
 
 (defun translate-program (prog target)
+  (find-and-fill-escapes prog)
   (let ((*frags* nil)
         (level (new-level top-level (temp:new-named-label "tiger_main") nil target)))
     (trivia:let-match1 (list _ prog-tagged-ir)
