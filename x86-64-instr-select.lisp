@@ -272,7 +272,7 @@
       right)
      (emit
       (asm:op-instr
-       "mov qword ptr ['s1], 's0"
+       "mov qword ptr ['s0], 's1"
        nil
        (list (select-instr-expr mem frame target)
              (select-instr-expr right frame target))
