@@ -68,8 +68,13 @@
          (temp->moves-table (make-hash-table))
 
          ;; A map from a temp to its alias (which it has been coalesced into).
-         ;; Note: we won't remove the entries corresponding to coalesced nodes within
-         ;; `temp->alias-table', otherwise, the alias path/links may breaked.
+         ;; Note: we won't remove the entries of coalesced nodes within
+         ;; `temp->alias-table' for several reasons:
+         ;; 1. If we remove the entries of coalesced nodes, then whenever we coalesce a node,
+         ;;    we need to delete entries that alias to the coalesced node, which need full table
+         ;;    scanning if we don't maintain additional data structures.
+         ;; 2. When we assign colors/registers later, we also need to assign colors/registers
+         ;;    for coalesced nodes, keeping the entries of coalesced nodes makes it easy to do so.
          (temp->alias-table (make-hash-table))
 
          ;; A map from a temp to a boolean indicates whether the temp is precolored.
