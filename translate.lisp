@@ -424,7 +424,11 @@
     ((ast:nil-expr)
      (list
       (types:get-unnamed-base-type (symbol:get-sym "nil"))
-      (tagged-expr (ir:mem-expr (ir:int-expr 0)))))
+      ;; Should not product (tagged-expr (ir:mem-expr (ir:int-expr 0))),
+      ;; otherwise, instruction selection will product an asm
+      ;; instruction to load data from the zero address, cause memeory
+      ;; fault.
+      (tagged-expr (ir:int-expr 0))))
     ((ast:int-expr value)
      (list
       (types:get-type types:*base-type-env* (symbol:get-sym "int"))
