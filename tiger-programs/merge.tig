@@ -7,14 +7,22 @@ let
       var i := 0
       function isdigit(s : string) : int =
 		ord(buffer)>=ord("0") & ord(buffer)<=ord("9")
+      var neg := 0
     in
       while buffer=" " | buffer="\n" do
         buffer := getchar();
+
+      if buffer="-"
+      then (neg := 1;
+            buffer := getchar();
+            if isdigit(buffer)=0
+            then (print("expect digits following a minus sign"); exit(1)));
+
       any.any := isdigit(buffer);
       while isdigit(buffer) do
         (i := i*10+ord(buffer)-ord("0");
          buffer := getchar());
-      i
+      if neg then -i else i
     end
 
   type list = {first: int, rest: list}
@@ -52,5 +60,6 @@ let
 
   /* BODY OF MAIN PROGRAM */
 in
+  /* Note that merge assumes the two lists are already sorted in increasing order */
   printlist(merge(readlist(), readlist()))
 end
