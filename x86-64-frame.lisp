@@ -228,21 +228,26 @@
 
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
                                    (target-arch target:arch-x86-64) (target-os target:os-windows))
-  (list
-   (list
-    (format nil "~A:" (temp:label-name (frame:frame-name frame)))
-    "push rbp"
-    "mov rbp, rsp"
-    (format nil "sub rsp, ~A" (frame-size frame)))
-   body-instrs
-   (list
-    (format nil "add rsp, ~A" (frame-size frame))
-    "pop rbp"
-    (let ((num-of-formals (length (frame:frame-formals frame))))
-      (cond ((<= num-of-formals *num-of-arg-regs*)
-             "ret")
-            (t
-             (format nil "ret ~A" (* (- num-of-formals *num-of-arg-regs*) *word-size*))))))))
+  (let ((total-frame-size (+ (frame-size frame)
+                             ;; Additional 32 bytes for home space
+                             ;; required by x64 calling convention.
+                             ;; See https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
+                             (* *num-of-arg-regs* *word-size*))))
+    (list
+     (list
+      (format nil "~A:" (temp:label-name (frame:frame-name frame)))
+      "push rbp"
+      "mov rbp, rsp"
+      (format nil "sub rsp, ~A" total-frame-size))
+     body-instrs
+     (list
+      (format nil "add rsp, ~A" total-frame-size)
+      "pop rbp"
+      (let ((num-of-formals (length (frame:frame-formals frame))))
+        (cond ((<= num-of-formals *num-of-arg-regs*)
+               "ret")
+              (t
+               (format nil "ret ~A" (* (- num-of-formals *num-of-arg-regs*) *word-size*)))))))))
 
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
