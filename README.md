@@ -4,8 +4,8 @@ The Tiger programming language is from the book: *Modern Compiler Implementation
 
 # Support platforms
 
-Right now, only supports x86-64 architecture on Windows platform,
-in the future, we should also Linux and Mac platforms (only x86-64 architecture).
+Right now, we only support x86-64 architecture on Windows platform,
+in the future, we should also support Linux and Mac platforms (only x86-64 architecture).
 
 Things need to be fixed/done to support Linux and Mac platforms:
 
