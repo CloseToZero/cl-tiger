@@ -339,6 +339,13 @@
     ((ir:bin-op-expr left (ir:div-bin-op) right)
      (let ((r (temp:new-temp)))
        (emit
+        ;; Clear rdx.
+        (asm:op-instr
+         "mov 'd0, 0"
+         (list (temp:named-temp "rdx"))
+         nil
+         asm:not-jump))
+       (emit
         ;; We select instrs for right later, shorten the live range.
         (asm:move-instr
          "mov 'd0, 's0"
@@ -350,7 +357,8 @@
          (list (temp:named-temp "rax")
                (temp:named-temp "rdx"))
          (list (select-instr-expr right frame target)
-               (temp:named-temp "rax"))
+               (temp:named-temp "rax")
+               (temp:named-temp "rdx"))
          asm:not-jump))
        (emit
         (asm:move-instr
