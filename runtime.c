@@ -13,7 +13,7 @@ struct ChString
   char str[2];
 };
 
-static struct ChString ch_strings[sizeof(char)];
+static struct ChString ch_strings[CHAR_MAX - CHAR_MIN];
 
 static void CheckMemAlloc(void *ptr, const char *label) {
   if (!ptr) {
@@ -56,7 +56,7 @@ const char* TIGER_CALL tiger_getchar(void) {
   if (ch == EOF) {
     return "";
   } else {
-    return ch_strings[ch].str;
+    return ch_strings[ch - CHAR_MIN].str;
   }
 }
 
@@ -69,11 +69,11 @@ intmax_t TIGER_CALL tiger_ord(const char *s) {
 }
 
 const char* TIGER_CALL tiger_chr(intmax_t ch_value) {
-  if (ch_value < 0 || ch_value >= sizeof(char)) {
+  if (ch_value < CHAR_MIN || ch_value >= CHAR_MAX) {
     printf("chr: value %jd is out of range\n", ch_value);
     exit(1);
   }
-  return ch_strings[ch_value].str;
+  return ch_strings[ch_value - CHAR_MIN].str;
 }
 
 static intmax_t CheckStringLen(const char *s, const char *label) {
@@ -98,7 +98,7 @@ const char* TIGER_CALL tiger_substring(const char *s, intmax_t first, intmax_t n
     exit(1);
   }
   if (n == 1) {
-    return ch_strings[s[first]].str;
+    return ch_strings[s[first] - CHAR_MIN].str;
   }
   char *ss = (char *)malloc(sizeof(char) * (n + 1));
   CheckMemAlloc(ss, "substring");
@@ -142,11 +142,11 @@ void TIGER_CALL tiger_exit(intmax_t code) {
 }
 
 static void InitChStrings(void) {
-  for (size_t i = 0; i < sizeof(char); i++) {
+  for (char ch = CHAR_MIN; ch < CHAR_MAX; ch++) {
     struct ChString ch_string;
-    ch_string.str[0] = (char)i;
+    ch_string.str[0] = ch;
     ch_string.str[1] = '\0';
-    ch_strings[i] = ch_string;
+    ch_strings[ch - CHAR_MIN] = ch_string;
   }
 }
 
