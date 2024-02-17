@@ -36,4 +36,7 @@
                (:file "flow-graph")
                (:file "liveness")
                (:file "reg-alloc")
+               (:file "runtime")
+               (:file "build")
+               (:file "x86-64-build")
                (:file "cl-tiger")))

@@ -3,7 +3,6 @@
   (:local-nicknames
    (:utils :cl-tiger/utils)
    (:target :cl-tiger/target)
-   (:asm :cl-tiger/asm)
    (:frame :cl-tiger/frame)
    (:parse :cl-tiger/parse)
    (:type-check :cl-tiger/type-check)
@@ -13,13 +12,16 @@
    (:graph :cl-tiger/graph)
    (:flow-graph :cl-tiger/flow-graph)
    (:liveness :cl-tiger/liveness)
-   (:reg-alloc :cl-tiger/reg-alloc))
+   (:reg-alloc :cl-tiger/reg-alloc)
+   (:build :cl-tiger/build))
   (:export
-   #:compile-tiger-file))
+   #:compile-tiger))
 
 (cl:in-package :cl-tiger)
 
-(defun compile-tiger-file (file target &key (stream t) (string-literal-as-comment t))
+(defun compile-tiger (file dst-dir target
+                      &key
+                        (string-literal-as-comment t))
   (let* ((text (uiop:read-file-string file))
          (line-map (utils:get-line-map text))
          (ast (parse:parse-program text)))
@@ -32,26 +34,29 @@
                 else
                   collect frag into frag-funs
                 finally (return (list frag-strs frag-funs)))
-        (dolist (frag-str frag-strs)
-          (format stream "~A~%" (frame:frag-str->definition frag-str string-literal-as-comment target)))
-        (dolist (frag-fun frag-funs)
-          (format stream "~%")
-          (trivia:let-match1 (frame:frag-fun body frame) frag-fun
-            (trivia:let-match1 (list blocks exit-label)
-                (normalize:split-into-basic-blocks (normalize:normalize body))
-              (let ((instrs
-                      (frame:preserve-live-out
-                       frame
-                       (mapcan (lambda (stm)
-                                 (instr-select:select-instrs stm frame target))
-                               (normalize:trace-schedule blocks exit-label))
-                       target)))
-                (let ((instrs (reg-alloc:reg-alloc instrs frame target)))
-                  (trivia:let-match1 (list prolog instrs epilog)
-                      (frame:wrap-entry-exit frame instrs target)
-                    (dolist (instr prolog)
-                      (format t "~A~%" instr))
-                    (dolist (instr instrs)
-                      (format t "~A~%" (asm:format-instr instr)))
-                    (dolist (instr epilog)
-                      (format t "~A~%" instr))))))))))))
+        (let ((build-frag-strs nil)
+              (build-frag-funs nil))
+          (setf build-frag-strs
+                (loop for frag-str in frag-strs
+                      collect
+                      (build:frag-str
+                       (frame:frag-str->definition
+                        frag-str string-literal-as-comment target))))
+          (setf build-frag-funs
+                (loop for frag-fun in frag-funs
+                      collect
+                      (trivia:let-match1 (frame:frag-fun body frame) frag-fun
+                        (trivia:let-match1 (list blocks exit-label)
+                            (normalize:split-into-basic-blocks (normalize:normalize body))
+                          (let ((instrs
+                                  (frame:preserve-live-out
+                                   frame
+                                   (mapcan (lambda (stm)
+                                             (instr-select:select-instrs stm frame target))
+                                           (normalize:trace-schedule blocks exit-label))
+                                   target)))
+                            (let ((instrs (reg-alloc:reg-alloc instrs frame target)))
+                              (trivia:let-match1 (list prolog instrs epilog)
+                                  (frame:wrap-entry-exit frame instrs target)
+                                (build:frag-fun prolog instrs epilog))))))))
+          (build:build build-frag-strs build-frag-funs dst-dir target))))))

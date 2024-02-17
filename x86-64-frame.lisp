@@ -164,8 +164,12 @@
   (ir:call-expr
    (ir:label-expr
     (temp:new-named-label
-     (concatenate 'string "tiger_" name)))
+     (frame:external-call-label-name name target)))
    args))
+
+(defmethod frame:external-call-label-name% (name target
+                                            (target-arch target:arch-x86-64) (target-os target:os-windows))
+  (concatenate 'string "tiger_" name))
 
 (defmethod frame:wrap-ir-entry-exit% (frame body-stm target
                                       (target-arch target:arch-x86-64) (target-os target:os-windows))
