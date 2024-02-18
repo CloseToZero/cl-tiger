@@ -172,15 +172,20 @@
          (type-check-error
           (second typ) *line-map*
           "Undefined type: ~A." (symbol:sym-name (first typ)))))
-     (let ((init-ty (type-check-expr type-env type-check-env within-loop init)))
+     (let* ((init-ty (type-check-expr type-env type-check-env within-loop init))
+            (final-ty init-ty))
        (when typ
-         (unless (types:type-compatible init-ty (types:actual-ty (types:get-type type-env (first typ))))
-           (type-check-error
-            pos *line-map*
-            "The type of the init expression of the variable doesn't match the type ~A."
-            (symbol:sym-name (first typ)))))
+         (let ((decl-ty (types:actual-ty (types:get-type type-env (first typ)))))
+           (cond ((types:type-compatible init-ty decl-ty)
+                  (setf final-ty decl-ty))
+                 (t
+                  (type-check-error
+                   pos *line-map*
+                   "The type of the init expression of the variable doesn't match the type ~A."
+                   (symbol:sym-name (first typ)))))))
        (list type-env
-             (insert-type-check-entry type-check-env name (type-check-var-entry init-ty)))))
+             (insert-type-check-entry
+              type-check-env name (type-check-var-entry final-ty)))))
     ((ast:type-decls type-decls)
      (let ((name-exists-table (make-hash-table)))
        (mapc (lambda (type-decl)

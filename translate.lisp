@@ -283,9 +283,10 @@
      (trivia:let-match1 (ir-var-entry ty access) (get-ir-entry ir-env sym)
        (list
         (types:actual-ty ty)
-        (tagged-expr (frame:access-expr (access-frame-access access)
-                                        (fp-expr level (access-level access) target)
-                                        target)))))
+        (tagged-expr (frame:access-expr
+                      (access-frame-access access)
+                      (fp-expr level (access-level access) target)
+                      target)))))
     ((ast:field-var var sym _)
      (trivia:let-match1 (list (types:record-ty fields) var-tagged-ir)
          (translate-var type-env ir-env level target break-target var)
@@ -316,7 +317,7 @@
 
 (defun translate-decl (type-env ir-env level target break-target decl)
   (serapeum:match-of ast:decl decl
-    ((ast:var-decl name _ init _ escape-ref)
+    ((ast:var-decl name typ init _ escape-ref)
      (trivia:let-match1 (list init-ty init-tagged-ir)
          (translate-expr type-env ir-env level target break-target init)
        (let ((var-access (alloc-local level (ast:escape-ref-value escape-ref) target)))
@@ -324,7 +325,9 @@
                (insert-ir-entry
                 ir-env name
                 (ir-var-entry
-                 init-ty
+                 (if typ
+                     (types:actual-ty (types:get-type type-env (first typ)))
+                     init-ty)
                  var-access))
                (list
                 (tagged-stm
