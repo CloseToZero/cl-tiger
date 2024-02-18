@@ -1,61 +1,61 @@
 let
-  type any = {any : int}
+  type any = { any: int }
   var buffer := getchar()
 
   function readint(any: any) : int =
     let
       var i := 0
-      function isdigit(s : string) : int =
-		ord(buffer)>=ord("0") & ord(buffer)<=ord("9")
+      function isdigit(s: string) : int =
+		ord(buffer) >= ord("0") & ord(buffer) <= ord("9")
       var neg := 0
     in
-      while buffer=" " | buffer="\n" do
+      while buffer = " " | buffer = "\n" do
         buffer := getchar();
 
       if buffer="-"
       then (neg := 1;
             buffer := getchar();
-            if isdigit(buffer)=0
+            if isdigit(buffer) = 0
             then (print("expect digits following a minus sign"); exit(1)));
 
       any.any := isdigit(buffer);
       while isdigit(buffer) do
-        (i := i*10+ord(buffer)-ord("0");
+        (i := i * 10 + ord(buffer) - ord("0");
          buffer := getchar());
       if neg then -i else i
     end
 
-  type list = {first: int, rest: list}
+  type list = { first: int, rest: list }
 
   function readlist() : list =
     let
-      var any := any{any=0}
+      var any := any { any = 0 }
       var i := readint(any)
     in
       if any.any
-      then list{first=i,rest=readlist()}
+      then list { first = i, rest = readlist() }
       else (buffer := getchar(); nil)
     end
 
   function merge(a: list, b: list) : list =
-    if a=nil then b
-    else if b=nil then a
+    if a = nil then b
+    else if b = nil then a
     else if a.first < b.first
-         then list{first=a.first,rest=merge(a.rest,b)}
-         else list{first=b.first,rest=merge(a,b.rest)}
+         then list { first = a.first, rest = merge(a.rest, b) }
+         else list { first = b.first, rest = merge(a, b.rest) }
 
   function printint(i: int) =
     let
-      function f(i:int) =
-        if i>0 then (f(i/10); print(chr(i-i/10*10+ord("0"))))
+      function f(i: int) =
+        if i > 0 then (f(i / 10); print(chr(i - i / 10 * 10 + ord("0"))))
     in
-      if i<0 then (print("-"); f(-i))
-      else if i>0 then f(i)
+      if i < 0 then (print("-"); f(-i))
+      else if i > 0 then f(i)
       else print("0")
     end
 
   function printlist(l: list) =
-    if l=nil then print("\n")
+    if l = nil then print("\n")
     else (printint(l.first); print(" "); printlist(l.rest))
 
   /* BODY OF MAIN PROGRAM */

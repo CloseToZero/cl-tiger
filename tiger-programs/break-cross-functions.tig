@@ -5,11 +5,11 @@ let
   function printint(i: int) =
     while 1 do
       let
-          function f(i:int) =
-            if i>0 then (f(i/10); break; print(chr(i-i/10*10+ord("0"))))
+          function f(i: int) =
+            if i > 0 then (f(i / 10); break; print(chr(i - i / 10 * 10 + ord("0"))))
       in
-          if i<0 then (print("-"); f(-i))
-          else if i>0 then f(i)
+          if i < 0 then (print("-"); f(-i))
+          else if i > 0 then f(i)
           else print("0")
       end
 in
