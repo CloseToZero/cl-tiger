@@ -75,7 +75,7 @@
       :type fixnum
       :initarg :offset
       :reader access-in-frame-offset)))
-  
+
   (defclass access-in-reg (frame:access)
     ((reg
       :type temp:temp
@@ -228,26 +228,41 @@
 
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
                                    (target-arch target:arch-x86-64) (target-os target:os-windows))
-  (let ((total-frame-size (+ (frame-size frame)
-                             ;; Additional 32 bytes for home space
-                             ;; required by x64 calling convention.
-                             ;; See https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
-                             (* *num-of-arg-regs* *word-size*))))
+  (let* ((max-num-of-call-args (loop for instr in body-instrs
+                                     maximize (trivia:if-match (asm:call-instr _ _ _ num-of-args) instr
+                                                num-of-args
+                                                0)))
+         (total-frame-size (+ (frame-size frame)
+                              ;; Additional 32 bytes for home space
+                              ;; required by x64 calling convention,
+                              ;; see https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
+                              (* *num-of-arg-regs* *word-size*)
+                              ;; Preallocate space for arguments passing,
+                              ;; see x86-64-instr-select::select-instr-args for details.
+                              (if (<= max-num-of-call-args *num-of-arg-regs*)
+                                  0
+                                  (* (- max-num-of-call-args *num-of-arg-regs*)
+                                     *word-size*)))
+                           ;; The above calculation can be simplify to
+                           ;; (+ frame-size (* (max max-num-of-call-args *num-of-arg-regs*) word-size*)),
+                           ;; but I prefer clarity and readability.
+                           ))
     (list
      (list
       (format nil "~A:" (temp:label-name (frame:frame-name frame)))
       "push rbp"
       "mov rbp, rsp"
       (format nil "sub rsp, ~A" total-frame-size))
-     body-instrs
+     (mapcar
+      (lambda (instr)
+        (trivia:if-match (asm:stack-arg-instr _ _ _ reloc-fun) instr
+          (funcall reloc-fun instr total-frame-size)
+          instr))
+      body-instrs)
      (list
       (format nil "add rsp, ~A" total-frame-size)
       "pop rbp"
-      (let ((num-of-formals (length (frame:frame-formals frame))))
-        (cond ((<= num-of-formals *num-of-arg-regs*)
-               "ret")
-              (t
-               (format nil "ret ~A" (* (- num-of-formals *num-of-arg-regs*) *word-size*)))))))))
+      "ret"))))
 
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))

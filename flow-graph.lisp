@@ -88,6 +88,12 @@
                                   (graph:add-edge node target-node))))))
                       (asm:not-jump
                        (add-fall-through-edge node rest-instrs)))))
+                 ((or (asm:stack-arg-instr _ dsts srcs _)
+                      (asm:call-instr _ dsts srcs _))
+                  (let ((node (instr->node instr)))
+                    (fset:includef defs-table node (utils:list->set dsts))
+                    (fset:includef uses-table node (utils:list->set srcs))
+                    (add-fall-through-edge node rest-instrs)))
                  ((asm:label-instr _ _)
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (fset:empty-set))

@@ -538,11 +538,11 @@
        (let ((arg-temps (select-instr-args args frame target))
              (r (temp:new-temp)))
          (emit
-          (asm:op-instr
+          (asm:call-instr
            "call 's0"
            (frame:caller-saves target)
            (cons f arg-temps)
-           asm:not-jump))
+           (length args)))
          (emit
           (asm:move-instr
            "mov 'd0, 's0"
@@ -561,8 +561,13 @@
   ;; The first four arguments are passed in rcx, rdx, r8, r9,
   ;; remaining arguments get pushed on the stack in right to left,
   ;; see https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention for details.
+  ;; We will scan the whole function to find the maximum number of arguments M,
+  ;; and x86-64-frame will reserve (M - 4) * word-size bytes stack space for remaining arguments,
+  ;; So in here, we should use "mov [rbp + offset], arg-temp" to "push" a argument,
+  ;; rather than use "push arg-temp".
   (let* ((arg-regs (frame:arg-regs target))
          (arg-regs-len (length arg-regs))
+         (word-size (frame:word-size target))
          (args-len (length args))
          (arg-temps (loop for arg in args
                           collect (let ((r (temp:new-temp)))
@@ -585,12 +590,25 @@
                       (nth i arg-temps))))
                    (t
                     (emit
-                     (asm:op-instr
-                      "push 's0"
+                     (asm:stack-arg-instr
+                      ;; We don't know the final frame size yet,
+                      ;; cannot calculate the correct offset, so we
+                      ;; use a arbitrary number (0) as offset and
+                      ;; correct the instr later by reloc-fun.
+                      "mov qword ptr ['s0 + 0], 's1"
                       nil
                       (list
+                       (frame:fp target)
                        (let ((r (nth i arg-temps)))
                          (push r result)
                          r))
-                      asm:not-jump))))
+                      (let (
+                            ;; Avoid use the modified i.
+                            (i i))
+                        (lambda (instr frame-size)
+                          (trivia:let-match1 (asm:stack-arg-instr _ dsts srcs _) instr
+                            (asm:stack-arg-instr
+                             (format nil "mov qword ptr ['s0 + ~A], 's1"
+                                     (+ (- frame-size) (* i word-size)))
+                             dsts srcs nil))))))))
           finally (return result))))

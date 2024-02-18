@@ -49,12 +49,12 @@
                         (trivia:let-match1 (list blocks exit-label)
                             (normalize:split-into-basic-blocks (normalize:normalize body))
                           (let ((instrs
-                                  (frame:preserve-live-out
-                                   frame
-                                   (mapcan (lambda (stm)
-                                             (instr-select:select-instrs stm frame target))
-                                           (normalize:trace-schedule blocks exit-label))
-                                   target)))
+                                   (frame:preserve-live-out
+                                    frame
+                                    (mapcan (lambda (stm)
+                                              (instr-select:select-instrs stm frame target))
+                                            (normalize:trace-schedule blocks exit-label))
+                                    target)))
                             (let ((instrs (reg-alloc:reg-alloc instrs frame target)))
                               (trivia:let-match1 (list prolog instrs epilog)
                                   (frame:wrap-entry-exit frame instrs target)

@@ -19,6 +19,16 @@
    #:move-instr-template
    #:move-instr-dst
    #:move-instr-src
+   #:stack-arg-instr
+   #:stack-arg-instr-template
+   #:stack-arg-instr-dsts
+   #:stack-arg-instr-srcs
+   #:stack-arg-instr-reloc-fun
+   #:call-instr
+   #:call-instr-template
+   #:call-instr-dsts
+   #:call-instr-srcs
+   #:call-instr-num-of-args
 
    #:format-instr-with
    #:format-instr))
@@ -51,7 +61,19 @@
   (move-instr
    (template string)
    (dst temp:temp)
-   (src temp:temp)))
+   (src temp:temp))
+  (stack-arg-instr
+   (template string)
+   (dsts list)
+   (srcs list)
+   ;; Pass the instr itself and the final frame-size
+   ;; return a new instr (can also return the passed instr)
+   (reloc-fun (or null (function (instr fixnum) instr))))
+  (call-instr
+   (template string)
+   (dsts list)
+   (srcs list)
+   (num-of-args fixnum)))
 
 (defun format-instr-with (instr dsts srcs jumps)
   (labels ((check-index (template match list index name)
@@ -71,6 +93,10 @@
     (let* ((template? t)
            (result (serapeum:match-of instr instr
                      ((op-instr template _ _ _)
+                      template)
+                     ((call-instr template _ _ _)
+                      template)
+                     ((stack-arg-instr template _ _ _)
                       template)
                      ((label-instr str _)
                       (setf template? nil)
@@ -94,6 +120,10 @@
          (list dsts srcs (serapeum:match-of maybe-jump jumps
                            ((is-jump targets) targets)
                            (not-jump nil))))
+        ((call-instr _ dsts srcs _)
+         (list dsts srcs nil))
+        ((stack-arg-instr _ dsts srcs _)
+         (list dsts srcs nil))
         ((label-instr _ _)
          (list nil nil nil))
         ((move-instr _ dst src)

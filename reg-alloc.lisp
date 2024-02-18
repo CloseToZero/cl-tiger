@@ -519,6 +519,16 @@
                                        dsts srcs
                                        (lambda (new-dsts new-srcs)
                                          (asm:op-instr template new-dsts new-srcs jumps))))
+                                     ((asm:stack-arg-instr template dsts srcs reloc-fun)
+                                      (rewrite-instr
+                                       dsts srcs
+                                       (lambda (new-dsts new-srcs)
+                                         (asm:stack-arg-instr template new-dsts new-srcs reloc-fun))))
+                                     ((asm:call-instr template dsts srcs num-of-regs)
+                                      (rewrite-instr
+                                       dsts srcs
+                                       (lambda (new-dsts new-srcs)
+                                         (asm:call-instr template new-dsts new-srcs num-of-regs))))
                                      ((asm:move-instr template dst src)
                                       (rewrite-instr
                                        (list dst) (list src)
@@ -572,6 +582,16 @@
                                     (mapcar #'get-reg dsts)
                                     (mapcar #'get-reg srcs)
                                     jumps))
+                     ((asm:stack-arg-instr template dsts srcs reloc-fun)
+                      (asm:stack-arg-instr template
+                                           (mapcar #'get-reg dsts)
+                                           (mapcar #'get-reg srcs)
+                                           reloc-fun))
+                     ((asm:call-instr template dsts srcs num-of-regs)
+                      (asm:call-instr template
+                                      (mapcar #'get-reg dsts)
+                                      (mapcar #'get-reg srcs)
+                                      num-of-regs))
                      ((asm:move-instr template dst src)
                       (asm:move-instr template
                                       (get-reg dst)
