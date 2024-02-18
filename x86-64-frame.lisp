@@ -255,7 +255,10 @@
       (format nil "sub rsp, ~A" total-frame-size))
      (mapcar
       (lambda (instr)
-        (trivia:if-match (asm:stack-arg-instr _ _ _ reloc-fun) instr
+        (trivia:if-match (trivia:guard
+                          (asm:stack-arg-instr _ _ _ reloc-fun)
+                          (not (null reloc-fun)))
+            instr
           (funcall reloc-fun instr total-frame-size)
           instr))
       body-instrs)
