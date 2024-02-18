@@ -1,0 +1,6 @@
+let
+  type intr = { value: int }
+  var intr: intr := nil
+in
+  intr.value
+end

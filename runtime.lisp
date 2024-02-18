@@ -8,4 +8,5 @@
 (defvar *runtime-functions*
   (list "AllocRecord"
         "AllocArray"
-        "StringCompare"))
+        "StringCompare"
+        "CheckNilRecord"))

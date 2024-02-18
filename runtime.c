@@ -41,6 +41,13 @@ intmax_t tiger_StringCompare(const char *s1, const char *s2) {
   return (intmax_t)strcmp(s1, s2);
 }
 
+void tiger_CheckNilRecord(void *record) {
+  if (!record) {
+    printf("Reference a field of a nil record\n");
+    exit(1);
+  }
+}
+
 void tiger_print(const char *s) {
   printf("%s", s);
 }

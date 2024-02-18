@@ -296,11 +296,18 @@
                  when (eq field-sym sym)
                    return (list field-sym field-ty index))
          (list (types:actual-ty ty)
-               (tagged-expr (ir:mem-expr
-                             (ir:bin-op-expr
-                              (tagged-ir->expr var-tagged-ir)
-                              ir:plus-bin-op
-                              (ir:int-expr (* index (frame:word-size target))))))))))
+               (tagged-expr
+                (ir:stm-then-expr
+                 (ir:expr-stm
+                  (frame:external-call
+                   "CheckNilRecord"
+                   (list (tagged-ir->expr var-tagged-ir))
+                   target))
+                 (ir:mem-expr
+                  (ir:bin-op-expr
+                   (tagged-ir->expr var-tagged-ir)
+                   ir:plus-bin-op
+                   (ir:int-expr (* index (frame:word-size target)))))))))))
     ((ast:subscript-var var expr _)
      (trivia:let-match (((list (types:array-ty base-type) var-tagged-ir)
                          (translate-var type-env ir-env level target break-target var))
