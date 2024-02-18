@@ -314,13 +314,27 @@
                         ((list _ expr-tagged-ir)
                          (translate-expr type-env ir-env level target break-target expr)))
        (list (types:actual-ty base-type)
-             (tagged-expr (ir:mem-expr
-                           (ir:bin-op-expr
-                            (tagged-ir->expr var-tagged-ir)
-                            ir:plus-bin-op
-                            (ir:bin-op-expr (tagged-ir->expr expr-tagged-ir)
-                                            ir:times-bin-op
-                                            (ir:int-expr (frame:word-size target)))))))))))
+             (tagged-expr
+              (ir:stm-then-expr
+               (ir:expr-stm
+                (frame:external-call
+                 "CheckArraySubscript"
+                 (list
+                  (tagged-ir->expr var-tagged-ir)
+                  (tagged-ir->expr expr-tagged-ir))
+                 target))
+               (ir:mem-expr
+                (ir:bin-op-expr
+                 (tagged-ir->expr var-tagged-ir)
+                 ir:plus-bin-op
+                 (ir:bin-op-expr
+                  ;; Skip array head (storing array size).
+                  (ir:bin-op-expr
+                   (tagged-ir->expr expr-tagged-ir)
+                   ir:plus-bin-op
+                   (ir:int-expr 1))
+                  ir:times-bin-op
+                  (ir:int-expr (frame:word-size target))))))))))))
 
 (defun translate-decl (type-env ir-env level target break-target decl)
   (serapeum:match-of ast:decl decl

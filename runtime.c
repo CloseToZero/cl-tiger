@@ -29,10 +29,11 @@ void* tiger_AllocRecord(intmax_t size) {
 
 intmax_t* tiger_AllocArray(intmax_t num_of_elements, intmax_t init) {
   assert(num_of_elements >= 0);
-  intmax_t *ptr = (intmax_t *)malloc((size_t)num_of_elements * sizeof(intmax_t));
+  intmax_t *ptr = (intmax_t *)malloc(((size_t)num_of_elements + 1) * sizeof(intmax_t));
   CheckMemAlloc(ptr, "AllocArray");
+  *ptr = num_of_elements;
   for (intmax_t i = 0; i < num_of_elements; i++) {
-    ptr[i] = init;
+    ptr[i + 1] = init;
   }
   return ptr;
 }
@@ -44,6 +45,14 @@ intmax_t tiger_StringCompare(const char *s1, const char *s2) {
 void tiger_CheckNilRecord(void *record) {
   if (!record) {
     printf("Reference a field of a nil record\n");
+    exit(1);
+  }
+}
+
+void tiger_CheckArraySubscript(intmax_t *array_head, intmax_t index) {
+  intmax_t num_of_elements = *array_head;
+  if (index < 0 || index >= num_of_elements) {
+    printf("Index %jd out of range [0, %jd)\n", index, num_of_elements);
     exit(1);
   }
 }

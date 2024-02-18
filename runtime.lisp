@@ -9,4 +9,5 @@
   (list "AllocRecord"
         "AllocArray"
         "StringCompare"
-        "CheckNilRecord"))
+        "CheckNilRecord"
+        "CheckArraySubscript"))
