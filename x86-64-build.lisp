@@ -6,7 +6,7 @@
    (:types :cl-tiger/types)
    (:target :cl-tiger/target)
    (:frame :cl-tiger/frame)
-   (:asm :cl-tiger/asm)
+   (:instr :cl-tiger/instr)
    (:runtime :cl-tiger/runtime)
    (:build :cl-tiger/build)))
 
@@ -75,7 +75,7 @@ add_executable(~A
           (dolist (instr prolog)
             (format out "~A~%" instr))
           (dolist (instr body-instrs)
-            (format out "~A~%" (asm:format-instr instr)))
+            (format out "~A~%" (instr:format-instr instr)))
           (dolist (instr epilog)
             (format out "~A~%" instr)))
         (format out "~%"))

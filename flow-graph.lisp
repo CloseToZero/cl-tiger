@@ -3,7 +3,7 @@
   (:local-nicknames
    (:utils :cl-tiger/utils)
    (:temp :cl-tiger/temp)
-   (:asm :cl-tiger/asm)
+   (:instr :cl-tiger/instr)
    (:graph :cl-tiger/graph))
   (:export
    #:flow-graph
@@ -51,15 +51,15 @@
          (instr->node-table (fset:empty-map)))
     ;; Create all nodes first.
     (loop for instr in instrs
-          do (let* ((name (asm:format-instr instr))
+          do (let* ((name (instr:format-instr instr))
                     (node (graph:new-node graph name)))
                (fset:includef instr->node-table instr node)
-               (trivia:when-match (asm:label-instr _ name) instr
+               (trivia:when-match (instr:label-instr _ name) instr
                  (fset:includef label->node-table name node))))
     (labels ((instr->node (instr)
                (let ((node (fset:@ instr->node-table instr)))
                  (unless node
-                   (error "Undefined node of the instr: ~A" (asm:format-instr instr)))
+                   (error "Undefined node of the instr: ~A" (instr:format-instr instr)))
                  node))
              (label->node (label)
                (let ((node (fset:@ label->node-table label)))
@@ -73,33 +73,33 @@
                  (_
                   (graph:add-edge node fake-node)))))
       (loop for (instr . rest-instrs) on instrs
-            do (serapeum:match-of asm:instr instr
-                 ((asm:op-instr _ dsts srcs jumps)
+            do (serapeum:match-of instr:instr instr
+                 ((instr:op-instr _ dsts srcs jumps)
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (utils:list->set dsts))
                     (fset:includef uses-table node (utils:list->set srcs))
-                    (serapeum:match-of asm:maybe-jump jumps
-                      ((asm:is-jump targets)
+                    (serapeum:match-of instr:maybe-jump jumps
+                      ((instr:is-jump targets)
                        (cond ((null targets)
                               (graph:add-edge node fake-node))
                              (t
                               (dolist (target targets)
                                 (let ((target-node (label->node target)))
                                   (graph:add-edge node target-node))))))
-                      (asm:not-jump
+                      (instr:not-jump
                        (add-fall-through-edge node rest-instrs)))))
-                 ((or (asm:stack-arg-instr _ dsts srcs _)
-                      (asm:call-instr _ dsts srcs _))
+                 ((or (instr:stack-arg-instr _ dsts srcs _)
+                      (instr:call-instr _ dsts srcs _))
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (utils:list->set dsts))
                     (fset:includef uses-table node (utils:list->set srcs))
                     (add-fall-through-edge node rest-instrs)))
-                 ((asm:label-instr _ _)
+                 ((instr:label-instr _ _)
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (fset:empty-set))
                     (fset:includef uses-table node (fset:empty-set))
                     (add-fall-through-edge node rest-instrs)))
-                 ((asm:move-instr _ dst src)
+                 ((instr:move-instr _ dst src)
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (fset:with (fset:empty-set) dst))
                     (fset:includef uses-table node (fset:with (fset:empty-set) src))

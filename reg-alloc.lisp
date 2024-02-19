@@ -6,7 +6,7 @@
    (:temp :cl-tiger/temp)
    (:frame :cl-tiger/frame)
    (:ir :cl-tiger/ir)
-   (:asm :cl-tiger/asm)
+   (:instr :cl-tiger/instr)
    (:graph :cl-tiger/graph)
    (:flow-graph :cl-tiger/flow-graph)
    (:liveness :cl-tiger/liveness)
@@ -513,31 +513,31 @@
                                          opt-dst-restores-compound-stm frame target)))))))))
                    (setf instrs
                          (mapcan (lambda (instr)
-                                   (serapeum:match-of asm:instr instr
-                                     ((asm:op-instr template dsts srcs jumps)
+                                   (serapeum:match-of instr:instr instr
+                                     ((instr:op-instr template dsts srcs jumps)
                                       (rewrite-instr
                                        dsts srcs
                                        (lambda (new-dsts new-srcs)
-                                         (asm:op-instr template new-dsts new-srcs jumps))))
-                                     ((asm:stack-arg-instr template dsts srcs reloc-fun)
+                                         (instr:op-instr template new-dsts new-srcs jumps))))
+                                     ((instr:stack-arg-instr template dsts srcs reloc-fun)
                                       (rewrite-instr
                                        dsts srcs
                                        (lambda (new-dsts new-srcs)
-                                         (asm:stack-arg-instr template new-dsts new-srcs reloc-fun))))
-                                     ((asm:call-instr template dsts srcs num-of-regs)
+                                         (instr:stack-arg-instr template new-dsts new-srcs reloc-fun))))
+                                     ((instr:call-instr template dsts srcs num-of-regs)
                                       (rewrite-instr
                                        dsts srcs
                                        (lambda (new-dsts new-srcs)
-                                         (asm:call-instr template new-dsts new-srcs num-of-regs))))
-                                     ((asm:move-instr template dst src)
+                                         (instr:call-instr template new-dsts new-srcs num-of-regs))))
+                                     ((instr:move-instr template dst src)
                                       (rewrite-instr
                                        (list dst) (list src)
                                        (lambda (new-dsts new-srcs)
-                                         (asm:move-instr
+                                         (instr:move-instr
                                           template
                                           (first new-dsts)
                                           (first new-srcs)))))
-                                     ((asm:label-instr _ _)
+                                     ((instr:label-instr _ _)
                                       (list instr))))
                                  instrs))))))
       (build)
@@ -569,34 +569,34 @@
                (remove-if
                 (lambda (instr)
                   ;; remove self moves.
-                  (serapeum:match-of asm:instr instr
-                    ((asm:move-instr _ dst src)
+                  (serapeum:match-of instr:instr instr
+                    ((instr:move-instr _ dst src)
                      (eq dst src))
                     (_
                      nil)))
                 (mapcar
                  (lambda (instr)
-                   (serapeum:match-of asm:instr instr
-                     ((asm:op-instr template dsts srcs jumps)
-                      (asm:op-instr template
+                   (serapeum:match-of instr:instr instr
+                     ((instr:op-instr template dsts srcs jumps)
+                      (instr:op-instr template
                                     (mapcar #'get-reg dsts)
                                     (mapcar #'get-reg srcs)
                                     jumps))
-                     ((asm:stack-arg-instr template dsts srcs reloc-fun)
-                      (asm:stack-arg-instr template
+                     ((instr:stack-arg-instr template dsts srcs reloc-fun)
+                      (instr:stack-arg-instr template
                                            (mapcar #'get-reg dsts)
                                            (mapcar #'get-reg srcs)
                                            reloc-fun))
-                     ((asm:call-instr template dsts srcs num-of-regs)
-                      (asm:call-instr template
+                     ((instr:call-instr template dsts srcs num-of-regs)
+                      (instr:call-instr template
                                       (mapcar #'get-reg dsts)
                                       (mapcar #'get-reg srcs)
                                       num-of-regs))
-                     ((asm:move-instr template dst src)
-                      (asm:move-instr template
+                     ((instr:move-instr template dst src)
+                      (instr:move-instr template
                                       (get-reg dst)
                                       (get-reg src)))
-                     ((asm:label-instr _ _)
+                     ((instr:label-instr _ _)
                       instr)))
                  instrs))))))))
 

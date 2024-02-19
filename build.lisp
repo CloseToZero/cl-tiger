@@ -24,7 +24,7 @@
   (frag-fun
    ;; A list of strings
    (prolog list)
-   ;; A list of asm:instr
+   ;; A list of instr:instr
    (body-instrs list)
    ;; A list of strings
    (epilog list)))

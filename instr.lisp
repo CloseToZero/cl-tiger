@@ -1,4 +1,4 @@
-(cl:defpackage :cl-tiger/asm
+(cl:defpackage :cl-tiger/instr
   (:use :cl)
   (:local-nicknames
    (:temp :cl-tiger/temp))
@@ -33,7 +33,7 @@
    #:format-instr-with
    #:format-instr))
 
-(cl:in-package :cl-tiger/asm)
+(cl:in-package :cl-tiger/instr)
 
 ;; Template string:
 ;; 's0, 's1 ... refer to src0, src1 ...

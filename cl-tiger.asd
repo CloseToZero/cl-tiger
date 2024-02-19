@@ -21,7 +21,7 @@
                (:file "temp")
                (:file "target")
                (:file "ir")
-               (:file "asm")
+               (:file "instr")
                (:file "frame")
                (:file "x86-64-frame")
                (:file "ast")

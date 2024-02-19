@@ -6,7 +6,7 @@
    (:temp :cl-tiger/temp)
    (:ir :cl-tiger/ir)
    (:frame :cl-tiger/frame)
-   (:asm :cl-tiger/asm)))
+   (:instr :cl-tiger/instr)))
 
 (cl:in-package :cl-tiger/x86-64-frame)
 
@@ -220,16 +220,16 @@
   (append
    body-instrs
    (list
-    (asm:op-instr
+    (instr:op-instr
      ";; A fake instruction used to preserve live-out temporaries."
      nil
      (append (list *rv* (temp:named-temp "rsp")) *callee-saves*)
-     (asm:is-jump nil)))))
+     (instr:is-jump nil)))))
 
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
                                    (target-arch target:arch-x86-64) (target-os target:os-windows))
   (let* ((max-num-of-call-args (loop for instr in body-instrs
-                                     maximize (trivia:if-match (asm:call-instr _ _ _ num-of-args) instr
+                                     maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
          (total-frame-size (+ (frame-size frame)
@@ -256,7 +256,7 @@
      (mapcar
       (lambda (instr)
         (trivia:if-match (trivia:guard
-                          (asm:stack-arg-instr _ _ _ reloc-fun)
+                          (instr:stack-arg-instr _ _ _ reloc-fun)
                           (not (null reloc-fun)))
             instr
           (funcall reloc-fun instr total-frame-size)
