@@ -13,33 +13,6 @@
 (defvar *word-size* 8)
 (defvar *fp* (temp:named-temp "rbp"))
 (defvar *rv* (temp:named-temp "rax"))
-(progn
-  (defvar *arg-regs*
-    (mapcar #'temp:named-temp
-            (list "rcx"
-                  "rdx"
-                  "r8"
-                  "r9")))
-  (defvar *num-of-arg-regs*
-    (length *arg-regs*)))
-(defvar *caller-saves*
-  (mapcar #'temp:named-temp
-          (list "rax"
-                "rcx"
-                "rdx"
-                "r8"
-                "r9"
-                "r10"
-                "r11")))
-(defvar *callee-saves*
-  (mapcar #'temp:named-temp
-          (list "rbx"
-                "rdi"
-                "rsi"
-                "r12"
-                "r13"
-                "r14"
-                "r15")))
 (defvar *regs*
   (mapcar #'temp:named-temp
           (list "rax"
@@ -107,7 +80,7 @@
       (access-in-reg (temp:new-temp))))
 
 (defmethod frame:new-frame% (name formals target
-                             (target-arch target:arch-x86-64) (target-os target:os-windows))
+                             (target-arch target:arch-x86-64) target-os)
   (let ((frame (make-instance 'frame :name name :target target)))
     (setf (frame:frame-formals% frame)
           (mapcar (lambda (escape)
@@ -116,39 +89,91 @@
     frame))
 
 (defmethod frame:alloc-local% (frame escape target
-                               (target-arch target:arch-x86-64) (target-os target:os-windows))
+                               (target-arch target:arch-x86-64) target-os)
   (alloc-local frame escape target))
 
 (defmethod frame:word-size% (target
-                             (target-arch target:arch-x86-64) (target-os target:os-windows))
+                             (target-arch target:arch-x86-64) target-os)
   *word-size*)
 
 (defmethod frame:fp% (target
-                      (target-arch target:arch-x86-64) (target-os target:os-windows))
+                      (target-arch target:arch-x86-64) target-os)
   *fp*)
 
 (defmethod frame:rv% (target
-                      (target-arch target:arch-x86-64) (target-os target:os-windows))
+                      (target-arch target:arch-x86-64) target-os)
   *rv*)
 
 (defmethod frame:arg-regs% (target
                             (target-arch target:arch-x86-64) (target-os target:os-windows))
-  *arg-regs*)
+  (mapcar #'temp:named-temp
+          (list "rcx"
+                "rdx"
+                "r8"
+                "r9")))
+
+(defmethod frame:arg-regs% (target
+                            (target-arch target:arch-x86-64) target-os)
+  (mapcar #'temp:named-temp
+          (list "rdi"
+                "rsi"
+                "rdx"
+                "rcx"
+                "r8"
+                "r9")))
 
 (defmethod frame:caller-saves% (target
                                 (target-arch target:arch-x86-64) (target-os target:os-windows))
-  *caller-saves*)
+  (mapcar #'temp:named-temp
+          (list "rax"
+                "rcx"
+                "rdx"
+                "r8"
+                "r9"
+                "r10"
+                "r11")))
+
+(defmethod frame:caller-saves% (target
+                                (target-arch target:arch-x86-64) target-os)
+  (mapcar #'temp:named-temp
+          (list "rax"
+                "rcx"
+                "rdx"
+                "rdi"
+                "rsi"
+                "r8"
+                "r9"
+                "r10"
+                "r11")))
 
 (defmethod frame:callee-saves% (target
                                 (target-arch target:arch-x86-64) (target-os target:os-windows))
-  *callee-saves*)
+  (mapcar #'temp:named-temp
+          (list "rbx"
+                "rdi"
+                "rsi"
+                "r12"
+                "r13"
+                "r14"
+                "r15")))
+
+(defmethod frame:callee-saves% (target
+                                (target-arch target:arch-x86-64) target-os)
+  (mapcar #'temp:named-temp
+          (list "rbx"
+                ;; "rsp"
+                ;; "rbp"
+                "r12"
+                "r13"
+                "r14"
+                "r15")))
 
 (defmethod frame:regs% (target
-                        (target-arch target:arch-x86-64) (target-os target:os-windows))
+                        (target-arch target:arch-x86-64) target-os)
   *regs*)
 
 (defmethod frame:access-expr% (access fp-expr target
-                               (target-arch target:arch-x86-64) (target-os target:os-windows))
+                               (target-arch target:arch-x86-64) target-os)
   (trivia:ematch access
     ((access-in-frame offset)
      (ir:mem-expr
@@ -160,7 +185,7 @@
      (ir:temp-expr reg))))
 
 (defmethod frame:external-call% (name args target
-                                 (target-arch target:arch-x86-64) (target-os target:os-windows))
+                                 (target-arch target:arch-x86-64) target-os)
   (ir:call-expr
    (ir:label-expr
     (temp:new-named-label
@@ -168,20 +193,23 @@
    args))
 
 (defmethod frame:external-call-label-name% (name target
-                                            (target-arch target:arch-x86-64) (target-os target:os-windows))
+                                            (target-arch target:arch-x86-64) target-os)
   (concatenate 'string "tiger_" name))
 
 (defmethod frame:wrap-ir-entry-exit% (frame body-stm target
                                       (target-arch target:arch-x86-64) (target-os target:os-windows))
-  (let ((saved-reg-temp-accesses
-          (mapcar (lambda (reg)
-                    (declare (ignore reg))
-                    (frame:alloc-local frame nil target))
-                  *callee-saves*)))
+  (let* ((callee-saves (frame:callee-saves target))
+         (saved-reg-temp-accesses
+           (mapcar (lambda (reg)
+                     (declare (ignore reg))
+                     (frame:alloc-local frame nil target))
+                   callee-saves))
+         (arg-regs (frame:arg-regs target))
+         (arg-regs-len (length arg-regs)))
     (ir:compound-stm
      (apply
       #'ir:stms->compound-stm
-      (loop for reg in *callee-saves*
+      (loop for reg in callee-saves
             for reg-temp-access in saved-reg-temp-accesses
             collect (ir:move-stm
                      (frame:access-expr reg-temp-access (ir:temp-expr *fp*) target)
@@ -191,10 +219,10 @@
        #'ir:stms->compound-stm
        (loop for i from 0
              for formal-access in (frame:frame-formals frame)
-             collect (cond ((< i (length *arg-regs*))
+             collect (cond ((< i arg-regs-len)
                             (ir:move-stm
                              (frame:access-expr formal-access (ir:temp-expr *fp*) target)
-                             (ir:temp-expr (nth i *arg-regs*))))
+                             (ir:temp-expr (nth i arg-regs))))
                            (t
                             (ir:move-stm
                              (frame:access-expr formal-access (ir:temp-expr *fp*) target)
@@ -209,21 +237,21 @@
        body-stm
        (apply
         #'ir:stms->compound-stm
-        (loop for reg in *callee-saves*
+        (loop for reg in callee-saves
               for reg-temp-access in saved-reg-temp-accesses
               collect (ir:move-stm
                        (ir:temp-expr reg)
                        (frame:access-expr reg-temp-access (ir:temp-expr *fp*) target)))))))))
 
 (defmethod frame:preserve-live-out% (frame body-instrs target
-                                    (target-arch target:arch-x86-64) (target-os target:os-windows))
+                                     (target-arch target:arch-x86-64) target-os)
   (append
    body-instrs
    (list
     (instr:op-instr
      ";; A fake instruction used to preserve live-out temporaries."
      nil
-     (append (list *rv* (temp:named-temp "rsp")) *callee-saves*)
+     (append (list *rv* (temp:named-temp "rsp")) (frame:callee-saves target))
      (instr:is-jump nil)))))
 
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
@@ -232,19 +260,20 @@
                                      maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
+         (num-of-arg-regs (length (frame:arg-regs target)))
          (total-frame-size (+ (frame-size frame)
                               ;; Additional 32 bytes for home space
                               ;; required by x64 calling convention,
                               ;; see https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
-                              (* *num-of-arg-regs* *word-size*)
+                              (* num-of-arg-regs *word-size*)
                               ;; Preallocate space for arguments passing,
                               ;; see x86-64-instr-select::select-instr-args for details.
-                              (if (<= max-num-of-call-args *num-of-arg-regs*)
+                              (if (<= max-num-of-call-args num-of-arg-regs)
                                   0
-                                  (* (- max-num-of-call-args *num-of-arg-regs*)
+                                  (* (- max-num-of-call-args num-of-arg-regs)
                                      *word-size*)))
                            ;; The above calculation can be simplify to
-                           ;; (+ frame-size (* (max max-num-of-call-args *num-of-arg-regs*) word-size*)),
+                           ;; (+ frame-size (* (max max-num-of-call-args num-of-arg-regs) *word-size*)),
                            ;; but I prefer clarity and readability.
                            ))
     (list

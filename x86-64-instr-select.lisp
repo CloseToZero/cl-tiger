@@ -841,7 +841,12 @@
                              dsts srcs nil))))))))
           finally (return result))))
 
-(defmethod asm->string% (asm target (target-arch target:arch-x86-64) (target-ost target:os-windows))
+(defun asm->string (asm target)
+  (asm->string% asm target (target:target-arch target) (target:target-os target)))
+
+(defgeneric asm->string% (asm target target-arch target-os))
+
+(defmethod asm->string% (asm target (target-arch target:arch-x86-64) (target-os target:os-windows))
   (serapeum:match-of asm asm
     ((asm-bin-op op dst src)
      (format nil "~A ~A, ~A"
@@ -913,13 +918,7 @@
     (op-ja "ja")
     (op-jae "jae")))
 
-(defun asm->string (asm target)
-  (asm->string% asm target (target:target-arch target) (target:target-os target)))
-
-
-(defgeneric asm->string% (asm target target-arch target-ost))
-
-(defmethod asm->string% (asm target (target-arch target:arch-x86-64) (target-ost target:os-linux))
+(defmethod asm->string% (asm target (target-arch target:arch-x86-64) target-os)
   (serapeum:match-of asm asm
     ((asm-bin-op op dst src)
      (format nil "~A ~A, ~A"
