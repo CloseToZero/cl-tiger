@@ -55,6 +55,12 @@ add_executable(~A
                          :direction :output
                          :if-does-not-exist :create
                          :if-exists :supersede)
+
+      (format out ".data~%~%")
+      (dolist (frag-str frag-strs)
+        (format out "~A~%" (build:frag-str-def frag-str)))
+      (format out "~%")
+
       (format out ".code~%~%")
 
       (format out "public tiger_main~%")
@@ -62,10 +68,6 @@ add_executable(~A
         (format out "extern ~A :proc~%" (frame:external-call-label-name runtime-function target)))
       (dolist (binding types:*built-in-function-bindings*)
         (format out "extern ~A :proc~%" (frame:external-call-label-name (first binding) target)))
-      (format out "~%")
-
-      (dolist (frag-str frag-strs)
-        (format out "~A~%" (build:frag-str-def frag-str)))
       (format out "~%")
 
       (dolist (frag-fun frag-funs)
