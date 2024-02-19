@@ -6,6 +6,8 @@
 
    #:os
    #:os-windows
+   #:os-linux
+   #:os-mac
 
    #:target
    #:target-arch
@@ -17,7 +19,9 @@
   arch-x86-64)
 
 (serapeum:defunion os
-  os-windows)
+  os-windows
+  os-linux
+  os-mac)
 
 (serapeum:defconstructor target
   (arch arch)
