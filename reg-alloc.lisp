@@ -46,6 +46,9 @@
            first-result))))
 
 (defun reg-alloc (instrs frame target)
+  (reg-alloc% instrs (fset:empty-set) frame target))
+
+(defun reg-alloc% (instrs pre-generated-temps frame target)
   (let* ((regs (frame:regs target))
 
          (flow-graph (flow-graph:instrs->flow-graph instrs))
@@ -95,7 +98,10 @@
                        :compare
                        (lambda (temp-1 temp-2)
                          (flet ((temp->spill-cost (temp)
-                                  (if (gethash temp precolored-table)
+                                  (if (or (gethash temp precolored-table)
+                                          (fset:contains? pre-generated-temps temp))
+                                      ;; We also avoid spill those temps generated for spilled temps,
+                                      ;; since generated temps tend to have less defs and uses.
                                       most-positive-fixnum
                                       (with-slots (num-of-defs num-of-uses) (gethash temp temp->statistics-table)
                                         (/ (+ num-of-defs num-of-uses)
@@ -142,15 +148,22 @@
                             (exclude-temp (and is-move (utils:set-singleton (fset:@ uses-table fnode)))))
                        (when is-move
                          (let* ((dst (utils:set-singleton (fset:@ defs-table fnode)))
-                                (src exclude-temp)
-                                (move (let ((move (make-instance 'move :dst dst :src src)))
-                                        (or (fset:@ move->move-table move)
-                                            (progn
-                                              (queues:qpush coalesce-move-queue move)
-                                              (fset:includef move->move-table move move)
-                                              move)))))
-                           (fset:includef (gethash dst temp->moves-table empty-set) move)
-                           (fset:includef (gethash src temp->moves-table empty-set) move)))
+                                (src exclude-temp))
+                           ;; Avoid coalesce moves of those temps generated for spilled temps,
+                           ;; even we will give high spill costs for these generated temps
+                           ;; (see the :compare function of spill-queue in the above), but that's no enough,
+                           ;; we may still end up with one generated temp as the only spilled temp,
+                           ;; and cause algorithm looping.
+                           (when (or (fset:contains? pre-generated-temps dst)
+                                     (fset:contains? pre-generated-temps src))
+                             (let ((move (let ((move (make-instance 'move :dst dst :src src)))
+                                           (or (fset:@ move->move-table move)
+                                               (progn
+                                                 (queues:qpush coalesce-move-queue move)
+                                                 (fset:includef move->move-table move move)
+                                                 move)))))
+                               (fset:includef (gethash dst temp->moves-table empty-set) move)
+                               (fset:includef (gethash src temp->moves-table empty-set) move)))))
                        (flet ((temp->statistics (temp)
                                 (or (gethash temp temp->statistics-table)
                                     (setf (gethash temp temp->statistics-table)
@@ -452,7 +465,8 @@
                         temp->alias-table))
 
              (rewrite-instrs-for-spilled-temps ()
-               (let ((spilled-temp->access-table (make-hash-table)))
+               (let ((spilled-temp->access-table (make-hash-table))
+                     (generated-temps (fset:empty-set)))
                  (dolist (spilled-temp spilled-temps)
                    (setf (gethash spilled-temp spilled-temp->access-table)
                          (frame:alloc-local frame t target)))
@@ -465,6 +479,7 @@
                               (alexandria:if-let (access (gethash src spilled-temp->access-table))
                                 (let ((temp (temp:new-temp "spilled_fetch")))
                                   (push temp new-srcs)
+                                  (fset:includef generated-temps temp)
                                   (push
                                    (ir:move-stm
                                     (ir:temp-expr temp)
@@ -478,6 +493,7 @@
                               (alexandria:if-let (access (gethash dst spilled-temp->access-table))
                                 (let ((temp (temp:new-temp "spilled_restore")))
                                   (push temp new-dsts)
+                                  (fset:includef generated-temps temp)
                                   (push
                                    (ir:move-stm
                                     (frame:access-expr
@@ -526,7 +542,8 @@
                                           (first new-srcs)))))
                                      ((instr:label-instr _ _)
                                       (list instr))))
-                                 instrs))))))
+                                 instrs)))
+                 generated-temps)))
       (build)
       (init-queues)
       (loop until (and (zerop (queues:qsize reduce-queue))
@@ -545,8 +562,8 @@
                   (do-spill)))
       (assign-regs)
       (cond ((not (null spilled-temps))
-             (rewrite-instrs-for-spilled-temps)
-             (reg-alloc instrs frame target))
+             (let ((generated-temps (rewrite-instrs-for-spilled-temps)))
+               (reg-alloc% instrs (fset:union generated-temps pre-generated-temps) frame target)))
             (t
              (flet ((get-reg (temp)
                       (let ((reg (gethash temp allocation)))
