@@ -946,7 +946,7 @@
     ((mem-base-dreg base disp)
      (format nil "~A(%~A)" (temp:temp-name disp) (temp:temp-name base)))
     ((mem-base-disp base disp)
-     (format nil "(%~A, %~A)" (temp:temp-name base) disp))
+     (format nil "~A(%~A)" disp (temp:temp-name base)))
     ((mem-base-index-scale-disp base index scale disp)
      (format nil "~A(%~A, %~A, ~A)"
              disp (temp:temp-name base) (temp:temp-name index) scale))))
