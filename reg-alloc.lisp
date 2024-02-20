@@ -203,7 +203,7 @@
                       (remhash item spill-queue-obsoleted-table))
                      ((not (gethash item spill-queue-exists-table))
                       (queues:qpush spill-queue item)
-                      (setf (gethash item spill-queue-exists-table) nil))))
+                      (setf (gethash item spill-queue-exists-table) t))))
 
              (pop-spill-queue (&optional empty)
                (loop (cond ((zerop (queues:qsize spill-queue))
