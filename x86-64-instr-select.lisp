@@ -937,7 +937,8 @@
      (format nil "~A: "
              (temp:label-name name)))
     ((asm-get-label-addr dst target)
-     (format nil "movq ~A, ~A"
+     ;; Does this work on Linux?
+     (format nil "lea ~A(%rip), ~A"
              (temp:label-name target)
              (gas-arg->string dst)))))
 
