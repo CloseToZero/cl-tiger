@@ -132,16 +132,16 @@ add_executable(~A
 
       (format out ".data~%~%")
       (dolist (frag-str frag-strs)
-        (format out "~A~%" (build:frag-str-def frag-str)))
+        (format out "_~A~%" (build:frag-str-def frag-str)))
       (format out "~%")
 
       (format out ".text~%~%")
 
-      (format out ".global tiger_main~%")
+      (format out ".global _tiger_main~%")
       (dolist (runtime-function runtime:*runtime-functions*)
-        (format out ".global ~A~%" (frame:external-call-label-name runtime-function target)))
+        (format out ".global _~A~%" (frame:external-call-label-name runtime-function target)))
       (dolist (binding types:*built-in-function-bindings*)
-        (format out ".global ~A~%" (frame:external-call-label-name (first binding) target)))
+        (format out ".global _~A~%" (frame:external-call-label-name (first binding) target)))
       (format out "~%")
 
       (dolist (frag-fun frag-funs)

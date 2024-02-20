@@ -934,11 +934,11 @@
              (gas-op->string op)
              (gas-arg->string arg)))
     ((asm-label name)
-     (format nil "~A: "
+     (format nil "_~A: "
              (temp:label-name name)))
     ((asm-get-label-addr dst target)
      ;; Does this work on Linux?
-     (format nil "lea ~A(%rip), ~A"
+     (format nil "lea _~A(%rip), ~A"
              (temp:label-name target)
              (gas-arg->string dst)))))
 
@@ -963,7 +963,7 @@
     ((temp-arg value)
      (format nil "%~A" (temp:temp-name value)))
     ((label-arg value)
-     (format nil "~A" (temp:label-name value)))
+     (format nil "_~A" (temp:label-name value)))
     ((call-reg-arg value)
      (format nil "*%~A" (temp:temp-name value)))
     ((int-arg value)

@@ -366,7 +366,7 @@
                                        *word-size*))))))
     (list
      (list
-      (format nil "~A:" (temp:label-name (frame:frame-name frame)))
+      (format nil "_~A:" (temp:label-name (frame:frame-name frame)))
       "push %rbp"
       "movq %rsp, %rbp"
       (format nil "sub $~A, %rsp" total-frame-size))
