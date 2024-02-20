@@ -95,13 +95,12 @@
                        :compare
                        (lambda (temp-1 temp-2)
                          (flet ((temp->spill-cost (temp)
-                                  (let ((statistics (gethash temp temp->statistics-table)))
-                                    (with-slots (num-of-defs num-of-uses) statistics
-                                      (if (gethash temp precolored-table)
-                                          most-positive-fixnum
-                                          (/ (+ num-of-defs num-of-uses)
-                                             (max (fset:size (gethash temp temp->adjs-table))
-                                                  0.5)))))))
+                                  (if (gethash temp precolored-table)
+                                      most-positive-fixnum
+                                      (with-slots (num-of-defs num-of-uses) (gethash temp temp->statistics-table)
+                                        (/ (+ num-of-defs num-of-uses)
+                                           (max (fset:size (gethash temp temp->adjs-table))
+                                                0.5))))))
                            (< (temp->spill-cost temp-1)
                               (temp->spill-cost temp-2))))))
          ;; We use the following two tables to mark a item in spill-queue as obsoleted,
@@ -488,29 +487,17 @@
                                     (ir:temp-expr temp))
                                    dst-restore-stms))
                                 (push dst new-dsts)))
-                            (setf new-srcs (nreverse new-srcs))
-                            (setf new-dsts (nreverse new-dsts))
-                            (let ((opt-src-fetchs-compound-stm
-                                    (if (null src-fetch-stms)
-                                        nil
-                                        (apply #'ir:stms->compound-stm (nreverse src-fetch-stms))))
-                                  (opt-dst-restores-compound-stm
-                                    (if (null dst-restore-stms)
-                                        nil
-                                        (apply #'ir:stms->compound-stm (nreverse dst-restore-stms)))))
-                              (cond ((and (null new-srcs) (null new-dsts))
-                                     (list
-                                      (funcall rebuild-instr-fun dsts srcs)))
-                                    (t
-                                     (nconc
-                                      (when opt-src-fetchs-compound-stm
-                                        (instr-select:select-instrs
-                                         opt-src-fetchs-compound-stm frame target))
-                                      (list
-                                       (funcall rebuild-instr-fun new-dsts new-srcs))
-                                      (when opt-dst-restores-compound-stm
-                                        (instr-select:select-instrs
-                                         opt-dst-restores-compound-stm frame target)))))))))
+                            (nconc
+                             (when src-fetch-stms
+                               (instr-select:select-instrs
+                                (apply #'ir:stms->compound-stm (nreverse src-fetch-stms))
+                                frame target))
+                             (list
+                              (funcall rebuild-instr-fun (nreverse new-dsts) (nreverse new-srcs)))
+                             (when dst-restore-stms
+                               (instr-select:select-instrs
+                                (apply #'ir:stms->compound-stm (nreverse dst-restore-stms))
+                                frame target))))))
                    (setf instrs
                          (mapcan (lambda (instr)
                                    (serapeum:match-of instr:instr instr
@@ -579,23 +566,23 @@
                    (serapeum:match-of instr:instr instr
                      ((instr:op-instr template dsts srcs jumps)
                       (instr:op-instr template
-                                    (mapcar #'get-reg dsts)
-                                    (mapcar #'get-reg srcs)
-                                    jumps))
-                     ((instr:stack-arg-instr template dsts srcs reloc-fun)
-                      (instr:stack-arg-instr template
-                                           (mapcar #'get-reg dsts)
-                                           (mapcar #'get-reg srcs)
-                                           reloc-fun))
-                     ((instr:call-instr template dsts srcs num-of-regs)
-                      (instr:call-instr template
                                       (mapcar #'get-reg dsts)
                                       (mapcar #'get-reg srcs)
-                                      num-of-regs))
+                                      jumps))
+                     ((instr:stack-arg-instr template dsts srcs reloc-fun)
+                      (instr:stack-arg-instr template
+                                             (mapcar #'get-reg dsts)
+                                             (mapcar #'get-reg srcs)
+                                             reloc-fun))
+                     ((instr:call-instr template dsts srcs num-of-regs)
+                      (instr:call-instr template
+                                        (mapcar #'get-reg dsts)
+                                        (mapcar #'get-reg srcs)
+                                        num-of-regs))
                      ((instr:move-instr template dst src)
                       (instr:move-instr template
-                                      (get-reg dst)
-                                      (get-reg src)))
+                                        (get-reg dst)
+                                        (get-reg src)))
                      ((instr:label-instr _ _)
                       instr)))
                  instrs))))))))
