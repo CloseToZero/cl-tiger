@@ -161,8 +161,6 @@
                                 (target-arch target:arch-x86-64) target-os)
   (mapcar #'temp:named-temp
           (list "rbx"
-                ;; "rsp"
-                ;; "rbp"
                 "r12"
                 "r13"
                 "r14"
@@ -293,7 +291,7 @@
     (instr:op-instr
      ";; A fake instruction used to preserve live-out temporaries."
      nil
-     (append (list *rv* (temp:named-temp "rsp")) (frame:callee-saves target))
+     (append (list *rv* *fp* (temp:named-temp "rsp")) (frame:callee-saves target))
      (instr:is-jump nil)))))
 
 (defmethod frame:preserve-live-out% (frame body-instrs target
@@ -304,7 +302,7 @@
     (instr:op-instr
      "# A fake instruction used to preserve live-out temporaries."
      nil
-     (append (list *rv* (temp:named-temp "rsp")) (frame:callee-saves target))
+     (append (list *rv* *fp* (temp:named-temp "rsp")) (frame:callee-saves target))
      (instr:is-jump nil)))))
 
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
