@@ -197,15 +197,14 @@
   (concatenate 'string "tiger_" name))
 
 (defmethod frame:wrap-ir-entry-exit% (frame body-stm target
-                                      (target-arch target:arch-x86-64) (target-os target:os-windows))
+                                      (target-arch target:arch-x86-64) target-os)
   (let* ((callee-saves (frame:callee-saves target))
          (saved-reg-temp-accesses
            (mapcar (lambda (reg)
                      (declare (ignore reg))
                      (frame:alloc-local frame nil target))
                    callee-saves))
-         (arg-regs (frame:arg-regs target))
-         (arg-regs-len (length arg-regs)))
+         (arg-regs (frame:arg-regs target)))
     (ir:compound-stm
      (apply
       #'ir:stms->compound-stm
@@ -215,24 +214,12 @@
                      (frame:access-expr reg-temp-access (ir:temp-expr *fp*) target)
                      (ir:temp-expr reg))))
      (ir:compound-stm
-      (apply
-       #'ir:stms->compound-stm
-       (loop for i from 0
-             for formal-access in (frame:frame-formals frame)
-             collect (cond ((< i arg-regs-len)
-                            (ir:move-stm
-                             (frame:access-expr formal-access (ir:temp-expr *fp*) target)
-                             (ir:temp-expr (nth i arg-regs))))
-                           (t
-                            (ir:move-stm
-                             (frame:access-expr formal-access (ir:temp-expr *fp*) target)
-                             (frame:access-expr
-                              (access-in-frame
-                               (+ (* i *word-size*)
-                                  ;; 2 * *word-size* for saved static link and return address
-                                  (* 2 *word-size*)))
-                              (ir:temp-expr *fp*)
-                              target))))))
+      (move-args-into-formal-access-places-stm
+       (frame:frame-formals frame)
+       arg-regs
+       target
+       (target:target-arch target)
+       (target:target-os target))
       (ir:compound-stm
        body-stm
        (apply
@@ -242,6 +229,60 @@
               collect (ir:move-stm
                        (ir:temp-expr reg)
                        (frame:access-expr reg-temp-access (ir:temp-expr *fp*) target)))))))))
+
+(defgeneric move-args-into-formal-access-places-stm (frame-formals arg-regs target target-arch target-os))
+
+(defmethod move-args-into-formal-access-places-stm
+    (frame-formals arg-regs
+     target
+     (target-arch target:arch-x86-64)
+     (target-os target:os-windows))
+  (let ((arg-regs-len (length arg-regs)))
+    (apply
+     #'ir:stms->compound-stm
+     (loop for i from 0
+           for formal-access in frame-formals
+           collect (cond ((< i arg-regs-len)
+                          (ir:move-stm
+                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
+                           (ir:temp-expr (nth i arg-regs))))
+                         (t
+                          (ir:move-stm
+                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
+                           (frame:access-expr
+                            (access-in-frame
+                             (+ (* i *word-size*)
+                                ;; 2 * *word-size* for saved static link and return address
+                                (* 2 *word-size*)))
+                            (ir:temp-expr *fp*)
+                            target))))))))
+
+(defmethod move-args-into-formal-access-places-stm
+    (frame-formals arg-regs
+     target
+     (target-arch target:arch-x86-64)
+     target-os)
+  (let ((arg-regs-len (length arg-regs)))
+    (apply
+     #'ir:stms->compound-stm
+     (loop for i from 0
+           for formal-access in frame-formals
+           collect (cond ((< i arg-regs-len)
+                          (ir:move-stm
+                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
+                           (ir:temp-expr (nth i arg-regs))))
+                         (t
+                          (ir:move-stm
+                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
+                           (frame:access-expr
+                            (access-in-frame
+                             ;; System V AMD64 ABI doesn't need home space,
+                             ;; so we use (- i arg-regs-len) here.
+                             (+ (* (- i arg-regs-len) *word-size*)
+                                ;; 2 * *word-size* for saved static link and return address
+                                (* 2 *word-size*)))
+                            (ir:temp-expr *fp*)
+                            target))))))))
 
 (defmethod frame:preserve-live-out% (frame body-instrs target
                                      (target-arch target:arch-x86-64) target-os)
@@ -255,27 +296,14 @@
      (instr:is-jump nil)))))
 
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
-                                   (target-arch target:arch-x86-64) (target-os target:os-windows))
+                                   (target-arch target:arch-x86-64) target-os)
   (let* ((max-num-of-call-args (loop for instr in body-instrs
                                      maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
-         (num-of-arg-regs (length (frame:arg-regs target)))
-         (total-frame-size (+ (frame-size frame)
-                              ;; Additional 32 bytes for home space
-                              ;; required by x64 calling convention,
-                              ;; see https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
-                              (* num-of-arg-regs *word-size*)
-                              ;; Preallocate space for arguments passing,
-                              ;; see x86-64-instr-select::select-instr-args for details.
-                              (if (<= max-num-of-call-args num-of-arg-regs)
-                                  0
-                                  (* (- max-num-of-call-args num-of-arg-regs)
-                                     *word-size*)))
-                           ;; The above calculation can be simplify to
-                           ;; (+ frame-size (* (max max-num-of-call-args num-of-arg-regs) *word-size*)),
-                           ;; but I prefer clarity and readability.
-                           ))
+         (total-frame-size (total-frame-size
+                            frame max-num-of-call-args target
+                            (target:target-arch target) (target:target-os target))))
     (list
      (list
       (format nil "~A:" (temp:label-name (frame:frame-name frame)))
@@ -296,6 +324,38 @@
       "pop rbp"
       "ret"))))
 
+(defgeneric total-frame-size (frame max-num-of-call-args target target-arch target-os))
+
+(defmethod total-frame-size (frame max-num-of-call-args
+                             target (target-arch target:arch-x86-64) (target-os target:os-windows))
+  (let ((num-of-arg-regs (length (frame:arg-regs target))))
+    (+ (frame-size frame)
+       ;; Additional 32 bytes for home space
+       ;; required by x64 calling convention,
+       ;; see https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
+       (* num-of-arg-regs *word-size*)
+       ;; Preallocate space for arguments passing,
+       ;; see x86-64-instr-select::select-instr-args for details.
+       (if (<= max-num-of-call-args num-of-arg-regs)
+           0
+           (* (- max-num-of-call-args num-of-arg-regs)
+              *word-size*)))
+    ;; The above calculation can be simplify to
+    ;; (+ frame-size (* (max max-num-of-call-args num-of-arg-regs) *word-size*)),
+    ;; but I prefer clarity and readability.
+    ))
+
+(defmethod total-frame-size (frame max-num-of-call-args
+                             target (target-arch target:arch-x86-64) target-os)
+  (let ((num-of-arg-regs (length (frame:arg-regs target))))
+    (+ (frame-size frame)
+       ;; Preallocate space for arguments passing,
+       ;; see x86-64-instr-select::select-instr-args for details.
+       (if (<= max-num-of-call-args num-of-arg-regs)
+           0
+           (* (- max-num-of-call-args num-of-arg-regs)
+              *word-size*)))))
+
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
   (trivia:let-match1 (frame:frag-str label str) frag-str
@@ -310,3 +370,18 @@
                  (format out "~A" byte)))
       (when string-literal-as-comment
         (format out " ; ~S" (utils:str-without-newlines str))))))
+
+(defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
+                                        (target-arch target:arch-x86-64) target-os)
+  (trivia:let-match1 (frame:frag-str label str) frag-str
+    (with-output-to-string (out)
+      (format out "~A:~%.byte " (temp:label-name label))
+      (let ((bytes (trivial-utf-8:string-to-utf-8-bytes str :null-terminate t)))
+        (loop with first? = t
+              for byte across bytes
+              do (if first?
+                     (setf first? nil)
+                     (format out ", "))
+                 (format out "~A" byte)))
+      (when string-literal-as-comment
+        (format out " # ~S" (utils:str-without-newlines str))))))
