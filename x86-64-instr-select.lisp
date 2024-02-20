@@ -38,6 +38,8 @@
    (value temp:temp))
   (label-arg
    (value temp:label))
+  (call-reg-arg
+   (value temp:temp))
   (int-arg
    (value fixnum)))
 
@@ -760,7 +762,7 @@
          (emit
           (instr:call-instr
            (asm->string
-            (asm-unary-op op-call *s0-arg*)
+            (asm-unary-op op-call (call-reg-arg *s0*))
             target)
            (frame:caller-saves target)
            (cons f arg-temps)
@@ -887,6 +889,8 @@
      (format nil "~A" (temp:temp-name value)))
     ((label-arg value)
      (format nil "~A" (temp:label-name value)))
+    ((call-reg-arg value)
+     (format nil "~A" (temp:temp-name value)))
     ((int-arg value)
      (format nil "~A" value))))
 
@@ -959,6 +963,8 @@
      (format nil "%~A" (temp:temp-name value)))
     ((label-arg value)
      (format nil "~A" (temp:label-name value)))
+    ((call-reg-arg value)
+     (format nil "*%~A" (temp:temp-name value)))
     ((int-arg value)
      (format nil "$~A" value))))
 
