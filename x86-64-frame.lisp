@@ -285,7 +285,8 @@
                             target))))))))
 
 (defmethod frame:preserve-live-out% (frame body-instrs target
-                                     (target-arch target:arch-x86-64) target-os)
+                                     (target-arch target:arch-x86-64)
+                                     (target-os target:os-windows))
   (append
    body-instrs
    (list
@@ -295,15 +296,40 @@
      (append (list *rv* (temp:named-temp "rsp")) (frame:callee-saves target))
      (instr:is-jump nil)))))
 
+(defmethod frame:preserve-live-out% (frame body-instrs target
+                                     (target-arch target:arch-x86-64) target-os)
+  (append
+   body-instrs
+   (list
+    (instr:op-instr
+     "# A fake instruction used to preserve live-out temporaries."
+     nil
+     (append (list *rv* (temp:named-temp "rsp")) (frame:callee-saves target))
+     (instr:is-jump nil)))))
+
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
-                                   (target-arch target:arch-x86-64) target-os)
+                                   (target-arch target:arch-x86-64)
+                                   (target-os target:os-windows))
   (let* ((max-num-of-call-args (loop for instr in body-instrs
                                      maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
-         (total-frame-size (total-frame-size
-                            frame max-num-of-call-args target
-                            (target:target-arch target) (target:target-os target))))
+         (total-frame-size (let ((num-of-arg-regs (length (frame:arg-regs target))))
+                             (+ (frame-size frame)
+                                ;; Additional 32 bytes for home space
+                                ;; required by x64 calling convention,
+                                ;; see https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
+                                (* num-of-arg-regs *word-size*)
+                                ;; Preallocate space for arguments passing,
+                                ;; see x86-64-instr-select::select-instr-args for details.
+                                (if (<= max-num-of-call-args num-of-arg-regs)
+                                    0
+                                    (* (- max-num-of-call-args num-of-arg-regs)
+                                       *word-size*)))
+                             ;; The above calculation can be simplify to
+                             ;; (+ frame-size (* (max max-num-of-call-args num-of-arg-regs) *word-size*)),
+                             ;; but I prefer clarity and readability.
+                             )))
     (list
      (list
       (format nil "~A:" (temp:label-name (frame:frame-name frame)))
@@ -324,37 +350,39 @@
       "pop rbp"
       "ret"))))
 
-(defgeneric total-frame-size (frame max-num-of-call-args target target-arch target-os))
-
-(defmethod total-frame-size (frame max-num-of-call-args
-                             target (target-arch target:arch-x86-64) (target-os target:os-windows))
-  (let ((num-of-arg-regs (length (frame:arg-regs target))))
-    (+ (frame-size frame)
-       ;; Additional 32 bytes for home space
-       ;; required by x64 calling convention,
-       ;; see https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
-       (* num-of-arg-regs *word-size*)
-       ;; Preallocate space for arguments passing,
-       ;; see x86-64-instr-select::select-instr-args for details.
-       (if (<= max-num-of-call-args num-of-arg-regs)
-           0
-           (* (- max-num-of-call-args num-of-arg-regs)
-              *word-size*)))
-    ;; The above calculation can be simplify to
-    ;; (+ frame-size (* (max max-num-of-call-args num-of-arg-regs) *word-size*)),
-    ;; but I prefer clarity and readability.
-    ))
-
-(defmethod total-frame-size (frame max-num-of-call-args
-                             target (target-arch target:arch-x86-64) target-os)
-  (let ((num-of-arg-regs (length (frame:arg-regs target))))
-    (+ (frame-size frame)
-       ;; Preallocate space for arguments passing,
-       ;; see x86-64-instr-select::select-instr-args for details.
-       (if (<= max-num-of-call-args num-of-arg-regs)
-           0
-           (* (- max-num-of-call-args num-of-arg-regs)
-              *word-size*)))))
+(defmethod frame:wrap-entry-exit% (frame body-instrs target
+                                   (target-arch target:arch-x86-64) target-os)
+  (let* ((max-num-of-call-args (loop for instr in body-instrs
+                                     maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
+                                                num-of-args
+                                                0)))
+         (total-frame-size (let ((num-of-arg-regs (length (frame:arg-regs target))))
+                             (+ (frame-size frame)
+                                ;; Preallocate space for arguments passing,
+                                ;; see x86-64-instr-select::select-instr-args for details.
+                                (if (<= max-num-of-call-args num-of-arg-regs)
+                                    0
+                                    (* (- max-num-of-call-args num-of-arg-regs)
+                                       *word-size*))))))
+    (list
+     (list
+      (format nil "~A:" (temp:label-name (frame:frame-name frame)))
+      "push %rbp"
+      "movq %rsp, %rbp"
+      (format nil "sub $~A, %rsp" total-frame-size))
+     (mapcar
+      (lambda (instr)
+        (trivia:if-match (trivia:guard
+                          (instr:stack-arg-instr _ _ _ reloc-fun)
+                          (not (null reloc-fun)))
+            instr
+          (funcall reloc-fun instr total-frame-size)
+          instr))
+      body-instrs)
+     (list
+      (format nil "add $~A, %rsp" total-frame-size)
+      "pop %rbp"
+      "ret"))))
 
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
