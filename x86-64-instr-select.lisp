@@ -848,7 +848,16 @@
                               (asm-bin-op
                                op-mov
                                (mem-arg
-                                (mem-base-disp *s0* (+ (- frame-size) (* i word-size))))
+                                (mem-base-disp
+                                 *s0*
+                                 (+ (- frame-size)
+                                    (* (serapeum:match-of target:os (target:target-os target)
+                                         (target:os-windows
+                                          i)
+                                         ((or target:os-linux target:os-mac)
+                                          ;; System V AMD64 ABI doesn't need home space
+                                          (- i arg-regs-len)))
+                                       word-size))))
                                *s1-arg*)
                               target)
                              dsts srcs nil))))))))
