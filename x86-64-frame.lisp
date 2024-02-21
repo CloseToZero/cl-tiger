@@ -312,22 +312,24 @@
                                      maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
-         (total-frame-size (let ((num-of-arg-regs (length (frame:arg-regs target))))
-                             (+ (frame-size frame)
-                                ;; Additional 32 bytes for home space
-                                ;; required by x64 calling convention,
-                                ;; see https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
-                                (* num-of-arg-regs *word-size*)
-                                ;; Preallocate space for arguments passing,
-                                ;; see x86-64-instr-select::select-instr-args for details.
-                                (if (<= max-num-of-call-args num-of-arg-regs)
-                                    0
-                                    (* (- max-num-of-call-args num-of-arg-regs)
-                                       *word-size*)))
-                             ;; The above calculation can be simplify to
-                             ;; (+ frame-size (* (max max-num-of-call-args num-of-arg-regs) *word-size*)),
-                             ;; but I prefer clarity and readability.
-                             )))
+         (total-frame-size (utils:round-up-multiple
+                            (let ((num-of-arg-regs (length (frame:arg-regs target))))
+                              (+ (frame-size frame)
+                                 ;; Additional 32 bytes for home space
+                                 ;; required by x64 calling convention,
+                                 ;; see https://devblogs.microsoft.com/oldnewthing/20160623-00/?p=93735 for details.
+                                 (* num-of-arg-regs *word-size*)
+                                 ;; Preallocate space for arguments passing,
+                                 ;; see x86-64-instr-select::select-instr-args for details.
+                                 (if (<= max-num-of-call-args num-of-arg-regs)
+                                     0
+                                     (* (- max-num-of-call-args num-of-arg-regs)
+                                        *word-size*)))
+                              ;; The above calculation can be simplify to
+                              ;; (+ frame-size (* (max max-num-of-call-args num-of-arg-regs) *word-size*)),
+                              ;; but I prefer clarity and readability.
+                              )
+                            16)))
     (list
      (list
       (format nil "~A:" (temp:label-name (frame:frame-name frame)))
@@ -354,14 +356,16 @@
                                      maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
-         (total-frame-size (let ((num-of-arg-regs (length (frame:arg-regs target))))
-                             (+ (frame-size frame)
-                                ;; Preallocate space for arguments passing,
-                                ;; see x86-64-instr-select::select-instr-args for details.
-                                (if (<= max-num-of-call-args num-of-arg-regs)
-                                    0
-                                    (* (- max-num-of-call-args num-of-arg-regs)
-                                       *word-size*))))))
+         (total-frame-size (utils:round-up-multiple
+                            (let ((num-of-arg-regs (length (frame:arg-regs target))))
+                              (+ (frame-size frame)
+                                 ;; Preallocate space for arguments passing,
+                                 ;; see x86-64-instr-select::select-instr-args for details.
+                                 (if (<= max-num-of-call-args num-of-arg-regs)
+                                     0
+                                     (* (- max-num-of-call-args num-of-arg-regs)
+                                        *word-size*))))
+                            16)))
     (list
      (list
       (format nil "_~A:" (temp:label-name (frame:frame-name frame)))

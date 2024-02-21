@@ -5,7 +5,8 @@
    #:pos->line-info
    #:str-without-newlines
    #:list->set
-   #:set-singleton))
+   #:set-singleton
+   #:round-up-multiple))
 
 (cl:in-package :cl-tiger/utils)
 
@@ -65,3 +66,10 @@ line-n without an newline."
     (error "The size of the set ~S is not 1." set))
   (fset:do-set (e set)
     (return e)))
+
+(defun round-up-multiple (num multiple)
+  (cond ((zerop multiple) num)
+        (t (let ((r (mod num multiple)))
+             (if (zerop r)
+                 num
+                 (- (+ num multiple) r))))))
