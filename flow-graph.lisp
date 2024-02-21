@@ -54,7 +54,7 @@
           do (let* ((name (instr:format-instr instr))
                     (node (graph:new-node graph name)))
                (fset:includef instr->node-table instr node)
-               (trivia:when-match (instr:label-instr _ name) instr
+               (trivia:when-match (instr:instr-label _ name) instr
                  (fset:includef label->node-table name node))))
     (labels ((instr->node (instr)
                (let ((node (fset:@ instr->node-table instr)))
@@ -74,7 +74,7 @@
                   (graph:add-edge node fake-node)))))
       (loop for (instr . rest-instrs) on instrs
             do (serapeum:match-of instr:instr instr
-                 ((instr:op-instr _ dsts srcs jumps)
+                 ((instr:instr-op _ dsts srcs jumps)
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (utils:list->set dsts))
                     (fset:includef uses-table node (utils:list->set srcs))
@@ -88,18 +88,18 @@
                                   (graph:add-edge node target-node))))))
                       (instr:not-jump
                        (add-fall-through-edge node rest-instrs)))))
-                 ((or (instr:stack-arg-instr _ dsts srcs _)
-                      (instr:call-instr _ dsts srcs _))
+                 ((or (instr:instr-stack-arg _ dsts srcs _)
+                      (instr:instr-call _ dsts srcs _))
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (utils:list->set dsts))
                     (fset:includef uses-table node (utils:list->set srcs))
                     (add-fall-through-edge node rest-instrs)))
-                 ((instr:label-instr _ _)
+                 ((instr:instr-label _ _)
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (fset:empty-set))
                     (fset:includef uses-table node (fset:empty-set))
                     (add-fall-through-edge node rest-instrs)))
-                 ((instr:move-instr _ dst src)
+                 ((instr:instr-move _ dst src)
                   (let ((node (instr->node instr)))
                     (fset:includef defs-table node (fset:with (fset:empty-set) dst))
                     (fset:includef uses-table node (fset:with (fset:empty-set) src))

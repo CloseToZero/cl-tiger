@@ -174,18 +174,18 @@
                                (target-arch target:arch-x86-64) target-os)
   (trivia:ematch access
     ((access-in-frame offset)
-     (ir:mem-expr
-      (ir:bin-op-expr
+     (ir:expr-mem
+      (ir:expr-bin-op
        fp-expr
-       ir:plus-bin-op
-       (ir:int-expr offset))))
+       ir:bin-op-plus
+       (ir:expr-int offset))))
     ((access-in-reg reg)
-     (ir:temp-expr reg))))
+     (ir:expr-temp reg))))
 
 (defmethod frame:external-call% (name args target
                                  (target-arch target:arch-x86-64) target-os)
-  (ir:call-expr
-   (ir:label-expr
+  (ir:expr-call
+   (ir:expr-label
     (temp:new-named-label
      (frame:external-call-label-name name target)))
    args))
@@ -217,30 +217,30 @@
                      (frame:alloc-local frame nil target))
                    callee-saves))
          (arg-regs (frame:arg-regs target)))
-    (ir:compound-stm
+    (ir:stm-compound
      (apply
-      #'ir:stms->compound-stm
+      #'ir:stms->stm-compound
       (loop for reg in callee-saves
             for reg-temp-access in saved-reg-temp-accesses
-            collect (ir:move-stm
-                     (frame:access-expr reg-temp-access (ir:temp-expr *fp*) target)
-                     (ir:temp-expr reg))))
-     (ir:compound-stm
+            collect (ir:stm-move
+                     (frame:access-expr reg-temp-access (ir:expr-temp *fp*) target)
+                     (ir:expr-temp reg))))
+     (ir:stm-compound
       (move-args-into-formal-access-places-stm
        (frame:frame-formals frame)
        arg-regs
        target
        (target:target-arch target)
        (target:target-os target))
-      (ir:compound-stm
+      (ir:stm-compound
        body-stm
        (apply
-        #'ir:stms->compound-stm
+        #'ir:stms->stm-compound
         (loop for reg in callee-saves
               for reg-temp-access in saved-reg-temp-accesses
-              collect (ir:move-stm
-                       (ir:temp-expr reg)
-                       (frame:access-expr reg-temp-access (ir:temp-expr *fp*) target)))))))))
+              collect (ir:stm-move
+                       (ir:expr-temp reg)
+                       (frame:access-expr reg-temp-access (ir:expr-temp *fp*) target)))))))))
 
 (defgeneric move-args-into-formal-access-places-stm (frame-formals arg-regs target target-arch target-os))
 
@@ -251,22 +251,22 @@
      (target-os target:os-windows))
   (let ((arg-regs-len (length arg-regs)))
     (apply
-     #'ir:stms->compound-stm
+     #'ir:stms->stm-compound
      (loop for i from 0
            for formal-access in frame-formals
            collect (cond ((< i arg-regs-len)
-                          (ir:move-stm
-                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
-                           (ir:temp-expr (nth i arg-regs))))
+                          (ir:stm-move
+                           (frame:access-expr formal-access (ir:expr-temp *fp*) target)
+                           (ir:expr-temp (nth i arg-regs))))
                          (t
-                          (ir:move-stm
-                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
+                          (ir:stm-move
+                           (frame:access-expr formal-access (ir:expr-temp *fp*) target)
                            (frame:access-expr
                             (access-in-frame
                              (+ (* i *word-size*)
                                 ;; 2 * *word-size* for saved static link and return address
                                 (* 2 *word-size*)))
-                            (ir:temp-expr *fp*)
+                            (ir:expr-temp *fp*)
                             target))))))))
 
 (defmethod move-args-into-formal-access-places-stm
@@ -276,16 +276,16 @@
      target-os)
   (let ((arg-regs-len (length arg-regs)))
     (apply
-     #'ir:stms->compound-stm
+     #'ir:stms->stm-compound
      (loop for i from 0
            for formal-access in frame-formals
            collect (cond ((< i arg-regs-len)
-                          (ir:move-stm
-                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
-                           (ir:temp-expr (nth i arg-regs))))
+                          (ir:stm-move
+                           (frame:access-expr formal-access (ir:expr-temp *fp*) target)
+                           (ir:expr-temp (nth i arg-regs))))
                          (t
-                          (ir:move-stm
-                           (frame:access-expr formal-access (ir:temp-expr *fp*) target)
+                          (ir:stm-move
+                           (frame:access-expr formal-access (ir:expr-temp *fp*) target)
                            (frame:access-expr
                             (access-in-frame
                              ;; System V AMD64 ABI doesn't need home space,
@@ -293,7 +293,7 @@
                              (+ (* (- i arg-regs-len) *word-size*)
                                 ;; 2 * *word-size* for saved static link and return address
                                 (* 2 *word-size*)))
-                            (ir:temp-expr *fp*)
+                            (ir:expr-temp *fp*)
                             target))))))))
 
 (defmethod frame:preserve-live-out% (frame body-instrs target
@@ -302,7 +302,7 @@
   (append
    body-instrs
    (list
-    (instr:op-instr
+    (instr:instr-op
      ";; A fake instruction used to preserve live-out temporaries."
      nil
      (append (list *rv* *fp* (temp:named-temp "rsp")) (frame:callee-saves target))
@@ -313,7 +313,7 @@
   (append
    body-instrs
    (list
-    (instr:op-instr
+    (instr:instr-op
      "# A fake instruction used to preserve live-out temporaries."
      nil
      (append (list *rv* *fp* (temp:named-temp "rsp")) (frame:callee-saves target))
@@ -323,7 +323,7 @@
                                    (target-arch target:arch-x86-64)
                                    (target-os target:os-windows))
   (let* ((max-num-of-call-args (loop for instr in body-instrs
-                                     maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
+                                     maximize (trivia:if-match (instr:instr-call _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
          (total-frame-size (utils:round-up-multiple
@@ -354,7 +354,7 @@
      (mapcar
       (lambda (instr)
         (trivia:if-match (trivia:guard
-                          (instr:stack-arg-instr _ _ _ reloc-fun)
+                          (instr:instr-stack-arg _ _ _ reloc-fun)
                           (not (null reloc-fun)))
             instr
           (funcall reloc-fun instr total-frame-size)
@@ -368,7 +368,7 @@
 (defmethod frame:wrap-entry-exit% (frame body-instrs target
                                    (target-arch target:arch-x86-64) target-os)
   (let* ((max-num-of-call-args (loop for instr in body-instrs
-                                     maximize (trivia:if-match (instr:call-instr _ _ _ num-of-args) instr
+                                     maximize (trivia:if-match (instr:instr-call _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
          (total-frame-size (utils:round-up-multiple
@@ -391,7 +391,7 @@
      (mapcar
       (lambda (instr)
         (trivia:if-match (trivia:guard
-                          (instr:stack-arg-instr _ _ _ reloc-fun)
+                          (instr:instr-stack-arg _ _ _ reloc-fun)
                           (not (null reloc-fun)))
             instr
           (funcall reloc-fun instr total-frame-size)

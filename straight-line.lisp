@@ -6,57 +6,57 @@
 (deftype id () 'string)
 
 (serapeum:defunion op
-  plus-op
-  minus-op
-  times-op
-  div-op)
+  op-plus
+  op-minus
+  op-times
+  op-div)
 
 (serapeum:defunion stm
-  (compound-stm
+  (stm-compound
    (first stm)
    (second stm))
-  (assign-stm
+  (stm-assign
    (id id)
    (expr expr))
-  (print-stm
+  (stm-print
    ;; A list of expr.
    (exprs list)))
 
 (serapeum:defunion expr
-  (id-expr
+  (expr-id
    (id id))
-  (num-expr
-   (num integer))
-  (op-expr
+  (expr-int
+   (value integer))
+  (expr-op
    (left expr)
    (op op)
    (right expr))
-  (stm-then-expr
+  (expr-stm-then-expr
    (stm stm)
    (expr expr)))
 
 (defvar *prog*
-  (compound-stm
-   (assign-stm "a" (op-expr (num-expr 5) plus-op (num-expr 3)))
-   (compound-stm
-    (assign-stm "b"
-                (stm-then-expr
-                 (print-stm
-                  (list (id-expr "a")
-                        (op-expr (id-expr "a") minus-op (num-expr 1))))
-                 (op-expr (num-expr 10) times-op (id-expr "a"))))
-    (print-stm (list (id-expr "b"))))))
+  (stm-compound
+   (stm-assign "a" (expr-op (expr-int 5) op-plus (expr-int 3)))
+   (stm-compound
+    (stm-assign "b"
+                (expr-stm-then-expr
+                 (stm-print
+                  (list (expr-id "a")
+                        (expr-op (expr-id "a") op-minus (expr-int 1))))
+                 (expr-op (expr-int 10) op-times (expr-id "a"))))
+    (stm-print (list (expr-id "b"))))))
 
 (defun interpret-stm (stm env)
   ;; Returns another assoc list as new env.
   (serapeum:match-of stm stm
-    ((compound-stm first second)
+    ((stm-compound first second)
      (let ((new-env (interpret-stm first env)))
        (interpret-stm second new-env)))
-    ((assign-stm id expr)
+    ((stm-assign id expr)
      (trivia:let-match (((list int-value new-env) (interpret-expr expr env)))
        (cons (cons id int-value) new-env)))
-    ((print-stm exprs)
+    ((stm-print exprs)
      (let ((first-expr? t))
        (prog1
            (reduce (lambda (cur-env expr)
@@ -71,24 +71,24 @@
 (defun interpret-expr (expr env)
   ;; Returns (int-return-value new-env)
   (serapeum:match-of expr expr
-    ((id-expr id)
+    ((expr-id id)
      (let ((id-value (assoc id env :test #'string=)))
        (unless id-value (error "Undefined variable: ~A, current environment: ~A." id env))
        (list (cdr id-value) env)))
-    ((num-expr num)
-     (list num env))
-    ((op-expr left op right)
+    ((expr-int value)
+     (list value env))
+    ((expr-op left op right)
      (trivia:let-match* (((list int-value-1 new-env-1) (interpret-expr left env))
                          ((list int-value-2 new-env-2) (interpret-expr right new-env-1)))
        (list (funcall
               (serapeum:match-of op op
-                  (plus-op #'+)
-                  (minus-op #'-)
-                  (times-op #'*)
-                  (div-op #'/))
+                  (op-plus #'+)
+                  (op-minus #'-)
+                  (op-times #'*)
+                  (op-div #'/))
               int-value-1 int-value-2)
              new-env-2)))
-    ((stm-then-expr stm expr)
+    ((expr-stm-then-expr stm expr)
      (let ((new-env (interpret-stm stm env)))
        (interpret-expr expr new-env)))))
 

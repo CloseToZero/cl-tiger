@@ -4,198 +4,198 @@
    (:temp :cl-tiger/temp))
   (:export
    #:bin-op
-   #:plus-bin-op
-   #:minus-bin-op
-   #:times-bin-op
-   #:div-bin-op
-   #:and-bin-op
-   #:or-bin-op
-   #:xor-bin-op
-   #:lshift-bin-op
-   #:rshift-bin-op
-   #:arshift-bin-op
+   #:bin-op-plus
+   #:bin-op-minus
+   #:bin-op-times
+   #:bin-op-div
+   #:bin-op-and
+   #:bin-op-or
+   #:bin-op-xor
+   #:bin-op-lshift
+   #:bin-op-rshift
+   #:bin-op-arshift
 
    #:rel-op
-   #:eq-rel-op
-   #:neq-rel-op
-   #:lt-rel-op
-   #:le-rel-op
-   #:gt-rel-op
-   #:ge-rel-op
-   #:ult-rel-op
-   #:ule-rel-op
-   #:ugt-rel-op
-   #:uge-rel-op
+   #:rel-op-eq
+   #:rel-op-neq
+   #:rel-op-lt
+   #:rel-op-le
+   #:rel-op-gt
+   #:rel-op-ge
+   #:rel-op-ult
+   #:rel-op-ule
+   #:rel-op-ugt
+   #:rel-op-uge
 
    #:expr
-   #:int-expr
-   #:int-expr-value
-   #:label-expr
-   #:label-expr-value
-   #:temp-expr
-   #:temp-expr-value
-   #:bin-op-expr
-   #:bin-op-expr-left
-   #:bin-op-expr-op
-   #:bin-op-expr-right
-   #:mem-expr
-   #:mem-expr-value
-   #:call-expr
-   #:call-expr-fun
-   #:call-expr-args
-   #:stm-then-expr
-   #:stm-then-expr-stm
-   #:stm-then-expr-expr
+   #:expr-int
+   #:expr-int-value
+   #:expr-label
+   #:expr-label-value
+   #:expr-temp
+   #:expr-temp-value
+   #:expr-bin-op
+   #:expr-bin-op-left
+   #:expr-bin-op-op
+   #:expr-bin-op-right
+   #:expr-mem
+   #:expr-mem-value
+   #:expr-call
+   #:expr-call-fun
+   #:expr-call-args
+   #:expr-stm-then-expr
+   #:expr-stm-then-expr-stm
+   #:expr-stm-then-expr-expr
 
    #:stm
-   #:move-stm
-   #:move-stm-left
-   #:move-stm-right
-   #:expr-stm
-   #:expr-stm-value
-   #:jump-stm
-   #:jump-stm-target
-   #:jump-stm-possible-labels
-   #:cjump-stm
-   #:cjump-stm-left
-   #:cjump-stm-op
-   #:cjump-stm-right
-   #:cjump-stm-true-target
-   #:cjump-stm-false-target
-   #:compound-stm
-   #:compound-stm-first
-   #:compound-stm-second
-   #:label-stm
-   #:label-stm-name
+   #:stm-move
+   #:stm-move-left
+   #:stm-move-right
+   #:stm-expr
+   #:stm-expr-value
+   #:stm-jump
+   #:stm-jump-target
+   #:stm-jump-possible-labels
+   #:stm-cjump
+   #:stm-cjump-left
+   #:stm-cjump-op
+   #:stm-cjump-right
+   #:stm-cjump-true-target
+   #:stm-cjump-false-target
+   #:stm-compound
+   #:stm-compound-first
+   #:stm-compound-second
+   #:stm-label
+   #:stm-label-name
 
    #:not-rel-op
 
-   #:stms->compound-stm
+   #:stms->stm-compound
 
    #:pretty-print))
 
 (cl:in-package :cl-tiger/ir)
 
 (serapeum:defunion bin-op
-  plus-bin-op
-  minus-bin-op
-  times-bin-op
-  div-bin-op
-  and-bin-op
-  or-bin-op
-  xor-bin-op
-  lshift-bin-op
-  rshift-bin-op
-  arshift-bin-op)
+  bin-op-plus
+  bin-op-minus
+  bin-op-times
+  bin-op-div
+  bin-op-and
+  bin-op-or
+  bin-op-xor
+  bin-op-lshift
+  bin-op-rshift
+  bin-op-arshift)
 
 (serapeum:defunion rel-op
-  eq-rel-op
-  neq-rel-op
-  lt-rel-op
-  le-rel-op
-  gt-rel-op
-  ge-rel-op
-  ult-rel-op
-  ule-rel-op
-  ugt-rel-op
-  uge-rel-op)
+  rel-op-eq
+  rel-op-neq
+  rel-op-lt
+  rel-op-le
+  rel-op-gt
+  rel-op-ge
+  rel-op-ult
+  rel-op-ule
+  rel-op-ugt
+  rel-op-uge)
 
 (serapeum:defunion expr
-  (int-expr
+  (expr-int
    (value fixnum))
-  (label-expr
+  (expr-label
    (value temp:label))
-  (temp-expr
+  (expr-temp
    (value temp:temp))
-  (bin-op-expr
+  (expr-bin-op
    (left expr)
    (op bin-op)
    (right expr))
-  (mem-expr
+  (expr-mem
    (value expr))
-  (call-expr
+  (expr-call
    (fun expr)
    ;; A list of expr.
    (args list))
-  (stm-then-expr
+  (expr-stm-then-expr
    (stm stm)
    (expr expr)))
 
 (serapeum:defunion stm
-  (move-stm
+  (stm-move
    (left expr)
    (right expr))
-  (expr-stm
+  (stm-expr
    (value expr))
-  (jump-stm
+  (stm-jump
    (target expr)
    ;; A list of temp:label.
    (possible-labels list))
-  (cjump-stm
+  (stm-cjump
    (left expr)
    (op rel-op)
    (right expr)
    (true-target temp:label)
    (false-target temp:label))
-  (compound-stm
+  (stm-compound
    (first stm)
    (second stm))
-  (label-stm
+  (stm-label
    (name temp:label)))
 
 (defun not-rel-op (rel-op)
   (serapeum:match-of rel-op rel-op
-    (eq-rel-op neq-rel-op)
-    (neq-rel-op eq-rel-op)
-    (lt-rel-op ge-rel-op)
-    (le-rel-op gt-rel-op)
-    (gt-rel-op le-rel-op)
-    (ge-rel-op lt-rel-op)
-    (ult-rel-op uge-rel-op)
-    (ule-rel-op ugt-rel-op)
-    (ugt-rel-op ule-rel-op)
-    (uge-rel-op ult-rel-op)))
+    (rel-op-eq rel-op-neq)
+    (rel-op-neq rel-op-eq)
+    (rel-op-lt rel-op-ge)
+    (rel-op-le rel-op-gt)
+    (rel-op-gt rel-op-le)
+    (rel-op-ge rel-op-lt)
+    (rel-op-ult rel-op-uge)
+    (rel-op-ule rel-op-ugt)
+    (rel-op-ugt rel-op-ule)
+    (rel-op-uge rel-op-ult)))
 
-(defun stms->compound-stm (&rest stms)
+(defun stms->stm-compound (&rest stms)
   (cond ((null stms)
-         (expr-stm (int-expr 0)))
+         (stm-expr (expr-int 0)))
         ((null (cdr stms))
          ;; A list of length 1.
          (car stms))
         (t
-         (compound-stm
-          (car stms) (apply #'stms->compound-stm (rest stms))))))
+         (stm-compound
+          (car stms) (apply #'stms->stm-compound (rest stms))))))
 
 (defun pretty-print-expr (stream expr cur-indent indent)
   (format stream "~v:<~>" cur-indent)
   (serapeum:match-of expr expr
-    ((int-expr value)
+    ((expr-int value)
      (format stream "(int ~A)" value))
-    ((label-expr value)
-     (format stream "(label-expr ~A)" (temp:label-name value)))
-    ((temp-expr value)
+    ((expr-label value)
+     (format stream "(expr-label ~A)" (temp:label-name value)))
+    ((expr-temp value)
      (format stream "(temp ~A)" (temp:temp-name value)))
-    ((bin-op-expr left op right)
+    ((expr-bin-op left op right)
      (format stream "(~A~%" (serapeum:match-of bin-op op
-                              (plus-bin-op "+")
-                              (minus-bin-op "-")
-                              (times-bin-op "*")
-                              (div-bin-op "/")
-                              (and-bin-op "and")
-                              (or-bin-op "or")
-                              (xor-bin-op "xor")
-                              (lshift-bin-op "lshift")
-                              (rshift-bin-op "rshift")
-                              (arshift-bin-op "arshift")))
+                              (bin-op-plus "+")
+                              (bin-op-minus "-")
+                              (bin-op-times "*")
+                              (bin-op-div "/")
+                              (bin-op-and "and")
+                              (bin-op-or "or")
+                              (bin-op-xor "xor")
+                              (bin-op-lshift "lshift")
+                              (bin-op-rshift "rshift")
+                              (bin-op-arshift "arshift")))
      (pretty-print-expr stream left (+ cur-indent indent) indent)
      (format stream "~%")
      (pretty-print-expr stream right (+ cur-indent indent) indent)
      (format stream ")"))
-    ((mem-expr value)
+    ((expr-mem value)
      (format stream "(mem~%")
      (pretty-print-expr stream value (+ cur-indent indent) indent)
      (format stream ")"))
-    ((call-expr fun args)
+    ((expr-call fun args)
      (format stream "(call~%")
      (pretty-print-expr stream fun (+ cur-indent indent) indent)
      (loop for (arg . rest-args) on args
@@ -204,7 +204,7 @@
               (unless (null rest-args)
                 (format stream "~%")))
      (format stream ")"))
-    ((stm-then-expr stm expr)
+    ((expr-stm-then-expr stm expr)
      (format stream "(stm-then-expr~%")
      (pretty-print-stm stream stm (+ cur-indent indent) indent)
      (format stream "~%")
@@ -214,17 +214,17 @@
 (defun pretty-print-stm (stream stm cur-indent indent)
   (format stream "~v:<~>" cur-indent)
   (serapeum:match-of stm stm
-    ((move-stm left right)
+    ((stm-move left right)
      (format stream "(move~%")
      (pretty-print-expr stream left (+ cur-indent indent) indent)
      (format stream "~%")
      (pretty-print-expr stream right (+ cur-indent indent) indent)
      (format stream ")"))
-    ((expr-stm value)
-     (format stream "(expr-stm~%")
+    ((stm-expr value)
+     (format stream "(stm-expr~%")
      (pretty-print-expr stream value (+ cur-indent indent) indent)
      (format stream ")"))
-    ((jump-stm target possible-labels)
+    ((stm-jump target possible-labels)
      (format stream "(jump~%")
      (pretty-print-expr stream target (+ cur-indent indent) indent)
      (format stream "~%")
@@ -236,22 +236,22 @@
      (format stream "~v:<~>" (+ cur-indent indent))
      (format stream "]")
      (format stream ")"))
-    ((cjump-stm left op right true-target false-target)
+    ((stm-cjump left op right true-target false-target)
      (format stream "(cjump~%")
      (pretty-print-expr stream left (+ cur-indent indent) indent)
      (format stream "~%")
      (format stream "~v:<~>" (+ cur-indent indent))
      (format stream "~A~%" (serapeum:match-of rel-op op
-                             (eq-rel-op "=")
-                             (neq-rel-op "!=")
-                             (lt-rel-op "<")
-                             (le-rel-op "<=")
-                             (gt-rel-op ">")
-                             (ge-rel-op ">=")
-                             (ult-rel-op "u<")
-                             (ule-rel-op "u<=")
-                             (ugt-rel-op "u>")
-                             (uge-rel-op "u>=")))
+                             (rel-op-eq "=")
+                             (rel-op-neq "!=")
+                             (rel-op-lt "<")
+                             (rel-op-le "<=")
+                             (rel-op-gt ">")
+                             (rel-op-ge ">=")
+                             (rel-op-ult "u<")
+                             (rel-op-ule "u<=")
+                             (rel-op-ugt "u>")
+                             (rel-op-uge "u>=")))
      (pretty-print-expr stream right (+ cur-indent indent) indent)
      (format stream "~%")
      (format stream "~v:<~>" (+ cur-indent indent))
@@ -260,14 +260,14 @@
      (format stream "~v:<~>" (+ cur-indent indent))
      (format stream "~A" (temp:label-name false-target))
      (format stream ")"))
-    ((compound-stm first second)
-     (format stream "(compound-stm~%")
+    ((stm-compound first second)
+     (format stream "(compound~%")
      (pretty-print-stm stream first (+ cur-indent indent) indent)
      (format stream "~%")
      (pretty-print-stm stream second (+ cur-indent indent) indent)
      (format stream ")"))
-    ((label-stm name)
-     (format stream "(label-stm ~A)" (temp:label-name name)))))
+    ((stm-label name)
+     (format stream "(stm-label ~A)" (temp:label-name name)))))
 
 (defun pretty-print (stream ir indent)
   (trivia:ematch ir

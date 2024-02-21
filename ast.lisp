@@ -5,16 +5,16 @@
    #:pos
 
    #:op
-   #:plus-op
-   #:minus-op
-   #:times-op
-   #:div-op
-   #:eq-op
-   #:neq-op
-   #:lt-op
-   #:le-op
-   #:gt-op
-   #:ge-op
+   #:op-plus
+   #:op-minus
+   #:op-times
+   #:op-div
+   #:op-eq
+   #:op-neq
+   #:op-lt
+   #:op-le
+   #:op-gt
+   #:op-ge
 
    #:escape-ref
    #:escape-ref-value
@@ -26,123 +26,123 @@
    #:field-escape-ref
 
    #:ty
-   #:name-ty
-   #:name-ty-name
-   #:name-ty-pos
-   #:record-ty
-   #:record-ty-fields
-   #:array-ty
-   #:array-ty-base-type-id
-   #:array-ty-pos
+   #:ty-name
+   #:ty-name-name
+   #:ty-name-pos
+   #:ty-record
+   #:ty-record-fields
+   #:ty-array
+   #:ty-array-base-type-id
+   #:ty-array-pos
 
-   #:function-decl
-   #:function-decl-name
-   #:function-decl-params
-   #:function-decl-result
-   #:function-decl-body
-   #:function-decl-pos
+   #:decl-function
+   #:decl-function-name
+   #:decl-function-params
+   #:decl-function-result
+   #:decl-function-body
+   #:decl-function-pos
 
-   #:type-decl
-   #:type-decl-name
-   #:type-decl-ty
-   #:type-decl-pos
+   #:decl-type
+   #:decl-type-name
+   #:decl-type-ty
+   #:decl-type-pos
 
    #:decl
-   #:function-decls
-   #:function-decls-decls
-   #:type-decls
-   #:type-decls-decls
-   #:var-decl
-   #:var-decl-name
-   #:var-decl-typ
-   #:var-decl-init
-   #:var-decl-pos
-   #:var-decl-escape-ref
+   #:decl-functions
+   #:decl-functions-decls
+   #:decl-types
+   #:decl-types-decls
+   #:decl-var
+   #:decl-var-name
+   #:decl-var-typ
+   #:decl-var-init
+   #:decl-var-pos
+   #:decl-var-escape-ref
 
    #:var
-   #:simple-var
-   #:simple-var-sym
-   #:simple-var-pos
-   #:field-var
-   #:field-var-var
-   #:field-var-sym
-   #:field-var-pos
-   #:subscript-var
-   #:subscript-var-var
-   #:subscript-var-expr
-   #:subscript-var-pos
+   #:var-simple
+   #:var-simple-sym
+   #:var-simple-pos
+   #:var-field
+   #:var-field-var
+   #:var-field-sym
+   #:var-field-pos
+   #:var-subscript
+   #:var-subscript-var
+   #:var-subscript-expr
+   #:var-subscript-pos
 
    #:expr
-   #:var-expr
-   #:var-expr-var
-   #:nil-expr
-   #:int-expr
-   #:int-expr-value
-   #:string-expr
-   #:string-expr-str
-   #:string-expr-pos
-   #:call-expr
-   #:call-expr-fun
-   #:call-expr-args
-   #:call-expr-pos
-   #:op-expr
-   #:op-expr-left
-   #:op-expr-op
-   #:op-expr-right
-   #:op-expr-pos
-   #:record-expr
-   #:record-expr-type-id
-   #:record-expr-fields
-   #:record-expr-pos
-   #:seq-expr
-   #:seq-expr-exprs
-   #:assign-expr
-   #:assign-expr-var
-   #:assign-expr-expr
-   #:assign-expr-pos
-   #:if-expr
-   #:if-expr-test
-   #:if-expr-then
-   #:if-expr-else
-   #:if-expr-pos
-   #:while-expr
-   #:while-expr-test
-   #:while-expr-body
-   #:while-expr-pos
-   #:for-expr
-   #:for-expr-var
-   #:for-expr-low
-   #:for-expr-high
-   #:for-expr-body
-   #:for-expr-pos
-   #:for-expr-escape-ref
-   #:break-expr
-   #:break-expr-pos
-   #:array-expr
-   #:array-expr-type-id
-   #:array-expr-size
-   #:array-expr-init
-   #:array-expr-pos
-   #:let-expr
-   #:let-expr-decls
-   #:let-expr-body
-   #:let-expr-pos))
+   #:expr-var
+   #:expr-var-var
+   #:expr-nil
+   #:expr-int
+   #:expr-int-value
+   #:expr-string
+   #:expr-string-str
+   #:expr-string-pos
+   #:expr-call
+   #:expr-call-fun
+   #:expr-call-args
+   #:expr-call-pos
+   #:expr-op
+   #:expr-op-left
+   #:expr-op-op
+   #:expr-op-right
+   #:expr-op-pos
+   #:expr-record
+   #:expr-record-type-id
+   #:expr-record-fields
+   #:expr-record-pos
+   #:expr-seq
+   #:expr-seq-exprs
+   #:expr-assign
+   #:expr-assign-var
+   #:expr-assign-expr
+   #:expr-assign-pos
+   #:expr-if
+   #:expr-if-test
+   #:expr-if-then
+   #:expr-if-else
+   #:expr-if-pos
+   #:expr-while
+   #:expr-while-test
+   #:expr-while-body
+   #:expr-while-pos
+   #:expr-for
+   #:expr-for-var
+   #:expr-for-low
+   #:expr-for-high
+   #:expr-for-body
+   #:expr-for-pos
+   #:expr-for-escape-ref
+   #:expr-break
+   #:expr-break-pos
+   #:expr-array
+   #:expr-array-type-id
+   #:expr-array-size
+   #:expr-array-init
+   #:expr-array-pos
+   #:expr-let
+   #:expr-let-decls
+   #:expr-let-body
+   #:expr-let-pos))
 
 (cl:in-package :cl-tiger/ast)
 
 (deftype pos () 'integer)
 
 (serapeum:defunion op
-  plus-op
-  minus-op
-  times-op
-  div-op
-  eq-op
-  neq-op
-  lt-op
-  le-op
-  gt-op
-  ge-op)
+  op-plus
+  op-minus
+  op-times
+  op-div
+  op-eq
+  op-neq
+  op-lt
+  op-le
+  op-gt
+  op-ge)
 
 ;; escape reference type,
 ;; so we can have mutable data inside immutable data.
@@ -158,18 +158,18 @@
   (escape-ref escape-ref))
 
 (serapeum:defunion ty
-  (name-ty
+  (ty-name
    (name symbol:sym)
    (pos pos))
-  (record-ty
+  (ty-record
    ;; A list of field.
    ;; In this case, the escape-ref of a field is useless.
    (fields list))
-  (array-ty
+  (ty-array
    (base-type-id symbol:sym)
    (pos pos)))
 
-(serapeum:defconstructor function-decl
+(serapeum:defconstructor decl-function
   (name symbol:sym)
   ;; A list of field.
   (params list)
@@ -178,19 +178,19 @@
   (body expr)
   (pos pos))
 
-(serapeum:defconstructor type-decl
+(serapeum:defconstructor decl-type
   (name symbol:sym)
   (ty ty)
   (pos pos))
 
 (serapeum:defunion decl
-  (function-decls
-   ;; A list of one or more function-decl.
+  (decl-functions
+   ;; A list of one or more decl-function.
    (decls list))
-  (type-decls
-   ;; A list of one or more type-decl.
+  (decl-types
+   ;; A list of one or more decl-type.
    (decls list))
-  (var-decl
+  (decl-var
    (name symbol:sym)
    ;; A list of (sym pos) or nil.
    (typ (or list null))
@@ -199,73 +199,73 @@
    (escape-ref escape-ref)))
 
 (serapeum:defunion var
-  (simple-var
+  (var-simple
    (sym symbol:sym)
    (pos pos))
-  (field-var
+  (var-field
    (var var)
    (sym symbol:sym)
    (pos pos))
-  (subscript-var
+  (var-subscript
    (var var)
    (expr expr)
    (pos pos)))
 
 (serapeum:defunion expr
-  (var-expr
+  (expr-var
    (var var))
-  nil-expr
-  (int-expr
+  expr-nil
+  (expr-int
    (value fixnum))
-  (string-expr
+  (expr-string
    (str string)
    (pos pos))
-  (call-expr
+  (expr-call
    (fun symbol:sym)
    ;; A list of expr.
    (args list)
    (pos pos))
-  (op-expr
+  (expr-op
    (left expr)
    (op op)
    (right expr)
    (pos pos))
-  (record-expr
+  (expr-record
    (type-id symbol:sym)
    ;; A list of (sym expr pos).
    (fields list)
    (pos pos))
-  (seq-expr
+  (expr-seq
    ;; A list of (expr pos).
    (exprs list))
-  (assign-expr
+  (expr-assign
    (var var)
    (expr expr)
    (pos pos))
-  (if-expr
+  (expr-if
    (test expr)
    (then expr)
    (else (or expr null))
    (pos pos))
-  (while-expr
+  (expr-while
    (test expr)
    (body expr)
    (pos pos))
-  (for-expr
+  (expr-for
    (var symbol:sym)
    (low expr)
    (high expr)
    (body expr)
    (pos pos)
    (escape-ref escape-ref))
-  (break-expr
+  (expr-break
    (pos pos))
-  (array-expr
+  (expr-array
    (type-id symbol:sym)
    (size expr)
    (init expr)
    (pos pos))
-  (let-expr
+  (expr-let
    ;; A list of decl.
    (decls list)
    (body expr)

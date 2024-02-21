@@ -32,15 +32,15 @@
    (disp fixnum)))
 
 (serapeum:defunion arg
-  (mem-arg
+  (arg-mem
    (value mem))
-  (temp-arg
+  (arg-temp
    (value temp:temp))
-  (label-arg
+  (arg-label
    (value temp:label))
-  (call-reg-arg
+  (arg-call-reg
    (value temp:temp))
-  (int-arg
+  (arg-int
    (value fixnum)))
 
 (serapeum:defunion op
@@ -93,12 +93,12 @@
 (defvar *j1* (temp:new-named-label "'j1"))
 (defvar *cl* (temp:named-temp "cl"))
 
-(defvar *d0-arg* (temp-arg *d0*))
-(defvar *s0-arg* (temp-arg *s0*))
-(defvar *s1-arg* (temp-arg *s1*))
-(defvar *j0-arg* (label-arg *j0*))
-(defvar *j1-arg* (label-arg *j1*))
-(defvar *cl-arg* (temp-arg *cl*))
+(defvar *d0-arg* (arg-temp *d0*))
+(defvar *s0-arg* (arg-temp *s0*))
+(defvar *s1-arg* (arg-temp *s1*))
+(defvar *j0-arg* (arg-label *j0*))
+(defvar *j1-arg* (arg-label *j1*))
+(defvar *cl-arg* (arg-temp *cl*))
 
 (defun emit (instr)
   (setf *instrs* (cons instr *instrs*))
@@ -106,16 +106,16 @@
 
 (defun rel-op->unary-op (rel-op)
   (serapeum:match-of ir:rel-op rel-op
-    (ir:eq-rel-op op-je)
-    (ir:neq-rel-op op-jne)
-    (ir:lt-rel-op op-jl)
-    (ir:le-rel-op op-jle)
-    (ir:gt-rel-op op-jg)
-    (ir:ge-rel-op op-jge)
-    (ir:ult-rel-op op-jb)
-    (ir:ule-rel-op op-jbe)
-    (ir:ugt-rel-op op-ja)
-    (ir:uge-rel-op op-jae)))
+    (ir:rel-op-eq op-je)
+    (ir:rel-op-neq op-jne)
+    (ir:rel-op-lt op-jl)
+    (ir:rel-op-le op-jle)
+    (ir:rel-op-gt op-jg)
+    (ir:rel-op-ge op-jge)
+    (ir:rel-op-ult op-jb)
+    (ir:rel-op-ule op-jbe)
+    (ir:rel-op-ugt op-ja)
+    (ir:rel-op-uge op-jae)))
 
 (defmethod instr-select:select-instrs% (stm frame target
                                         (target-arch target:arch-x86-64) target-os)
@@ -127,36 +127,36 @@
   (trivia:ematch stm
     ((or
       (trivia:guard
-       (ir:move-stm
-        (ir:temp-expr d)
-        (ir:mem-expr
-         (ir:bin-op-expr
-          (ir:temp-expr s0)
-          (ir:plus-bin-op)
-          (ir:bin-op-expr
-           (ir:temp-expr s1)
-           (ir:times-bin-op)
-           (ir:int-expr c)))))
+       (ir:stm-move
+        (ir:expr-temp d)
+        (ir:expr-mem
+         (ir:expr-bin-op
+          (ir:expr-temp s0)
+          (ir:bin-op-plus)
+          (ir:expr-bin-op
+           (ir:expr-temp s1)
+           (ir:bin-op-times)
+           (ir:expr-int c)))))
        (member c '(2 4 8)))
       (trivia:guard
-       (ir:move-stm
-        (ir:temp-expr d)
-        (ir:mem-expr
-         (ir:bin-op-expr
-          (ir:bin-op-expr
-           (ir:temp-expr s1)
-           (ir:times-bin-op)
-           (ir:int-expr c))
-          (ir:plus-bin-op)
-          (ir:temp-expr s0))))
+       (ir:stm-move
+        (ir:expr-temp d)
+        (ir:expr-mem
+         (ir:expr-bin-op
+          (ir:expr-bin-op
+           (ir:expr-temp s1)
+           (ir:bin-op-times)
+           (ir:expr-int c))
+          (ir:bin-op-plus)
+          (ir:expr-temp s0))))
        (member c '(2 4 8))))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
          *d0-arg*
-         (mem-arg
+         (arg-mem
           (mem-base-index-scale-disp
            *s0* *s1* c 0)))
         target)
@@ -164,80 +164,80 @@
        (list s0 s1)
        instr:not-jump)))
     ((or
-      (ir:move-stm
-       (ir:temp-expr d)
-       (ir:mem-expr
-        (ir:bin-op-expr
-         (ir:temp-expr s0)
-         (trivia:<> (or (ir:plus-bin-op) (ir:minus-bin-op)) op op)
-         (ir:int-expr c))))
-      (ir:move-stm
-       (ir:temp-expr d)
-       (ir:mem-expr
-        (ir:bin-op-expr
-         (ir:int-expr c)
-         (trivia:<> (or (ir:plus-bin-op) (ir:minus-bin-op)) op op)
-         (ir:temp-expr s0)))))
+      (ir:stm-move
+       (ir:expr-temp d)
+       (ir:expr-mem
+        (ir:expr-bin-op
+         (ir:expr-temp s0)
+         (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
+         (ir:expr-int c))))
+      (ir:stm-move
+       (ir:expr-temp d)
+       (ir:expr-mem
+        (ir:expr-bin-op
+         (ir:expr-int c)
+         (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
+         (ir:expr-temp s0)))))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
          *d0-arg*
-         (mem-arg
+         (arg-mem
           (mem-base-disp
            *s0*
            (trivia:ematch op
-             ((ir:plus-bin-op) c)
-             ((ir:minus-bin-op) (- c))))))
+             ((ir:bin-op-plus) c)
+             ((ir:bin-op-minus) (- c))))))
         target)
        (list d)
        (list s0)
        instr:not-jump)))
-    ((ir:move-stm
-      (ir:temp-expr d)
-      (ir:mem-expr
-       (ir:bin-op-expr
-        (ir:temp-expr s0)
-        (ir:plus-bin-op)
-        (ir:temp-expr s1))))
+    ((ir:stm-move
+      (ir:expr-temp d)
+      (ir:expr-mem
+       (ir:expr-bin-op
+        (ir:expr-temp s0)
+        (ir:bin-op-plus)
+        (ir:expr-temp s1))))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
          *d0-arg*
-         (mem-arg
+         (arg-mem
           (mem-base-dreg *s0* *s1*)))
         target)
        (list d)
        (list s0 s1)
        instr:not-jump)))
-    ((ir:move-stm
-      (ir:temp-expr d)
-      (ir:int-expr c))
+    ((ir:stm-move
+      (ir:expr-temp d)
+      (ir:expr-int c))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
-        (asm-bin-op op-mov *d0-arg* (int-arg c))
+        (asm-bin-op op-mov *d0-arg* (arg-int c))
         target)
        (list d)
        nil
        instr:not-jump)))
-    ((ir:move-stm
-      (ir:temp-expr d)
-      (ir:temp-expr s))
+    ((ir:stm-move
+      (ir:expr-temp d)
+      (ir:expr-temp s))
      (emit
-      (instr:move-instr
+      (instr:instr-move
        (asm->string
         (asm-bin-op op-mov *d0-arg* *s0-arg*)
         target)
        d s)))
-    ((ir:move-stm
-      (ir:temp-expr d)
+    ((ir:stm-move
+      (ir:expr-temp d)
       right)
      (emit
-      (instr:move-instr
+      (instr:instr-move
        (asm->string
         (asm-bin-op op-mov *d0-arg* *s0-arg*)
         target)
@@ -245,35 +245,35 @@
        (select-instr-expr right frame target))))
     ((or
       (trivia:guard
-       (ir:move-stm
-        (ir:mem-expr
-         (ir:bin-op-expr
-          (ir:temp-expr s1)
-          (ir:plus-bin-op)
-          (ir:bin-op-expr
-           (ir:temp-expr s2)
-           (ir:times-bin-op)
-           (ir:int-expr c))))
-        (ir:temp-expr s0))
+       (ir:stm-move
+        (ir:expr-mem
+         (ir:expr-bin-op
+          (ir:expr-temp s1)
+          (ir:bin-op-plus)
+          (ir:expr-bin-op
+           (ir:expr-temp s2)
+           (ir:bin-op-times)
+           (ir:expr-int c))))
+        (ir:expr-temp s0))
        (member c '(2 4 8)))
       (trivia:guard
-       (ir:move-stm
-        (ir:mem-expr
-         (ir:bin-op-expr
-          (ir:bin-op-expr
-           (ir:temp-expr s2)
-           (ir:times-bin-op)
-           (ir:int-expr c))
-          (ir:plus-bin-op)
-          (ir:temp-expr s1)))
-        (ir:temp-expr s0))
+       (ir:stm-move
+        (ir:expr-mem
+         (ir:expr-bin-op
+          (ir:expr-bin-op
+           (ir:expr-temp s2)
+           (ir:bin-op-times)
+           (ir:expr-int c))
+          (ir:bin-op-plus)
+          (ir:expr-temp s1)))
+        (ir:expr-temp s0))
        (member c '(2 4 8))))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
-         (mem-arg
+         (arg-mem
           (mem-base-index-scale-disp *s1* *s2* c 0))
          *s0-arg*)
         target)
@@ -282,181 +282,181 @@
        instr:not-jump)))
     ((or
       (trivia:guard
-       (ir:move-stm
-        (ir:mem-expr
-         (ir:bin-op-expr
-          (ir:temp-expr s0)
-          (ir:plus-bin-op)
-          (ir:bin-op-expr
-           (ir:temp-expr s1)
-           (ir:times-bin-op)
-           (ir:int-expr c0))))
-        (ir:int-expr c1))
+       (ir:stm-move
+        (ir:expr-mem
+         (ir:expr-bin-op
+          (ir:expr-temp s0)
+          (ir:bin-op-plus)
+          (ir:expr-bin-op
+           (ir:expr-temp s1)
+           (ir:bin-op-times)
+           (ir:expr-int c0))))
+        (ir:expr-int c1))
        (member c0 '(2 4 8)))
       (trivia:guard
-       (ir:move-stm
-        (ir:mem-expr
-         (ir:bin-op-expr
-          (ir:bin-op-expr
-           (ir:temp-expr s1)
-           (ir:times-bin-op)
-           (ir:int-expr c0))
-          (ir:plus-bin-op)
-          (ir:temp-expr s0)))
-        (ir:int-expr c1))
+       (ir:stm-move
+        (ir:expr-mem
+         (ir:expr-bin-op
+          (ir:expr-bin-op
+           (ir:expr-temp s1)
+           (ir:bin-op-times)
+           (ir:expr-int c0))
+          (ir:bin-op-plus)
+          (ir:expr-temp s0)))
+        (ir:expr-int c1))
        (member c0 '(2 4 8))))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
-         (mem-arg
+         (arg-mem
           (mem-base-index-scale-disp *s0* *s1* c0 0))
-         (int-arg c1))
+         (arg-int c1))
         target)
        nil
        (list s0 s1)
        instr:not-jump)))
     ((or
-      (ir:move-stm
-       (ir:mem-expr
-        (ir:bin-op-expr
-         (ir:temp-expr s1)
-         (trivia:<> (or (ir:plus-bin-op) (ir:minus-bin-op)) op op)
-         (ir:int-expr c)))
-       (ir:temp-expr s0))
-      (ir:move-stm
-       (ir:mem-expr
-        (ir:bin-op-expr
-         (ir:int-expr c)
-         (trivia:<> (or (ir:plus-bin-op) (ir:minus-bin-op)) op op)
-         (ir:temp-expr s1)))
-       (ir:temp-expr s0)))
+      (ir:stm-move
+       (ir:expr-mem
+        (ir:expr-bin-op
+         (ir:expr-temp s1)
+         (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
+         (ir:expr-int c)))
+       (ir:expr-temp s0))
+      (ir:stm-move
+       (ir:expr-mem
+        (ir:expr-bin-op
+         (ir:expr-int c)
+         (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
+         (ir:expr-temp s1)))
+       (ir:expr-temp s0)))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
-         (mem-arg
+         (arg-mem
           (mem-base-disp
            *s1*
            (trivia:ematch op
-             ((ir:plus-bin-op) c)
-             ((ir:minus-bin-op) (- c)))))
+             ((ir:bin-op-plus) c)
+             ((ir:bin-op-minus) (- c)))))
          *s0-arg*)
         target)
        nil
        (list s0 s1)
        instr:not-jump)))
-    ((ir:move-stm
-      (ir:mem-expr
-       (ir:bin-op-expr
-        (ir:temp-expr s0)
-        (ir:plus-bin-op)
-        (ir:temp-expr s1)))
-      (ir:int-expr c))
+    ((ir:stm-move
+      (ir:expr-mem
+       (ir:expr-bin-op
+        (ir:expr-temp s0)
+        (ir:bin-op-plus)
+        (ir:expr-temp s1)))
+      (ir:expr-int c))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
-         (mem-arg
+         (arg-mem
           (mem-base-dreg *s0* *s1*))
-         (int-arg c))
+         (arg-int c))
         target)
        nil
        (list s0 s1)
        instr:not-jump)))
-    ((ir:move-stm
-      (ir:mem-expr
-       (ir:bin-op-expr
-        (ir:temp-expr s1)
-        (ir:plus-bin-op)
-        (ir:temp-expr s2)))
-      (ir:temp-expr s0))
+    ((ir:stm-move
+      (ir:expr-mem
+       (ir:expr-bin-op
+        (ir:expr-temp s1)
+        (ir:bin-op-plus)
+        (ir:expr-temp s2)))
+      (ir:expr-temp s0))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
-         (mem-arg
+         (arg-mem
           (mem-base-dreg *s1* *s2*))
          *s0-arg*)
         target)
        nil
        (list s0 s1 s2)
        instr:not-jump)))
-    ((ir:move-stm
-      (ir:mem-expr
-       (ir:temp-expr s))
-      (ir:int-expr c))
+    ((ir:stm-move
+      (ir:expr-mem
+       (ir:expr-temp s))
+      (ir:expr-int c))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
-         (mem-arg (mem-reg *s0*))
-         (int-arg c))
+         (arg-mem (mem-reg *s0*))
+         (arg-int c))
         target)
        nil
        (list s)
        instr:not-jump)))
-    ((ir:move-stm
-      (ir:mem-expr
-       (ir:temp-expr s1))
-      (ir:temp-expr s0))
+    ((ir:stm-move
+      (ir:expr-mem
+       (ir:expr-temp s1))
+      (ir:expr-temp s0))
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
-         (mem-arg (mem-reg *s1*))
+         (arg-mem (mem-reg *s1*))
          *s0-arg*)
         target)
        nil
        (list s0 s1)
        instr:not-jump)))
-    ((ir:move-stm
-      (ir:mem-expr mem)
+    ((ir:stm-move
+      (ir:expr-mem mem)
       right)
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-bin-op
          op-mov
-         (mem-arg (mem-reg *s0*))
+         (arg-mem (mem-reg *s0*))
          *s1-arg*)
         target)
        nil
        (list (select-instr-expr mem frame target)
              (select-instr-expr right frame target))
        instr:not-jump)))
-    ((ir:expr-stm expr)
+    ((ir:stm-expr expr)
      (select-instr-expr expr frame target)
      nil)
-    ((ir:jump-stm
-      (ir:label-expr label)
+    ((ir:stm-jump
+      (ir:expr-label label)
       _)
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-unary-op op-jmp *j0-arg*)
         target)
        nil
        nil
        (instr:is-jump (list label)))))
-    ((ir:jump-stm expr possible-labels)
+    ((ir:stm-jump expr possible-labels)
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (asm->string
         (asm-unary-op op-jmp *s0-arg*)
         target)
        nil
        (list (select-instr-expr expr frame target))
        (instr:is-jump possible-labels))))
-    ((ir:cjump-stm left op right true-target false-target)
+    ((ir:stm-cjump left op right true-target false-target)
      (emit
-      (instr:op-instr
+      (instr:instr-op
        (format nil "~A~%~A~%~A"
                (asm->string
                 (asm-bin-op op-cmp *s0-arg* *s1-arg*)
@@ -473,30 +473,30 @@
        (list (select-instr-expr left frame target)
              (select-instr-expr right frame target))
        (instr:is-jump (list true-target false-target)))))
-    ((ir:compound-stm first second)
+    ((ir:stm-compound first second)
      (select-instr-stm first frame target)
      (select-instr-stm second frame target))
-    ((ir:label-stm name)
+    ((ir:stm-label name)
      (emit
-      (instr:label-instr
+      (instr:instr-label
        (asm->string (asm-label name) target)
        name)))))
 
 (defun select-instr-expr (expr frame target)
   (trivia:ematch expr
-    ((ir:int-expr value)
+    ((ir:expr-int value)
      (let ((r (temp:new-temp)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
-          (asm-bin-op op-mov *d0-arg* (int-arg value))
+          (asm-bin-op op-mov *d0-arg* (arg-int value))
           target)
          (list r) nil instr:not-jump))
        r))
-    ((ir:label-expr label)
+    ((ir:expr-label label)
      (let ((r (temp:new-temp)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-get-label-addr *d0-arg* label)
           target)
@@ -504,29 +504,29 @@
          nil
          instr:not-jump))
        r))
-    ((ir:temp-expr temp)
+    ((ir:expr-temp temp)
      temp)
-    ((ir:bin-op-expr left (ir:div-bin-op) right)
+    ((ir:expr-bin-op left (ir:bin-op-div) right)
      (let ((r (temp:new-temp)))
        (emit
         ;; Clear rdx.
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
-          (asm-bin-op op-mov *d0-arg* (int-arg 0))
+          (asm-bin-op op-mov *d0-arg* (arg-int 0))
           target)
          (list (temp:named-temp "rdx"))
          nil
          instr:not-jump))
        (emit
         ;; We select instrs for right later, shorten the live range.
-        (instr:move-instr
+        (instr:instr-move
          (asm->string
           (asm-bin-op op-mov *d0-arg* *s0-arg*)
           target)
          (temp:named-temp "rax")
          (select-instr-expr left frame target)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-unary-op op-idiv *s0-arg*)
           target)
@@ -537,42 +537,42 @@
                (temp:named-temp "rdx"))
          instr:not-jump))
        (emit
-        (instr:move-instr
+        (instr:instr-move
          (asm->string
           (asm-bin-op op-mov *d0-arg* *s0-arg*)
           target)
          r (temp:named-temp "rax")))
        r))
-    ((ir:bin-op-expr left
+    ((ir:expr-bin-op left
                      (trivia:<>
-                      (or (ir:plus-bin-op)
-                          (ir:minus-bin-op)
-                          (ir:times-bin-op)
-                          (ir:and-bin-op)
-                          (ir:or-bin-op)
-                          (ir:xor-bin-op))
+                      (or (ir:bin-op-plus)
+                          (ir:bin-op-minus)
+                          (ir:bin-op-times)
+                          (ir:bin-op-and)
+                          (ir:bin-op-or)
+                          (ir:bin-op-xor))
                       op
                       op)
                      right)
      (let ((r (temp:new-temp)))
        (emit
-        (instr:move-instr
+        (instr:instr-move
          (asm->string
           (asm-bin-op op-mov *d0-arg* *s0-arg*)
           target)
          r
          (select-instr-expr left frame target)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-bin-op
            (trivia:ematch op
-             ((ir:plus-bin-op) op-add)
-             ((ir:minus-bin-op) op-sub)
-             ((ir:times-bin-op) op-imul)
-             ((ir:and-bin-op) op-and)
-             ((ir:or-bin-op) op-or)
-             ((ir:xor-bin-op) op-xor))
+             ((ir:bin-op-plus) op-add)
+             ((ir:bin-op-minus) op-sub)
+             ((ir:bin-op-times) op-imul)
+             ((ir:bin-op-and) op-and)
+             ((ir:bin-op-or) op-or)
+             ((ir:bin-op-xor) op-xor))
            *d0-arg*
            *s0-arg*)
           target)
@@ -580,70 +580,70 @@
          (list (select-instr-expr right frame target) r)
          instr:not-jump))
        r))
-    ((ir:bin-op-expr left
+    ((ir:expr-bin-op left
                      (trivia:<>
-                      (or (ir:lshift-bin-op)
-                          (ir:rshift-bin-op)
-                          (ir:arshift-bin-op))
+                      (or (ir:bin-op-lshift)
+                          (ir:bin-op-rshift)
+                          (ir:bin-op-arshift))
                       op
                       op)
-                     (ir:int-expr c))
+                     (ir:expr-int c))
      (unless (<= 0 c 63)
        (error "Perform operations ~S with ~A bits which is more than 63" op c))
      (let ((r (temp:new-temp)))
        (emit
-        (instr:move-instr
+        (instr:instr-move
          (asm->string
           (asm-bin-op op-mov *d0-arg* *s0-arg*)
           target)
          r
          (select-instr-expr left frame target)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-bin-op
            (trivia:ematch op
-             ((ir:lshift-bin-op) op-shl)
-             ((ir:rshift-bin-op) op-shr)
-             ((ir:arshift-bin-op) op-sar))
+             ((ir:bin-op-lshift) op-shl)
+             ((ir:bin-op-rshift) op-shr)
+             ((ir:bin-op-arshift) op-sar))
            *d0-arg*
-           (int-arg c))
+           (arg-int c))
           target)
          (list r)
          (list r)
          instr:not-jump))
        r))
-    ((ir:bin-op-expr left
+    ((ir:expr-bin-op left
                      (trivia:<>
-                      (or (ir:lshift-bin-op)
-                          (ir:rshift-bin-op)
-                          (ir:arshift-bin-op))
+                      (or (ir:bin-op-lshift)
+                          (ir:bin-op-rshift)
+                          (ir:bin-op-arshift))
                       op
                       op)
                      right)
      (let ((r (temp:new-temp)))
        (emit
-        (instr:move-instr
+        (instr:instr-move
          (asm->string
           (asm-bin-op op-mov *d0-arg* *s0-arg*)
           target)
          r
          (select-instr-expr left frame target)))
        (emit
-        (instr:move-instr
+        (instr:instr-move
          (asm->string
           (asm-bin-op op-mov *d0-arg* *s0-arg*)
           target)
          (temp:named-temp "rcx")
          (select-instr-expr right frame target)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-bin-op
            (trivia:ematch op
-             ((ir:lshift-bin-op) op-shl)
-             ((ir:rshift-bin-op) op-shr)
-             ((ir:arshift-bin-op) op-sar))
+             ((ir:bin-op-lshift) op-shl)
+             ((ir:bin-op-rshift) op-shr)
+             ((ir:bin-op-arshift) op-sar))
            *d0-arg*
            *cl-arg*)
           target)
@@ -653,33 +653,33 @@
        r))
     ((or
       (trivia:guard
-       (ir:mem-expr
-        (ir:bin-op-expr
-         (ir:temp-expr s0)
-         (ir:plus-bin-op)
-         (ir:bin-op-expr
-          (ir:temp-expr s1)
-          (ir:times-bin-op)
-          (ir:int-expr c))))
+       (ir:expr-mem
+        (ir:expr-bin-op
+         (ir:expr-temp s0)
+         (ir:bin-op-plus)
+         (ir:expr-bin-op
+          (ir:expr-temp s1)
+          (ir:bin-op-times)
+          (ir:expr-int c))))
        (member c '(2 4 8)))
       (trivia:guard
-       (ir:mem-expr
-        (ir:bin-op-expr
-         (ir:bin-op-expr
-          (ir:temp-expr s1)
-          (ir:times-bin-op)
-          (ir:int-expr c))
-         (ir:plus-bin-op)
-         (ir:temp-expr s0)))
+       (ir:expr-mem
+        (ir:expr-bin-op
+         (ir:expr-bin-op
+          (ir:expr-temp s1)
+          (ir:bin-op-times)
+          (ir:expr-int c))
+         (ir:bin-op-plus)
+         (ir:expr-temp s0)))
        (member c '(2 4 8))))
      (let ((r (temp:new-temp)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-bin-op
            op-mov
            *d0-arg*
-           (mem-arg
+           (arg-mem
             (mem-base-index-scale-disp *s0* *s1* c 0)))
           target)
          (list r)
@@ -687,72 +687,72 @@
          instr:not-jump))
        r))
     ((or
-      (ir:mem-expr
-       (ir:bin-op-expr
-        (ir:temp-expr s0)
-        (trivia:<> (or (ir:plus-bin-op) (ir:minus-bin-op)) op op)
-        (ir:int-expr c)))
-      (ir:mem-expr
-       (ir:bin-op-expr
-        (ir:int-expr c)
-        (trivia:<> (or (ir:plus-bin-op) (ir:minus-bin-op)) op op)
-        (ir:temp-expr s0))))
+      (ir:expr-mem
+       (ir:expr-bin-op
+        (ir:expr-temp s0)
+        (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
+        (ir:expr-int c)))
+      (ir:expr-mem
+       (ir:expr-bin-op
+        (ir:expr-int c)
+        (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
+        (ir:expr-temp s0))))
      (let ((r (temp:new-temp)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-bin-op
            op-mov
            *d0-arg*
-           (mem-arg
+           (arg-mem
             (mem-base-disp
              *s0*
              (trivia:ematch op
-               ((ir:plus-bin-op) c)
-               ((ir:minus-bin-op) (- c))))))
+               ((ir:bin-op-plus) c)
+               ((ir:bin-op-minus) (- c))))))
           target)
          (list r)
          (list s0)
          instr:not-jump))
        r))
-    ((ir:mem-expr
-      (ir:bin-op-expr
-       (ir:temp-expr s0)
-       (ir:plus-bin-op)
-       (ir:temp-expr s1)))
+    ((ir:expr-mem
+      (ir:expr-bin-op
+       (ir:expr-temp s0)
+       (ir:bin-op-plus)
+       (ir:expr-temp s1)))
      (let ((r (temp:new-temp)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-bin-op
            op-mov
            *d0-arg*
-           (mem-arg
+           (arg-mem
             (mem-base-dreg *s0* *s1*)))
           target)
          (list r)
          (list s0 s1)
          instr:not-jump))
        r))
-    ((ir:mem-expr
+    ((ir:expr-mem
       expr)
      (let ((r (temp:new-temp)))
        (emit
-        (instr:op-instr
+        (instr:instr-op
          (asm->string
           (asm-bin-op
            op-mov
            *d0-arg*
-           (mem-arg (mem-reg *s0*)))
+           (arg-mem (mem-reg *s0*)))
           target)
          (list r)
          (list (select-instr-expr expr frame target))
          instr:not-jump))
        r))
-    ((ir:call-expr fun args)
+    ((ir:expr-call fun args)
      (let ((f (temp:new-temp "fun")))
        (emit
-        (instr:move-instr
+        (instr:instr-move
          (asm->string
           (asm-bin-op op-mov *d0-arg* *s0-arg*)
           target)
@@ -760,15 +760,15 @@
        (let ((arg-temps (select-instr-args args frame target))
              (r (temp:new-temp)))
          (emit
-          (instr:call-instr
+          (instr:instr-call
            (asm->string
-            (asm-unary-op op-call (call-reg-arg *s0*))
+            (asm-unary-op op-call (arg-call-reg *s0*))
             target)
            (frame:caller-saves target)
            (cons f arg-temps)
            (length args)))
          (emit
-          (instr:move-instr
+          (instr:instr-move
            (asm->string
             (asm-bin-op op-mov *d0-arg* *s0-arg*)
             target)
@@ -779,7 +779,7 @@
          ;; return by select-instr-expr won't be overwritten,
          ;; Pass back the rax directly violate this assumption.
          r)))
-    ((ir:stm-then-expr stm expr)
+    ((ir:expr-stm-then-expr stm expr)
      (select-instr-stm stm frame target)
      (select-instr-expr expr frame target))))
 
@@ -798,7 +798,7 @@
          (arg-temps (loop for arg in args
                           collect (let ((r (temp:new-temp)))
                                     (emit
-                                     (instr:move-instr
+                                     (instr:instr-move
                                       (asm->string
                                        (asm-bin-op op-mov *d0-arg* *s0-arg*)
                                        target)
@@ -810,7 +810,7 @@
           for arg in (reverse args)
           do (cond ((< i arg-regs-len)
                     (emit
-                     (instr:move-instr
+                     (instr:instr-move
                       (asm->string
                        (asm-bin-op op-mov *d0-arg* *s0-arg*)
                        target)
@@ -820,7 +820,7 @@
                       (nth i arg-temps))))
                    (t
                     (emit
-                     (instr:stack-arg-instr
+                     (instr:instr-stack-arg
                       ;; We don't know the final frame size yet,
                       ;; cannot calculate the correct offset, so we
                       ;; use a arbitrary number (0) as offset and
@@ -828,7 +828,7 @@
                       (asm->string
                        (asm-bin-op
                         op-mov
-                        (mem-arg
+                        (arg-mem
                          (mem-base-disp *s0* 0))
                         *s1-arg*)
                        target)
@@ -842,12 +842,12 @@
                             ;; Avoid use the modified i.
                             (i i))
                         (lambda (instr frame-size)
-                          (trivia:let-match1 (instr:stack-arg-instr _ dsts srcs _) instr
-                            (instr:stack-arg-instr
+                          (trivia:let-match1 (instr:instr-stack-arg _ dsts srcs _) instr
+                            (instr:instr-stack-arg
                              (asm->string
                               (asm-bin-op
                                op-mov
-                               (mem-arg
+                               (arg-mem
                                 (mem-base-disp
                                  *s0*
                                  (+ (- frame-size)
@@ -903,15 +903,15 @@
 
 (defun masm-arg->string (arg target)
   (serapeum:match-of arg arg
-    ((mem-arg value)
+    ((arg-mem value)
      (masm-mem->string value))
-    ((temp-arg value)
+    ((arg-temp value)
      (format nil "~A" (temp:temp-name value)))
-    ((label-arg value)
+    ((arg-label value)
      (format nil "~A" (frame:label-name value target)))
-    ((call-reg-arg value)
+    ((arg-call-reg value)
      (format nil "~A" (temp:temp-name value)))
-    ((int-arg value)
+    ((arg-int value)
      (format nil "~A" value))))
 
 (defun masm-op->string (op)
@@ -977,15 +977,15 @@
 
 (defun gas-arg->string (arg target)
   (serapeum:match-of arg arg
-    ((mem-arg value)
+    ((arg-mem value)
      (gas-mem->string value))
-    ((temp-arg value)
+    ((arg-temp value)
      (format nil "%~A" (temp:temp-name value)))
-    ((label-arg value)
+    ((arg-label value)
      (format nil "~A" (frame:label-name value target)))
-    ((call-reg-arg value)
+    ((arg-call-reg value)
      (format nil "*%~A" (temp:temp-name value)))
-    ((int-arg value)
+    ((arg-int value)
      (format nil "$~A" value))))
 
 (defun gas-op->string (op)

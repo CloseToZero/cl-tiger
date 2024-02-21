@@ -30,38 +30,38 @@
 
 (defun find-and-fill-escapes-expr (escape-ref-env depth expr)
   (serapeum:match-of ast:expr expr
-    ((ast:var-expr var)
+    ((ast:expr-var var)
      (find-and-fill-escapes-var escape-ref-env depth var))
-    ((ast:nil-expr) nil)
-    ((ast:int-expr _) nil)
-    ((ast:string-expr _ _) nil)
-    ((ast:call-expr _ args _)
+    ((ast:expr-nil) nil)
+    ((ast:expr-int _) nil)
+    ((ast:expr-string _ _) nil)
+    ((ast:expr-call _ args _)
      (mapc (lambda (arg)
              (find-and-fill-escapes-expr escape-ref-env depth arg))
            args))
-    ((ast:op-expr left _ right _)
+    ((ast:expr-op left _ right _)
      (find-and-fill-escapes-expr escape-ref-env depth left)
      (find-and-fill-escapes-expr escape-ref-env depth right))
-    ((ast:record-expr _ fields _)
+    ((ast:expr-record _ fields _)
      (mapc (lambda (field)
              ;; form: (sym expr pos).
              (find-and-fill-escapes-expr escape-ref-env depth (second field)))
            fields))
-    ((ast:seq-expr exprs)
+    ((ast:expr-seq exprs)
      (mapc (lambda (expr-with-pos)
              ;; expr-with-pos form: (expr pos).
              (find-and-fill-escapes-expr escape-ref-env depth (first expr-with-pos)))
            exprs))
-    ((ast:assign-expr _ expr _)
+    ((ast:expr-assign _ expr _)
      (find-and-fill-escapes-expr escape-ref-env depth expr))
-    ((ast:if-expr test then else _)
+    ((ast:expr-if test then else _)
      (find-and-fill-escapes-expr escape-ref-env depth test)
      (find-and-fill-escapes-expr escape-ref-env depth then)
      (when else (find-and-fill-escapes-expr escape-ref-env depth else)))
-    ((ast:while-expr test body _)
+    ((ast:expr-while test body _)
      (find-and-fill-escapes-expr escape-ref-env depth test)
      (find-and-fill-escapes-expr escape-ref-env depth body))
-    ((ast:for-expr var low high body _ escape-ref)
+    ((ast:expr-for var low high body _ escape-ref)
      (find-and-fill-escapes-expr escape-ref-env depth low)
      (find-and-fill-escapes-expr escape-ref-env depth high)
      (find-and-fill-escapes-expr (insert-escape-ref
@@ -69,41 +69,41 @@
                                   (progn (setf (ast:escape-ref-value escape-ref) nil)
                                          escape-ref))
                                  depth body))
-    ((ast:break-expr _)
+    ((ast:expr-break _)
      nil)
-    ((ast:array-expr _ size init _)
+    ((ast:expr-array _ size init _)
      (find-and-fill-escapes-expr escape-ref-env depth size)
      (find-and-fill-escapes-expr escape-ref-env depth init))
-    ((ast:let-expr decls body _)
+    ((ast:expr-let decls body _)
      (let ((new-escape-ref-env (find-and-fill-escapes-decls escape-ref-env depth decls)))
        (find-and-fill-escapes-expr new-escape-ref-env depth body)))))
 
 (defun find-and-fill-escapes-var (escape-ref-env depth var)
   (serapeum:match-of ast:var var
-    ((ast:simple-var sym _)
+    ((ast:var-simple sym _)
      (trivia:let-match1 (list escape-ref-depth escape-ref) (get-escape-ref escape-ref-env sym)
        (when (> depth escape-ref-depth)
          (setf (ast:escape-ref-value escape-ref) t)))
      nil)
-    ((ast:field-var var _ _)
+    ((ast:var-field var _ _)
      (find-and-fill-escapes-var escape-ref-env depth var))
-    ((ast:subscript-var var expr _)
+    ((ast:var-subscript var expr _)
      (find-and-fill-escapes-expr escape-ref-env depth expr)
      (find-and-fill-escapes-var escape-ref-env depth var))))
 
 (defun find-and-fill-escapes-decl (escape-ref-env depth decl)
   (serapeum:match-of ast:decl decl
-    ((ast:var-decl name _ init _ escape-ref)
+    ((ast:decl-var name _ init _ escape-ref)
      (find-and-fill-escapes-expr escape-ref-env depth init)
      (insert-escape-ref escape-ref-env name depth
                         (progn (setf (ast:escape-ref-value escape-ref) nil)
                                escape-ref)))
-    ((ast:type-decls _) escape-ref-env)
-    ((ast:function-decls function-decls)
-     (mapc (lambda (function-decl)
+    ((ast:decl-types _) escape-ref-env)
+    ((ast:decl-functions decl-functions)
+     (mapc (lambda (decl-function)
              (find-and-fill-escapes-expr
               (loop with acc-escape-ref-env = escape-ref-env
-                    for param-field in (ast:function-decl-params function-decl)
+                    for param-field in (ast:decl-function-params decl-function)
                     do (setf acc-escape-ref-env
                              (insert-escape-ref acc-escape-ref-env
                                                 (ast:field-name param-field)
@@ -112,8 +112,8 @@
                                                   (setf (ast:escape-ref-value escape-ref) nil)
                                                   escape-ref)))
                     finally (return acc-escape-ref-env))
-              (+ depth 1) (ast:function-decl-body function-decl)))
-           function-decls)
+              (+ depth 1) (ast:decl-function-body decl-function)))
+           decl-functions)
      escape-ref-env)))
 
 (defun find-and-fill-escapes-decls (escape-ref-env depth decls)
@@ -123,8 +123,8 @@
           :initial-value escape-ref-env))
 
 (serapeum:defunion level
-  top-level
-  (inner-level
+  level-top
+  (level-inner
    (parent level)
    (name temp:label)
    (frame frame:frame)))
@@ -143,17 +143,17 @@
 
 (defun new-level (parent name formals target)
   (let ((frame (frame:new-frame name (cons t formals) target)))
-    (inner-level parent name frame)))
+    (level-inner parent name frame)))
 
 (defun level-formals (level)
   (rest (mapcar (lambda (frame-access)
                   (access level frame-access))
-                (frame:frame-formals (inner-level-frame level)))))
+                (frame:frame-formals (level-inner-frame level)))))
 
 (defun alloc-local (level escape target)
   (serapeum:match-of level level
-    (top-level (error "Cannot alloc a local variable in the top level."))
-    ((inner-level _ _ frame)
+    (level-top (error "Cannot alloc a local variable in the top level."))
+    ((level-inner _ _ frame)
      (access level (frame:alloc-local frame escape target)))))
 
 (defun tagged-ir->expr (tagged-ir)
@@ -161,49 +161,49 @@
     ((tagged-expr value)
      value)
     ((tagged-stm value)
-     (ir:stm-then-expr value (ir:int-expr 0)))
+     (ir:expr-stm-then-expr value (ir:expr-int 0)))
     ((tagged-condi value)
      (let ((result-temp (temp:new-temp "result"))
            (true-label (temp:new-label "true"))
            (false-label (temp:new-label "false")))
-       (ir:stm-then-expr
-        (ir:stms->compound-stm
-         (ir:move-stm (ir:temp-expr result-temp) (ir:int-expr 1))
+       (ir:expr-stm-then-expr
+        (ir:stms->stm-compound
+         (ir:stm-move (ir:expr-temp result-temp) (ir:expr-int 1))
          (funcall value true-label false-label)
-         (ir:label-stm false-label)
-         (ir:move-stm (ir:temp-expr result-temp) (ir:int-expr 0))
-         (ir:label-stm true-label))
-        (ir:temp-expr result-temp))))))
+         (ir:stm-label false-label)
+         (ir:stm-move (ir:expr-temp result-temp) (ir:expr-int 0))
+         (ir:stm-label true-label))
+        (ir:expr-temp result-temp))))))
 
 (defun tagged-ir->stm (tagged-ir)
   (serapeum:match-of tagged-ir tagged-ir
     ((tagged-expr value)
-     (ir:expr-stm value))
+     (ir:stm-expr value))
     ((tagged-stm value)
      value)
     ((tagged-condi value)
      (let ((true-label (temp:new-label "true"))
            (false-label (temp:new-label "false")))
-       (ir:stms->compound-stm
+       (ir:stms->stm-compound
         (funcall value true-label false-label)
-        (ir:label-stm true-label)
-        (ir:label-stm false-label))))))
+        (ir:stm-label true-label)
+        (ir:stm-label false-label))))))
 
 (defun tagged-ir->condi (tagged-ir)
   (serapeum:match-of tagged-ir tagged-ir
     ((tagged-expr value)
      (serapeum:match-of ir:expr value
-       ((ir:int-expr 0)
+       ((ir:expr-int 0)
         (lambda (true-label false-label)
           (declare (ignore true-label))
-          (ir:jump-stm (ir:label-expr false-label) (list false-label))))
-       ((ir:int-expr _)
+          (ir:stm-jump (ir:expr-label false-label) (list false-label))))
+       ((ir:expr-int _)
         (lambda (true-label false-label)
           (declare (ignore false-label))
-          (ir:jump-stm (ir:label-expr true-label) (list true-label))))
+          (ir:stm-jump (ir:expr-label true-label) (list true-label))))
        (_
         (lambda (true-label false-label)
-          (ir:cjump-stm value ir:neq-rel-op (ir:int-expr 0)
+          (ir:stm-cjump value ir:rel-op-neq (ir:expr-int 0)
                         true-label false-label)))))
     ((tagged-stm _)
      (error "Cannot convert a ir:stm which has no value to a conditional jump generate function."))
@@ -212,27 +212,27 @@
 
 ;; cur-level should be a descendant of target-level.
 (defun fp-expr (cur-level target-level target)
-  (when (typep target-level 'top-level)
-    (error "target-level argument of fp-expr should not be top-level."))
+  (when (typep target-level 'level-top)
+    (error "target-level argument of fp-expr should not be level-top."))
   (labels ((rec (cur-level acc-fp-expr)
-             (when (typep cur-level 'top-level)
-               (error "cur-level argument of fp-expr should not be top-level."))
+             (when (typep cur-level 'level-top)
+               (error "cur-level argument of fp-expr should not be level-top."))
              (if (eq cur-level target-level)
                  acc-fp-expr
-                 (trivia:let-match1 (inner-level parent _ frame) cur-level
+                 (trivia:let-match1 (level-inner parent _ frame) cur-level
                    (rec parent
                         (frame:access-expr
                          (or (car (frame:frame-formals frame))
                              (error "Missing static link in the frame: ~S" frame))
                          acc-fp-expr
                          target))))))
-    (rec cur-level (ir:temp-expr (frame:fp target)))))
+    (rec cur-level (ir:expr-temp (frame:fp target)))))
 
 (serapeum:defunion ir-entry
-  (ir-var-entry
+  (ir-entry-var
    (ty types:ty)
    (access access))
-  (ir-fun-entry
+  (ir-entry-fun
    ;; A list of types:ty
    (formal-types list)
    (result-type types:ty)
@@ -243,7 +243,7 @@
   (let ((env (fset:empty-map)))
     (reduce (lambda (env binding)
               (trivia:let-match1 (list name formal-types result-type) binding
-                (let ((level (new-level top-level
+                (let ((level (new-level level-top
                                         (temp:new-named-label name)
                                         (mapcar (lambda (formal-type)
                                                   (declare (ignore formal-type)) nil)
@@ -251,7 +251,7 @@
                                         target)))
                   (fset:with env
                              (symbol:get-sym name)
-                             (ir-fun-entry formal-types
+                             (ir-entry-fun formal-types
                                            result-type
                                            (temp:new-named-label name)
                                            level)))))
@@ -266,29 +266,29 @@
 
 (defun translate-ty (type-env ty)
   (serapeum:match-of ast:ty ty
-    ((ast:name-ty name _)
+    ((ast:ty-name name _)
      (types:get-type type-env name))
-    ((ast:record-ty fields)
-     (types:record-ty
+    ((ast:ty-record fields)
+     (types:ty-record
       (mapcar (lambda (field)
                 (trivia:let-match1 (ast:field name type-id _ _) field
                   (list name (types:get-type type-env type-id))))
               fields)))
-    ((ast:array-ty base-type-id _)
-     (types:array-ty (types:get-type type-env base-type-id)))))
+    ((ast:ty-array base-type-id _)
+     (types:ty-array (types:get-type type-env base-type-id)))))
 
 (defun translate-var (type-env ir-env level target break-target var)
   (serapeum:match-of ast:var var
-    ((ast:simple-var sym _)
-     (trivia:let-match1 (ir-var-entry ty access) (get-ir-entry ir-env sym)
+    ((ast:var-simple sym _)
+     (trivia:let-match1 (ir-entry-var ty access) (get-ir-entry ir-env sym)
        (list
         (types:actual-ty ty)
         (tagged-expr (frame:access-expr
                       (access-frame-access access)
                       (fp-expr level (access-level access) target)
                       target)))))
-    ((ast:field-var var sym _)
-     (trivia:let-match1 (list (types:record-ty fields) var-tagged-ir)
+    ((ast:var-field var sym _)
+     (trivia:let-match1 (list (types:ty-record fields) var-tagged-ir)
          (translate-var type-env ir-env level target break-target var)
        (trivia:let-match1 (list _ ty index)
            (loop for (field-sym field-ty) in fields
@@ -297,139 +297,139 @@
                    return (list field-sym field-ty index))
          (list (types:actual-ty ty)
                (tagged-expr
-                (ir:stm-then-expr
-                 (ir:expr-stm
+                (ir:expr-stm-then-expr
+                 (ir:stm-expr
                   (frame:external-call
                    "CheckNilRecord"
                    (list (tagged-ir->expr var-tagged-ir))
                    target))
-                 (ir:mem-expr
-                  (ir:bin-op-expr
+                 (ir:expr-mem
+                  (ir:expr-bin-op
                    (tagged-ir->expr var-tagged-ir)
-                   ir:plus-bin-op
-                   (ir:int-expr (* index (frame:word-size target)))))))))))
-    ((ast:subscript-var var expr _)
-     (trivia:let-match (((list (types:array-ty base-type) var-tagged-ir)
+                   ir:bin-op-plus
+                   (ir:expr-int (* index (frame:word-size target)))))))))))
+    ((ast:var-subscript var expr _)
+     (trivia:let-match (((list (types:ty-array base-type) var-tagged-ir)
                          (translate-var type-env ir-env level target break-target var))
                         ((list _ expr-tagged-ir)
                          (translate-expr type-env ir-env level target break-target expr)))
        (list (types:actual-ty base-type)
              (tagged-expr
-              (ir:stm-then-expr
-               (ir:expr-stm
+              (ir:expr-stm-then-expr
+               (ir:stm-expr
                 (frame:external-call
                  "CheckArraySubscript"
                  (list
                   (tagged-ir->expr var-tagged-ir)
                   (tagged-ir->expr expr-tagged-ir))
                  target))
-               (ir:mem-expr
-                (ir:bin-op-expr
+               (ir:expr-mem
+                (ir:expr-bin-op
                  (tagged-ir->expr var-tagged-ir)
-                 ir:plus-bin-op
-                 (ir:bin-op-expr
+                 ir:bin-op-plus
+                 (ir:expr-bin-op
                   ;; Skip array head (storing array size).
-                  (ir:bin-op-expr
+                  (ir:expr-bin-op
                    (tagged-ir->expr expr-tagged-ir)
-                   ir:plus-bin-op
-                   (ir:int-expr 1))
-                  ir:times-bin-op
-                  (ir:int-expr (frame:word-size target))))))))))))
+                   ir:bin-op-plus
+                   (ir:expr-int 1))
+                  ir:bin-op-times
+                  (ir:expr-int (frame:word-size target))))))))))))
 
 (defun translate-decl (type-env ir-env level target break-target decl)
   (serapeum:match-of ast:decl decl
-    ((ast:var-decl name typ init _ escape-ref)
+    ((ast:decl-var name typ init _ escape-ref)
      (trivia:let-match1 (list init-ty init-tagged-ir)
          (translate-expr type-env ir-env level target break-target init)
        (let ((var-access (alloc-local level (ast:escape-ref-value escape-ref) target)))
          (list type-env
                (insert-ir-entry
                 ir-env name
-                (ir-var-entry
+                (ir-entry-var
                  (if typ
                      (types:actual-ty (types:get-type type-env (first typ)))
                      init-ty)
                  var-access))
                (list
                 (tagged-stm
-                 (ir:move-stm
+                 (ir:stm-move
                   (frame:access-expr
                    (access-frame-access var-access)
                    (fp-expr level (access-level var-access) target)
                    target)
                   (tagged-ir->expr init-tagged-ir))))))))
-    ((ast:type-decls type-decls)
+    ((ast:decl-types decl-types)
      (let ((new-type-env
-             (reduce (lambda (acc-type-env type-decl)
+             (reduce (lambda (acc-type-env decl-type)
                        (types:insert-type acc-type-env
-                                          (ast:type-decl-name type-decl)
-                                          (types:name-ty (ast:type-decl-name type-decl) (types:ty-ref nil))))
-                     type-decls
+                                          (ast:decl-type-name decl-type)
+                                          (types:ty-name (ast:decl-type-name decl-type) (types:ty-ref nil))))
+                     decl-types
                      :initial-value type-env)))
-       (mapc (lambda (type-decl)
+       (mapc (lambda (decl-type)
                (setf
-                (types:ty-ref-value (types:name-ty-ty-ref
-                                     (types:get-type new-type-env (ast:type-decl-name type-decl))))
-                (translate-ty new-type-env (ast:type-decl-ty type-decl))))
-             type-decls)
+                (types:ty-ref-value (types:ty-name-ty-ref
+                                     (types:get-type new-type-env (ast:decl-type-name decl-type))))
+                (translate-ty new-type-env (ast:decl-type-ty decl-type))))
+             decl-types)
        (list new-type-env ir-env nil)))
-    ((ast:function-decls function-decls)
+    ((ast:decl-functions decl-functions)
      (let ((new-ir-env
-             (reduce (lambda (acc-ir-env function-decl)
-                       (let ((name (temp:new-label (symbol:sym-name (ast:function-decl-name function-decl)))))
+             (reduce (lambda (acc-ir-env decl-function)
+                       (let ((name (temp:new-label (symbol:sym-name (ast:decl-function-name decl-function)))))
                          (insert-ir-entry
                           acc-ir-env
-                          (ast:function-decl-name function-decl)
-                          (ir-fun-entry
+                          (ast:decl-function-name decl-function)
+                          (ir-entry-fun
                            (mapcar (lambda (param-field)
                                      (types:get-type type-env (ast:field-type-id param-field)))
-                                   (ast:function-decl-params function-decl))
-                           (let ((function-decl-result (ast:function-decl-result function-decl)))
-                             ;; function-decl-result form: (sym pos).
-                             (if function-decl-result
-                                 (types:get-type type-env (first function-decl-result))
+                                   (ast:decl-function-params decl-function))
+                           (let ((decl-function-result (ast:decl-function-result decl-function)))
+                             ;; decl-function-result form: (sym pos).
+                             (if decl-function-result
+                                 (types:get-type type-env (first decl-function-result))
                                  (types:get-unnamed-base-type (symbol:get-sym "unit"))))
                            name
                            (new-level level name
                                       (mapcar (lambda (param-field)
                                                 (ast:escape-ref-value
                                                  (ast:field-escape-ref param-field)))
-                                              (ast:function-decl-params function-decl))
+                                              (ast:decl-function-params decl-function))
                                       target)))))
-                     function-decls
+                     decl-functions
                      :initial-value ir-env)))
-       (mapc (lambda (function-decl)
-               (let ((ir-entry (get-ir-entry new-ir-env (ast:function-decl-name function-decl))))
-                 (trivia:let-match1 (ir-fun-entry formal-types _ _ level) ir-entry
+       (mapc (lambda (decl-function)
+               (let ((ir-entry (get-ir-entry new-ir-env (ast:decl-function-name decl-function))))
+                 (trivia:let-match1 (ir-entry-fun formal-types _ _ level) ir-entry
                    (trivia:let-match1 (list _ body-tagged-ir)
                        (translate-expr
                         type-env
                         (loop with acc-ir-env = new-ir-env
                               for formal-type in formal-types
-                              for param-field in (ast:function-decl-params function-decl)
+                              for param-field in (ast:decl-function-params decl-function)
                               for formal-access in (level-formals level)
                               do (setf acc-ir-env
                                        (insert-ir-entry
                                         acc-ir-env
                                         (ast:field-name param-field)
-                                        (ir-var-entry
+                                        (ir-entry-var
                                          formal-type
                                          formal-access)))
                               finally (return acc-ir-env))
                         level
                         target
                         break-target
-                        (ast:function-decl-body function-decl))
-                     (let ((frame (inner-level-frame level)))
+                        (ast:decl-function-body decl-function))
+                     (let ((frame (level-inner-frame level)))
                        (alloc-fun
                         (frame:wrap-ir-entry-exit
                          frame
-                         (ir:move-stm
-                          (ir:temp-expr (frame:rv target))
+                         (ir:stm-move
+                          (ir:expr-temp (frame:rv target))
                           (tagged-ir->expr body-tagged-ir))
                          target)
                         frame))))))
-             function-decls)
+             decl-functions)
        (list type-env new-ir-env nil)))))
 
 (defun translate-decls (type-env ir-env level target break-target decls)
@@ -443,30 +443,30 @@
 
 (defun translate-expr (type-env ir-env level target break-target expr)
   (serapeum:match-of ast:expr expr
-    ((ast:var-expr var)
+    ((ast:expr-var var)
      (translate-var type-env ir-env level target break-target var))
-    ((ast:nil-expr)
+    ((ast:expr-nil)
      (list
       (types:get-unnamed-base-type (symbol:get-sym "nil"))
-      ;; Should not product (tagged-expr (ir:mem-expr (ir:int-expr 0))),
+      ;; Should not product (tagged-expr (ir:expr-mem (ir:expr-int 0))),
       ;; otherwise, instruction selection will product an asm
       ;; instruction to load data from the zero address, cause memeory
       ;; fault.
-      (tagged-expr (ir:int-expr 0))))
-    ((ast:int-expr value)
+      (tagged-expr (ir:expr-int 0))))
+    ((ast:expr-int value)
      (list
       (types:get-type types:*base-type-env* (symbol:get-sym "int"))
-      (tagged-expr (ir:int-expr value))))
-    ((ast:string-expr str _)
+      (tagged-expr (ir:expr-int value))))
+    ((ast:expr-string str _)
      (list (types:get-type types:*base-type-env* (symbol:get-sym "string"))
            (let ((string-label (temp:new-label "string")))
              (alloc-string string-label str)
-             (tagged-expr (ir:label-expr string-label)))))
-    ((ast:call-expr fun args _)
+             (tagged-expr (ir:expr-label string-label)))))
+    ((ast:expr-call fun args _)
      (let ((ir-entry (get-ir-entry ir-env fun)))
-       (trivia:let-match1 (ir-fun-entry _ result-type fun-label fun-level) ir-entry
+       (trivia:let-match1 (ir-entry-fun _ result-type fun-label fun-level) ir-entry
          (list (types:actual-ty result-type)
-               (trivia:let-match1 (inner-level parent-level _) fun-level
+               (trivia:let-match1 (level-inner parent-level _) fun-level
                  (let ((arg-ir-exprs
                          (mapcar (lambda (arg)
                                    (trivia:let-match1 (list _ arg-tagged-ir)
@@ -474,10 +474,10 @@
                                      (tagged-ir->expr arg-tagged-ir)))
                                  args)))
                    (serapeum:match-of level parent-level
-                     ((inner-level _ _ _)
+                     ((level-inner _ _ _)
                       (tagged-expr
-                       (ir:call-expr
-                        (ir:label-expr fun-label)
+                       (ir:expr-call
+                        (ir:expr-label fun-label)
                         (list*
                          (fp-expr level parent-level target)
                          arg-ir-exprs))))
@@ -486,83 +486,83 @@
                           (temp:label-name fun-label)
                           arg-ir-exprs
                           target))))))))))
-    ((ast:op-expr left op right _)
+    ((ast:expr-op left op right _)
      (trivia:let-match (((list left-ty left-tagged-ir)
                          (translate-expr type-env ir-env level target break-target left))
                         ((list right-ty right-tagged-ir)
                          (translate-expr type-env ir-env level target break-target right)))
        (list
         (types:get-type types:*base-type-env* (symbol:get-sym "int"))
-        (cond ((member op (list ast:plus-op ast:minus-op ast:times-op ast:div-op))
+        (cond ((member op (list ast:op-plus ast:op-minus ast:op-times ast:op-div))
                (tagged-expr
-                (ir:bin-op-expr (tagged-ir->expr left-tagged-ir)
+                (ir:expr-bin-op (tagged-ir->expr left-tagged-ir)
                                 (trivia:ematch op
-                                  ((ast:plus-op) ir:plus-bin-op)
-                                  ((ast:minus-op) ir:minus-bin-op)
-                                  ((ast:times-op) ir:times-bin-op)
-                                  ((ast:div-op) ir:div-bin-op))
+                                  ((ast:op-plus) ir:bin-op-plus)
+                                  ((ast:op-minus) ir:bin-op-minus)
+                                  ((ast:op-times) ir:bin-op-times)
+                                  ((ast:op-div) ir:bin-op-div))
                                 (tagged-ir->expr right-tagged-ir))))
               (t
                (trivia:match (list left-ty right-ty)
-                 ((list (types:string-ty) (types:string-ty))
+                 ((list (types:ty-string) (types:ty-string))
                   (tagged-condi
                    (lambda (true-target false-target)
-                     (ir:cjump-stm
+                     (ir:stm-cjump
                       (frame:external-call
                        "StringCompare"
                        (list (tagged-ir->expr left-tagged-ir)
                              (tagged-ir->expr right-tagged-ir))
                        target)
                       (trivia:ematch op
-                        ((ast:eq-op) ir:eq-rel-op)
-                        ((ast:neq-op) ir:neq-rel-op)
-                        ((ast:lt-op) ir:lt-rel-op)
-                        ((ast:le-op) ir:le-rel-op)
-                        ((ast:gt-op) ir:gt-rel-op)
-                        ((ast:ge-op) ir:ge-rel-op))
-                      (ir:int-expr 0)
+                        ((ast:op-eq) ir:rel-op-eq)
+                        ((ast:op-neq) ir:rel-op-neq)
+                        ((ast:op-lt) ir:rel-op-lt)
+                        ((ast:op-le) ir:rel-op-le)
+                        ((ast:op-gt) ir:rel-op-gt)
+                        ((ast:op-ge) ir:rel-op-ge))
+                      (ir:expr-int 0)
                       true-target false-target))))
                  (_
                   (tagged-condi
                    (lambda (true-target false-target)
-                     (ir:cjump-stm
+                     (ir:stm-cjump
                       (tagged-ir->expr left-tagged-ir)
                       (trivia:ematch op
-                        ((ast:eq-op) ir:eq-rel-op)
-                        ((ast:neq-op) ir:neq-rel-op)
-                        ((ast:lt-op) ir:lt-rel-op)
-                        ((ast:le-op) ir:le-rel-op)
-                        ((ast:gt-op) ir:gt-rel-op)
-                        ((ast:ge-op) ir:ge-rel-op))
+                        ((ast:op-eq) ir:rel-op-eq)
+                        ((ast:op-neq) ir:rel-op-neq)
+                        ((ast:op-lt) ir:rel-op-lt)
+                        ((ast:op-le) ir:rel-op-le)
+                        ((ast:op-gt) ir:rel-op-gt)
+                        ((ast:op-ge) ir:rel-op-ge))
                       (tagged-ir->expr right-tagged-ir)
                       true-target false-target))))))))))
-    ((ast:record-expr type-id fields _)
+    ((ast:expr-record type-id fields _)
      (let ((ty (types:actual-ty (types:get-type type-env type-id))))
-       (trivia:let-match1 (types:record-ty _) ty
+       (trivia:let-match1 (types:ty-record _) ty
          (list ty
                (let ((m (temp:new-temp "record_memeory")))
                  (tagged-expr
-                  (ir:stm-then-expr
-                   (apply #'ir:stms->compound-stm
-                          (ir:move-stm
-                           (ir:temp-expr m)
+                  (ir:expr-stm-then-expr
+                   (apply #'ir:stms->stm-compound
+                          (ir:stm-move
+                           (ir:expr-temp m)
                            (frame:external-call
                             "AllocRecord"
-                            (list (ir:int-expr (* (length fields) (frame:word-size target))))
+                            (list (ir:expr-int (* (length fields) (frame:word-size target))))
                             target))
                           (loop for field in fields
                                 for index from 0
                                 collect
                                 (trivia:let-match1 (list _ field-tagged-ir)
                                     (translate-expr type-env ir-env level target break-target (second field))
-                                  (ir:move-stm
-                                   (ir:mem-expr
-                                    (ir:bin-op-expr (ir:temp-expr m)
-                                                    ir:plus-bin-op
-                                                    (ir:int-expr (* index (frame:word-size target)))))
+                                  (ir:stm-move
+                                   (ir:expr-mem
+                                    (ir:expr-bin-op (ir:expr-temp m)
+                                                    ir:bin-op-plus
+                                                    (ir:expr-int (* index (frame:word-size target)))))
                                    (tagged-ir->expr field-tagged-ir)))))
-                   (ir:temp-expr m))))))))
-    ((ast:seq-expr exprs)
+                   (ir:expr-temp m))))))))
+    ((ast:expr-seq exprs)
      (trivia:let-match1 (list ty tagged-irs)
          (reduce (lambda (acc expr-with-pos)
                    ;; expr-with-pos form: (expr pos).
@@ -576,26 +576,26 @@
              (labels ((rec (tagged-irs)
                         (trivia:ematch tagged-irs
                           (nil
-                           (tagged-stm (ir:expr-stm (ir:int-expr 0))))
+                           (tagged-stm (ir:stm-expr (ir:expr-int 0))))
                           ((list tagged-ir)
                            tagged-ir)
                           ((list* tagged-ir rest-tagged-irs)
                            (tagged-expr
-                            (ir:stm-then-expr
+                            (ir:expr-stm-then-expr
                              (tagged-ir->stm tagged-ir)
                              (tagged-ir->expr (rec rest-tagged-irs))))))))
                (rec (nreverse tagged-irs))))))
-    ((ast:assign-expr var expr _)
+    ((ast:expr-assign var expr _)
      (trivia:let-match (((list _ var-tagged-ir)
                          (translate-var type-env ir-env level target break-target var))
                         ((list _ expr-tagged-ir)
                          (translate-expr type-env ir-env level target break-target expr)))
        (list (types:get-unnamed-base-type (symbol:get-sym "unit"))
              (tagged-stm
-              (ir:move-stm
+              (ir:stm-move
                (tagged-ir->expr var-tagged-ir)
                (tagged-ir->expr expr-tagged-ir))))))
-    ((ast:if-expr test then else _)
+    ((ast:expr-if test then else _)
      (trivia:let-match (((list _ test-tagged-ir)
                          (translate-expr type-env ir-env level target break-target test))
                         ((list then-ty then-tagged-ir)
@@ -603,7 +603,7 @@
                         ((list else-ty else-tagged-ir)
                          (if else
                              (translate-expr type-env ir-env level target break-target else)
-                             (list nil (tagged-expr (ir:int-expr 0))))))
+                             (list nil (tagged-expr (ir:expr-int 0))))))
        (list
         (if else
             (types:upgrade-from-compatible-types then-ty else-ty)
@@ -614,33 +614,33 @@
                   (join-target (temp:new-label "join_target"))
                   (result-temp (temp:new-temp "result")))
               (tagged-expr
-               (ir:stm-then-expr
-                (ir:stms->compound-stm
-                 (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
-                               ir:neq-rel-op
-                               (ir:int-expr 0)
+               (ir:expr-stm-then-expr
+                (ir:stms->stm-compound
+                 (ir:stm-cjump (tagged-ir->expr test-tagged-ir)
+                               ir:rel-op-neq
+                               (ir:expr-int 0)
                                true-target
                                false-target)
-                 (ir:label-stm true-target)
-                 (ir:move-stm (ir:temp-expr result-temp) (tagged-ir->expr then-tagged-ir))
-                 (ir:jump-stm (ir:label-expr join-target) (list join-target))
-                 (ir:label-stm false-target)
-                 (ir:move-stm (ir:temp-expr result-temp) (tagged-ir->expr else-tagged-ir))
-                 (ir:label-stm join-target))
-                (ir:temp-expr result-temp))))
+                 (ir:stm-label true-target)
+                 (ir:stm-move (ir:expr-temp result-temp) (tagged-ir->expr then-tagged-ir))
+                 (ir:stm-jump (ir:expr-label join-target) (list join-target))
+                 (ir:stm-label false-target)
+                 (ir:stm-move (ir:expr-temp result-temp) (tagged-ir->expr else-tagged-ir))
+                 (ir:stm-label join-target))
+                (ir:expr-temp result-temp))))
             (tagged-stm
              (let ((true-target (temp:new-label "true_target"))
                    (false-target (temp:new-label "false_target")))
-               (ir:stms->compound-stm
-                (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
-                              ir:neq-rel-op
-                              (ir:int-expr 0)
+               (ir:stms->stm-compound
+                (ir:stm-cjump (tagged-ir->expr test-tagged-ir)
+                              ir:rel-op-neq
+                              (ir:expr-int 0)
                               true-target
                               false-target)
-                (ir:label-stm true-target)
+                (ir:stm-label true-target)
                 (tagged-ir->stm then-tagged-ir)
-                (ir:label-stm false-target))))))))
-    ((ast:while-expr test body _)
+                (ir:stm-label false-target))))))))
+    ((ast:expr-while test body _)
      (let ((break-target (temp:new-label "break_target")))
        (trivia:let-match (((list _ test-tagged-ir)
                            (translate-expr type-env ir-env level target break-target test))
@@ -650,32 +650,32 @@
                (body-target (temp:new-label "body_target")))
            (list body-ty
                  (tagged-stm
-                  (ir:stms->compound-stm
-                   (ir:label-stm test-target)
-                   (ir:cjump-stm (tagged-ir->expr test-tagged-ir)
-                                 ir:neq-rel-op
-                                 (ir:int-expr 0)
+                  (ir:stms->stm-compound
+                   (ir:stm-label test-target)
+                   (ir:stm-cjump (tagged-ir->expr test-tagged-ir)
+                                 ir:rel-op-neq
+                                 (ir:expr-int 0)
                                  body-target
                                  break-target)
-                   (ir:label-stm body-target)
+                   (ir:stm-label body-target)
                    (tagged-ir->stm body-tagged-ir)
-                   (ir:jump-stm (ir:label-expr test-target) (list test-target))
-                   (ir:label-stm break-target))))))))
-    ((ast:for-expr var low high body _ escape-ref)
+                   (ir:stm-jump (ir:expr-label test-target) (list test-target))
+                   (ir:stm-label break-target))))))))
+    ((ast:expr-for var low high body _ escape-ref)
      (let ((break-target (temp:new-label "break_target")))
        (trivia:let-match (((list _ low-tagged-ir)
                            (translate-expr type-env ir-env level target break-target low))
                           ((list _ high-tagged-ir)
                            (translate-expr type-env ir-env level target break-target high)))
-         (let ((int-ty (types:get-type types:*base-type-env* (symbol:get-sym "int"))))
+         (let ((ty-int (types:get-type types:*base-type-env* (symbol:get-sym "int"))))
            (let* ((var-access
                     (alloc-local level (ast:escape-ref-value escape-ref) target))
                   (new-ir-env
                     (insert-ir-entry
                      ir-env
                      var
-                     (ir-var-entry
-                      int-ty
+                     (ir-entry-var
+                      ty-int
                       var-access))))
              (trivia:let-match1 (list body-ty body-tagged-ir)
                  (translate-expr type-env new-ir-env level target break-target body)
@@ -689,52 +689,52 @@
                            target)))
                    (list body-ty
                          (tagged-stm
-                          (ir:stms->compound-stm
-                           (ir:move-stm
+                          (ir:stms->stm-compound
+                           (ir:stm-move
                             (var-access-expr)
                             (tagged-ir->expr low-tagged-ir))
-                           (ir:move-stm
-                            (ir:temp-expr high-temp)
+                           (ir:stm-move
+                            (ir:expr-temp high-temp)
                             (tagged-ir->expr high-tagged-ir))
-                           (ir:cjump-stm
+                           (ir:stm-cjump
                             (var-access-expr)
-                            ir:le-rel-op
-                            (ir:temp-expr high-temp)
+                            ir:rel-op-le
+                            (ir:expr-temp high-temp)
                             body-target
                             break-target)
-                           (ir:label-stm body-target)
+                           (ir:stm-label body-target)
                            (tagged-ir->stm body-tagged-ir)
-                           (ir:move-stm
-                            (ir:temp-expr pre-inc-test-temp)
+                           (ir:stm-move
+                            (ir:expr-temp pre-inc-test-temp)
                             (tagged-ir->expr
                              (tagged-condi
                               (lambda (true-target false-target)
-                                (ir:cjump-stm
+                                (ir:stm-cjump
                                  (var-access-expr)
-                                 ir:lt-rel-op
-                                 (ir:temp-expr high-temp)
+                                 ir:rel-op-lt
+                                 (ir:expr-temp high-temp)
                                  true-target
                                  false-target)))))
-                           (ir:move-stm
+                           (ir:stm-move
                             (var-access-expr)
-                            (ir:bin-op-expr
+                            (ir:expr-bin-op
                              (var-access-expr)
-                             ir:plus-bin-op
-                             (ir:int-expr 1)))
-                           (ir:cjump-stm
-                            (ir:temp-expr pre-inc-test-temp)
-                            ir:neq-rel-op
-                            (ir:int-expr 0)
+                             ir:bin-op-plus
+                             (ir:expr-int 1)))
+                           (ir:stm-cjump
+                            (ir:expr-temp pre-inc-test-temp)
+                            ir:rel-op-neq
+                            (ir:expr-int 0)
                             body-target
                             break-target)
-                           (ir:label-stm break-target))))))))))))
-    ((ast:break-expr _)
+                           (ir:stm-label break-target))))))))))))
+    ((ast:expr-break _)
      (list (types:get-unnamed-base-type (symbol:get-sym "unit"))
            (tagged-stm
-            (ir:jump-stm (ir:label-expr break-target) (list break-target)))))
-    ((ast:array-expr type-id size init _)
+            (ir:stm-jump (ir:expr-label break-target) (list break-target)))))
+    ((ast:expr-array type-id size init _)
      (let ((ty (types:actual-ty (types:get-type type-env type-id))))
-       (trivia:let-match1 (types:array-ty _) ty
+       (trivia:let-match1 (types:ty-array _) ty
          (trivia:let-match (((list _ size-tagged-ir)
                              (translate-expr type-env ir-env level target break-target size))
                             ((list _ init-tagged-ir)
@@ -747,15 +747,15 @@
                     (tagged-ir->expr size-tagged-ir)
                     (tagged-ir->expr init-tagged-ir))
                    target)))))))
-    ((ast:let-expr decls body _)
+    ((ast:expr-let decls body _)
      (trivia:let-match1 (list new-type-env new-ir-env tagged-irs)
          (translate-decls type-env ir-env level target break-target decls)
        (trivia:let-match1 (list body-ty body-tagged-ir)
            (translate-expr new-type-env new-ir-env level target break-target body)
          (list body-ty
                (tagged-expr
-                (ir:stm-then-expr
-                 (apply #'ir:stms->compound-stm
+                (ir:expr-stm-then-expr
+                 (apply #'ir:stms->stm-compound
                         (mapcar #'tagged-ir->stm tagged-irs))
                  (tagged-ir->expr body-tagged-ir)))))))))
 
@@ -771,7 +771,7 @@
 (defun translate-program (prog target)
   (find-and-fill-escapes prog)
   (let ((*frags* nil)
-        (level (new-level top-level (temp:new-named-label "tiger_main") nil target)))
+        (level (new-level level-top (temp:new-named-label "tiger_main") nil target)))
     (trivia:let-match1 (list _ prog-tagged-ir)
         (translate-expr types:*base-type-env*
                         (base-ir-env target)
@@ -779,12 +779,12 @@
                         target
                         nil
                         prog)
-      (let ((frame (inner-level-frame level)))
+      (let ((frame (level-inner-frame level)))
         (alloc-fun
          (frame:wrap-ir-entry-exit
           frame
-          (ir:move-stm
-           (ir:temp-expr (frame:rv target))
+          (ir:stm-move
+           (ir:expr-temp (frame:rv target))
            (tagged-ir->expr prog-tagged-ir))
           target)
          frame))

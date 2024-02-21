@@ -481,11 +481,11 @@
                                   (push temp new-srcs)
                                   (fset:includef generated-temps temp)
                                   (push
-                                   (ir:move-stm
-                                    (ir:temp-expr temp)
+                                   (ir:stm-move
+                                    (ir:expr-temp temp)
                                     (frame:access-expr
                                      access
-                                     (ir:temp-expr (frame:fp target))
+                                     (ir:expr-temp (frame:fp target))
                                      target))
                                    src-fetch-stms))
                                 (push src new-srcs)))
@@ -495,52 +495,52 @@
                                   (push temp new-dsts)
                                   (fset:includef generated-temps temp)
                                   (push
-                                   (ir:move-stm
+                                   (ir:stm-move
                                     (frame:access-expr
                                      access
-                                     (ir:temp-expr (frame:fp target))
+                                     (ir:expr-temp (frame:fp target))
                                      target)
-                                    (ir:temp-expr temp))
+                                    (ir:expr-temp temp))
                                    dst-restore-stms))
                                 (push dst new-dsts)))
                             (nconc
                              (when src-fetch-stms
                                (instr-select:select-instrs
-                                (apply #'ir:stms->compound-stm (nreverse src-fetch-stms))
+                                (apply #'ir:stms->stm-compound (nreverse src-fetch-stms))
                                 frame target))
                              (list
                               (funcall rebuild-instr-fun (nreverse new-dsts) (nreverse new-srcs)))
                              (when dst-restore-stms
                                (instr-select:select-instrs
-                                (apply #'ir:stms->compound-stm (nreverse dst-restore-stms))
+                                (apply #'ir:stms->stm-compound (nreverse dst-restore-stms))
                                 frame target))))))
                    (setf instrs
                          (mapcan (lambda (instr)
                                    (serapeum:match-of instr:instr instr
-                                     ((instr:op-instr template dsts srcs jumps)
+                                     ((instr:instr-op template dsts srcs jumps)
                                       (rewrite-instr
                                        dsts srcs
                                        (lambda (new-dsts new-srcs)
-                                         (instr:op-instr template new-dsts new-srcs jumps))))
-                                     ((instr:stack-arg-instr template dsts srcs reloc-fun)
+                                         (instr:instr-op template new-dsts new-srcs jumps))))
+                                     ((instr:instr-stack-arg template dsts srcs reloc-fun)
                                       (rewrite-instr
                                        dsts srcs
                                        (lambda (new-dsts new-srcs)
-                                         (instr:stack-arg-instr template new-dsts new-srcs reloc-fun))))
-                                     ((instr:call-instr template dsts srcs num-of-regs)
+                                         (instr:instr-stack-arg template new-dsts new-srcs reloc-fun))))
+                                     ((instr:instr-call template dsts srcs num-of-regs)
                                       (rewrite-instr
                                        dsts srcs
                                        (lambda (new-dsts new-srcs)
-                                         (instr:call-instr template new-dsts new-srcs num-of-regs))))
-                                     ((instr:move-instr template dst src)
+                                         (instr:instr-call template new-dsts new-srcs num-of-regs))))
+                                     ((instr:instr-move template dst src)
                                       (rewrite-instr
                                        (list dst) (list src)
                                        (lambda (new-dsts new-srcs)
-                                         (instr:move-instr
+                                         (instr:instr-move
                                           template
                                           (first new-dsts)
                                           (first new-srcs)))))
-                                     ((instr:label-instr _ _)
+                                     ((instr:instr-label _ _)
                                       (list instr))))
                                  instrs)))
                  generated-temps)))
@@ -574,33 +574,33 @@
                 (lambda (instr)
                   ;; remove self moves.
                   (serapeum:match-of instr:instr instr
-                    ((instr:move-instr _ dst src)
+                    ((instr:instr-move _ dst src)
                      (eq dst src))
                     (_
                      nil)))
                 (mapcar
                  (lambda (instr)
                    (serapeum:match-of instr:instr instr
-                     ((instr:op-instr template dsts srcs jumps)
-                      (instr:op-instr template
+                     ((instr:instr-op template dsts srcs jumps)
+                      (instr:instr-op template
                                       (mapcar #'get-reg dsts)
                                       (mapcar #'get-reg srcs)
                                       jumps))
-                     ((instr:stack-arg-instr template dsts srcs reloc-fun)
-                      (instr:stack-arg-instr template
+                     ((instr:instr-stack-arg template dsts srcs reloc-fun)
+                      (instr:instr-stack-arg template
                                              (mapcar #'get-reg dsts)
                                              (mapcar #'get-reg srcs)
                                              reloc-fun))
-                     ((instr:call-instr template dsts srcs num-of-regs)
-                      (instr:call-instr template
+                     ((instr:instr-call template dsts srcs num-of-regs)
+                      (instr:instr-call template
                                         (mapcar #'get-reg dsts)
                                         (mapcar #'get-reg srcs)
                                         num-of-regs))
-                     ((instr:move-instr template dst src)
-                      (instr:move-instr template
+                     ((instr:instr-move template dst src)
+                      (instr:instr-move template
                                         (get-reg dst)
                                         (get-reg src)))
-                     ((instr:label-instr _ _)
+                     ((instr:instr-label _ _)
                       instr)))
                  instrs))))))))
 

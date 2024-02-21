@@ -7,28 +7,28 @@
    #:is-jump
    #:not-jump
    #:instr
-   #:op-instr
-   #:op-instr-template
-   #:op-instr-dsts
-   #:op-instr-srcs
-   #:op-instr-jumps
-   #:label-instr
-   #:label-instr-template
-   #:label-instr-name
-   #:move-instr
-   #:move-instr-template
-   #:move-instr-dst
-   #:move-instr-src
-   #:stack-arg-instr
-   #:stack-arg-instr-template
-   #:stack-arg-instr-dsts
-   #:stack-arg-instr-srcs
-   #:stack-arg-instr-reloc-fun
-   #:call-instr
-   #:call-instr-template
-   #:call-instr-dsts
-   #:call-instr-srcs
-   #:call-instr-num-of-args
+   #:instr-op
+   #:instr-op-template
+   #:instr-op-dsts
+   #:instr-op-srcs
+   #:instr-op-jumps
+   #:instr-label
+   #:instr-label-template
+   #:instr-label-name
+   #:instr-move
+   #:instr-move-template
+   #:instr-move-dst
+   #:instr-move-src
+   #:instr-stack-arg
+   #:instr-stack-arg-template
+   #:instr-stack-arg-dsts
+   #:instr-stack-arg-srcs
+   #:instr-stack-arg-reloc-fun
+   #:instr-call
+   #:instr-call-template
+   #:instr-call-dsts
+   #:instr-call-srcs
+   #:instr-call-num-of-args
 
    #:format-instr-with
    #:format-instr))
@@ -48,28 +48,28 @@
   not-jump)
 
 (serapeum:defunion instr
-  (op-instr
+  (instr-op
    (template string)
    ;; A list of temp:temp
    (dsts list)
    ;; A list of temp:temp
    (srcs list)
    (jumps maybe-jump))
-  (label-instr
+  (instr-label
    (str string)
    (name temp:label))
-  (move-instr
+  (instr-move
    (template string)
    (dst temp:temp)
    (src temp:temp))
-  (stack-arg-instr
+  (instr-stack-arg
    (template string)
    (dsts list)
    (srcs list)
    ;; Pass the instr itself and the final frame-size
    ;; return a new instr (can also return the passed instr)
    (reloc-fun (or null (function (instr fixnum) instr))))
-  (call-instr
+  (instr-call
    (template string)
    (dsts list)
    (srcs list)
@@ -92,16 +92,16 @@
               :simple-calls t)))
     (let* ((template? t)
            (result (serapeum:match-of instr instr
-                     ((op-instr template _ _ _)
+                     ((instr-op template _ _ _)
                       template)
-                     ((call-instr template _ _ _)
+                     ((instr-call template _ _ _)
                       template)
-                     ((stack-arg-instr template _ _ _)
+                     ((instr-stack-arg template _ _ _)
                       template)
-                     ((label-instr str _)
+                     ((instr-label str _)
                       (setf template? nil)
                       str)
-                     ((move-instr template _ _)
+                     ((instr-move template _ _)
                       template))))
       (when template?
         (setf result
@@ -116,16 +116,16 @@
 (defun format-instr (instr)
   (trivia:let-match1 (list dsts srcs jumps) 
       (serapeum:match-of instr instr
-        ((op-instr _ dsts srcs jumps)
+        ((instr-op _ dsts srcs jumps)
          (list dsts srcs (serapeum:match-of maybe-jump jumps
                            ((is-jump targets) targets)
                            (not-jump nil))))
-        ((call-instr _ dsts srcs _)
+        ((instr-call _ dsts srcs _)
          (list dsts srcs nil))
-        ((stack-arg-instr _ dsts srcs _)
+        ((instr-stack-arg _ dsts srcs _)
          (list dsts srcs nil))
-        ((label-instr _ _)
+        ((instr-label _ _)
          (list nil nil nil))
-        ((move-instr _ dst src)
+        ((instr-move _ dst src)
          (list (list dst) (list src) nil)))
     (format-instr-with instr dsts srcs jumps)))
