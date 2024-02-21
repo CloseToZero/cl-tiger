@@ -170,5 +170,5 @@ int main(void)
   InitChStrings();
   intmax_t code = tiger_main(0);
   CheckExitCode(code, "main");
-  return code;
+  return (int)code;
 }
