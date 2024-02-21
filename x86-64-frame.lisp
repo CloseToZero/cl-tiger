@@ -365,9 +365,9 @@
     (list
      (list
       (format nil "_~A:" (temp:label-name (frame:frame-name frame)))
-      "push %rbp"
+      "pushq %rbp"
       "movq %rsp, %rbp"
-      (format nil "sub $~A, %rsp" total-frame-size))
+      (format nil "subq $~A, %rsp" total-frame-size))
      (mapcar
       (lambda (instr)
         (trivia:if-match (trivia:guard
@@ -378,9 +378,9 @@
           instr))
       body-instrs)
      (list
-      (format nil "add $~A, %rsp" total-frame-size)
+      (format nil "addq $~A, %rsp" total-frame-size)
       "pop %rbp"
-      "ret"))))
+      "retq"))))
 
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
