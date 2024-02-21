@@ -21,6 +21,7 @@
    #:access-expr
    #:external-call
    #:external-call-label-name
+   #:label-name
    #:wrap-ir-entry-exit
    #:wrap-entry-exit
    #:preserve-live-out
@@ -47,6 +48,7 @@
    #:access-expr%
    #:external-call%
    #:external-call-label-name%
+   #:label-name%
    #:wrap-ir-entry-exit%
    #:wrap-entry-exit%
    #:preserve-live-out%
@@ -137,6 +139,11 @@
   (external-call% name args target (target:target-arch target) (target:target-os target)))
 
 (defgeneric external-call% (name args target target-arch target-os))
+
+(defun label-name (label target)
+  (label-name% label target (target:target-arch target) (target:target-os target)))
+
+(defgeneric label-name% (label target target-arch target-os))
 
 (defun external-call-label-name (name target)
   (external-call-label-name% name target (target:target-arch target) (target:target-os target)))

@@ -194,6 +194,20 @@
                                             (target-arch target:arch-x86-64) target-os)
   (concatenate 'string "tiger_" name))
 
+(defmethod frame:external-call-label-name% (name target
+                                            (target-arch target:arch-x86-64) (target-os target:os-mac))
+  (concatenate 'string "_tiger_" name))
+
+(defmethod frame:label-name%
+    (label target
+     (target-arch target:arch-x86-64) target-os)
+  (temp:label-name label))
+
+(defmethod frame:label-name%
+    (label target
+     (target-arch target:arch-x86-64) (target-os target:os-mac))
+  (concatenate 'string "_" (temp:label-name label)))
+
 (defmethod frame:wrap-ir-entry-exit% (frame body-stm target
                                       (target-arch target:arch-x86-64) target-os)
   (let* ((callee-saves (frame:callee-saves target))
@@ -332,7 +346,8 @@
                             16)))
     (list
      (list
-      (format nil "~A:" (temp:label-name (frame:frame-name frame)))
+      (format nil "~A:"
+              (frame:label-name (frame:frame-name frame) target))
       "push rbp"
       "mov rbp, rsp"
       (format nil "sub rsp, ~A" total-frame-size))
@@ -368,7 +383,8 @@
                             16)))
     (list
      (list
-      (format nil "_~A:" (temp:label-name (frame:frame-name frame)))
+      (format nil "~A:"
+              (frame:label-name (frame:frame-name frame) target))
       "pushq %rbp"
       "movq %rsp, %rbp"
       (format nil "subq $~A, %rsp" total-frame-size))
@@ -390,7 +406,7 @@
                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
   (trivia:let-match1 (frame:frag-str label str) frag-str
     (with-output-to-string (out)
-      (format out "~A db " (temp:label-name label))
+      (format out "~A db " (frame:label-name label target))
       (let ((bytes (trivial-utf-8:string-to-utf-8-bytes str :null-terminate t)))
         (loop with first? = t
               for byte across bytes
@@ -405,7 +421,7 @@
                                         (target-arch target:arch-x86-64) target-os)
   (trivia:let-match1 (frame:frag-str label str) frag-str
     (with-output-to-string (out)
-      (format out "~A:~%.byte " (temp:label-name label))
+      (format out "~A:~%.byte " (frame:label-name label target))
       (let ((bytes (trivial-utf-8:string-to-utf-8-bytes str :null-terminate t)))
         (loop with first? = t
               for byte across bytes

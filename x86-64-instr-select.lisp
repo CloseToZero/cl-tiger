@@ -82,7 +82,7 @@
    (name temp:label))
   (asm-get-label-addr
    (dst arg)
-   (target temp:label)))
+   (label temp:label)))
 
 (defvar *instrs* nil)
 (defvar *d0* (temp:named-temp "'d0"))
@@ -873,19 +873,19 @@
     ((asm-bin-op op dst src)
      (format nil "~A ~A, ~A"
              (masm-op->string op)
-             (masm-arg->string dst)
-             (masm-arg->string src)))
+             (masm-arg->string dst target)
+             (masm-arg->string src target)))
     ((asm-unary-op op arg)
      (format nil "~A ~A"
              (masm-op->string op)
-             (masm-arg->string arg)))
+             (masm-arg->string arg target)))
     ((asm-label name)
      (format nil "~A: "
-             (temp:label-name name)))
-    ((asm-get-label-addr dst target)
+             (frame:label-name name target)))
+    ((asm-get-label-addr dst label)
      (format nil "lea ~A, ~A"
-             (masm-arg->string dst)
-             (temp:label-name target)))))
+             (masm-arg->string dst target)
+             (frame:label-name label target)))))
 
 (defun masm-mem->string (mem)
   (serapeum:match-of mem mem
@@ -901,14 +901,14 @@
      (format nil "qword ptr [~A + ~A * ~A + ~A]"
              (temp:temp-name base) (temp:temp-name index) scale disp))))
 
-(defun masm-arg->string (arg)
+(defun masm-arg->string (arg target)
   (serapeum:match-of arg arg
     ((mem-arg value)
      (masm-mem->string value))
     ((temp-arg value)
      (format nil "~A" (temp:temp-name value)))
     ((label-arg value)
-     (format nil "~A" (temp:label-name value)))
+     (format nil "~A" (frame:label-name value target)))
     ((call-reg-arg value)
      (format nil "~A" (temp:temp-name value)))
     ((int-arg value)
@@ -947,20 +947,19 @@
     ((asm-bin-op op dst src)
      (format nil "~A ~A, ~A"
              (gas-op->string op)
-             (gas-arg->string src)
-             (gas-arg->string dst)))
+             (gas-arg->string src target)
+             (gas-arg->string dst target)))
     ((asm-unary-op op arg)
      (format nil "~A ~A"
              (gas-op->string op)
-             (gas-arg->string arg)))
+             (gas-arg->string arg target)))
     ((asm-label name)
-     (format nil "_~A: "
-             (temp:label-name name)))
-    ((asm-get-label-addr dst target)
-     ;; Does this work on Linux?
-     (format nil "lea _~A(%rip), ~A"
-             (temp:label-name target)
-             (gas-arg->string dst)))))
+     (format nil "~A: "
+             (frame:label-name name target)))
+    ((asm-get-label-addr dst label)
+     (format nil "lea ~A(%rip), ~A"
+             (frame:label-name label target)
+             (gas-arg->string dst target)))))
 
 (defun gas-mem->string (mem)
   (serapeum:match-of mem mem
@@ -976,14 +975,14 @@
      (format nil "~A(%~A, %~A, ~A)"
              disp (temp:temp-name base) (temp:temp-name index) scale))))
 
-(defun gas-arg->string (arg)
+(defun gas-arg->string (arg target)
   (serapeum:match-of arg arg
     ((mem-arg value)
      (gas-mem->string value))
     ((temp-arg value)
      (format nil "%~A" (temp:temp-name value)))
     ((label-arg value)
-     (format nil "_~A" (temp:label-name value)))
+     (format nil "~A" (frame:label-name value target)))
     ((call-reg-arg value)
      (format nil "*%~A" (temp:temp-name value)))
     ((int-arg value)
