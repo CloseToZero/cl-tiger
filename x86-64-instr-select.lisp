@@ -825,7 +825,13 @@
                       ;; cannot calculate the correct offset, so we
                       ;; use a arbitrary number (0) as offset and
                       ;; correct the instr later by reloc-fun.
-                      "mov qword ptr ['s0 + 0], 's1"
+                      (asm->string
+                       (asm-bin-op
+                        op-mov
+                        (mem-arg
+                         (mem-base-disp *s0* 0))
+                        *s1-arg*)
+                       target)
                       nil
                       (list
                        (frame:fp target)
@@ -838,8 +844,13 @@
                         (lambda (instr frame-size)
                           (trivia:let-match1 (instr:stack-arg-instr _ dsts srcs _) instr
                             (instr:stack-arg-instr
-                             (format nil "mov qword ptr ['s0 + ~A], 's1"
-                                     (+ (- frame-size) (* i word-size)))
+                             (asm->string
+                              (asm-bin-op
+                               op-mov
+                               (mem-arg
+                                (mem-base-disp *s0* (+ (- frame-size) (* i word-size))))
+                               *s1-arg*)
+                              target)
                              dsts srcs nil))))))))
           finally (return result))))
 
