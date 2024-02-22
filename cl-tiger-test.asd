@@ -5,6 +5,7 @@
   :licence "MIT"
   :depends-on ("cl-tiger"
                "uiop"
+               "cl-ppcre"
                "parachute")
   :serial t
   :components ((:file "test"))
