@@ -8,8 +8,8 @@ x86-64 architecture on Windows, Linux and Mac.
 
 # How to compile and build a tiger program
 
-We compile a tiger source to an assembly file ``tiger.asm/tiger.s``,
-then generate a CMake project including the assembly file ``tiger.asm/tiger.s``
+We compile a tiger source to an assembly file `tiger.asm/tiger.s`,
+then generate a CMake project including the assembly file `tiger.asm/tiger.s`
 and the runtime C source `runtime.c`, then, user can use CMake to generate a native
 project and compile the native project to an executable.
 
@@ -28,7 +28,7 @@ First, we compile a tiger source and generate a CMake project:
 ```
 
 **Note:** Right now, the name of the output project directory (the
-placeholder ``output-project-dir`` in the above) should not include spaces,
+placeholder `output-project-dir` in the above) should not include spaces,
 because we simply use the output project directory name as the name of CMake target,
 something like "my-project", "my_project", "MyProject" are fine.
 
@@ -43,6 +43,6 @@ cmake -S .. -B .
 cmake --build .
 ```
 
-After ``cmake --build .``,
+After `cmake --build .`,
 the compiled executable should be generated,
 you should be able to run it and see its output.
