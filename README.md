@@ -27,6 +27,11 @@ First, we compile a tiger source and generate a CMake project:
   )
 ```
 
+**Note:** Right now, the name of the output project directory (the
+placeholder ``output-project-dir`` in the above) should not include spaces,
+because we simply use the output project directory name as the name of CMake target,
+something like "my-project", "my_project", "MyProject" are fine.
+
 Next, build the generated CMake project.
 Open a terminal/cmd, then execute the following commands:
 
