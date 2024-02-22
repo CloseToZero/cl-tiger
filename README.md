@@ -46,3 +46,23 @@ cmake --build .
 After `cmake --build .`,
 the compiled executable should be generated,
 you should be able to run it and see its output.
+
+# How to test the system
+
+In the first time, we haven't download the dependencies of `cl-tiger`
+and `cl-tiger-test` systems, we use `quicklisp` to do that:
+
+```common-lisp
+(ql:quickload :cl-tiger-test)
+;; We don't need (ql:quickload :cl-tiger) since cl-tiger-test depends on cl-tiger
+```
+
+Then, we can test the system using `asdf:test-system`:
+
+```common-lisp
+(asdf:test-system :cl-tiger)
+```
+
+Next time, we can use `asdf:test-system` directly without
+`ql:quickload` since we already download the dependencies of
+`cl-tiger` and `cl-tiger-test` systems.
