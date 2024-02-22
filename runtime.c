@@ -43,27 +43,31 @@ intmax_t tiger_StringCompare(const char *s1, const char *s2) {
   return (intmax_t)strcmp(s1, s2);
 }
 
-void tiger_CheckNilRecord(void *record) {
+intmax_t tiger_CheckNilRecord(void *record) {
   if (!record) {
     printf("Reference a field of a nil record\n");
     exit(1);
   }
+  return 0;
 }
 
-void tiger_CheckArraySubscript(intmax_t *array_head, intmax_t index) {
+intmax_t tiger_CheckArraySubscript(intmax_t *array_head, intmax_t index) {
   intmax_t num_of_elements = *array_head;
   if (index < 0 || index >= num_of_elements) {
     printf("Index %jd out of range [0, %jd)\n", index, num_of_elements);
     exit(1);
   }
+  return 0;
 }
 
-void tiger_print(const char *s) {
+intmax_t tiger_print(const char *s) {
   printf("%s", s);
+  return 0;
 }
 
-void tiger_flush(void) {
+intmax_t tiger_flush(void) {
   fflush(stdin);
+  return 0;
 }
 
 const char* tiger_getchar(void) {
@@ -151,9 +155,10 @@ static void CheckExitCode(intmax_t code, const char *label) {
   }
 }
 
-void tiger_exit(intmax_t code) {
+intmax_t tiger_exit(intmax_t code) {
   CheckExitCode(code, "exit");
   exit((int)code);
+  return 0;
 }
 
 static void InitChStrings(void) {
