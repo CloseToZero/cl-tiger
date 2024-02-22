@@ -2,7 +2,7 @@
 
 The Tiger programming language is from the book: *Modern Compiler Implementation in ML*.
 
-# Support platforms
+# Supported platforms
 
 x86-64 architecture on Windows, Linux and Mac.
 
