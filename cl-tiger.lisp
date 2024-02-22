@@ -21,7 +21,8 @@
 
 (defun compile-tiger (file dst-dir target
                       &key
-                        (string-literal-as-comment t))
+                        (string-literal-as-comment t)
+                        (build-args nil))
   (let* ((text (uiop:read-file-string file))
          (line-map (utils:get-line-map text))
          (ast (parse:parse-program text)))
@@ -59,4 +60,4 @@
                               (trivia:let-match1 (list prolog instrs epilog)
                                   (frame:wrap-entry-exit frame instrs target)
                                 (build:frag-fun prolog instrs epilog))))))))
-          (build:build build-frag-strs build-frag-funs dst-dir target))))))
+          (apply #'build:build build-frag-strs build-frag-funs dst-dir target build-args))))))

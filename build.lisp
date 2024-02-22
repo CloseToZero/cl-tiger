@@ -29,8 +29,9 @@
    ;; A list of strings
    (epilog list)))
 
-(defun build (frag-strs frag-funs dst-dir target)
-  (build% frag-strs frag-funs dst-dir
-          target (target:target-arch target) (target:target-os target)))
+(defun build (frag-strs frag-funs dst-dir target &rest args)
+  (apply #'build% frag-strs frag-funs dst-dir
+         target (target:target-arch target) (target:target-os target)
+         args))
 
-(defgeneric build% (frag-strs frag-funs dst-dir target target-arch target-os))
+(defgeneric build% (frag-strs frag-funs dst-dir target target-arch target-os &key &allow-other-keys))

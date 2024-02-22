@@ -39,4 +39,5 @@
                (:file "runtime")
                (:file "build")
                (:file "build-x86-64")
-               (:file "cl-tiger")))
+               (:file "cl-tiger"))
+  :in-order-to ((asdf:test-op (asdf:test-op "cl-tiger-test"))))

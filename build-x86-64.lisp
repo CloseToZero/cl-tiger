@@ -14,7 +14,8 @@
 
 (defmethod build:build% (frag-strs frag-funs dst-dir
                          target
-                         (target-arch target:arch-x86-64) target-os)
+                         (target-arch target:arch-x86-64) target-os
+                         &key generate-get-exe-path-target)
   (let* ((dst-dir-pathname (uiop:ensure-pathname
                             (if (stringp dst-dir)
                                 (parse-namestring dst-dir)
@@ -25,15 +26,18 @@
          (project-name (first (last (pathname-directory dst-dir-pathname)))))
     (create-cmake-project
      dst-dir-pathname project-name frag-strs frag-funs
-     target (target:target-arch target) (target:target-os target))))
+     target (target:target-arch target) (target:target-os target)
+     :generate-get-exe-path-target generate-get-exe-path-target)))
 
 (defgeneric create-cmake-project (dst-dir-pathname project-name frag-strs frag-funs
-                                  target target-arch target-os))
+                                  target target-arch target-os
+                                  &key generate-get-exe-path-target))
 
 (defmethod create-cmake-project (dst-dir-pathname project-name frag-strs frag-funs
                                  target
                                  (target-arch target:arch-x86-64)
-                                 (target-os target:os-windows))
+                                 (target-os target:os-windows)
+                                 &key generate-get-exe-path-target)
   (let* ((cmakelists-pathname (uiop:merge-pathnames* "CMakeLists.txt" dst-dir-pathname))
          (asm-filename "tiger.asm")
          (asm-pathname (uiop:merge-pathnames* asm-filename dst-dir-pathname))
@@ -56,11 +60,21 @@ add_executable(~A
   ~A
   ~A
 )
+~A
 "
               project-name
               project-name
               asm-filename
-              runtime-filename))
+              runtime-filename
+              (if generate-get-exe-path-target
+                  (format nil "
+add_custom_target(get_exe_path
+  COMMAND ${CMAKE_COMMAND} -E echo \"target executable path = $<TARGET_FILE:~A>\"
+  DEPENDS ~A
+)"
+                          project-name
+                          project-name)
+                  "")))
     (uiop:copy-file in-runtime-pathname out-runtime-pathname)
     (with-open-file (out asm-pathname
                          :direction :output
@@ -96,7 +110,8 @@ add_executable(~A
 (defmethod create-cmake-project (dst-dir-pathname project-name frag-strs frag-funs
                                  target
                                  (target-arch target:arch-x86-64)
-                                 target-os)
+                                 target-os
+                                 &key generate-get-exe-path-target)
   (let* ((cmakelists-pathname (uiop:merge-pathnames* "CMakeLists.txt" dst-dir-pathname))
          (asm-filename "tiger.s")
          (asm-pathname (uiop:merge-pathnames* asm-filename dst-dir-pathname))
@@ -119,11 +134,21 @@ add_executable(~A
   ~A
   ~A
 )
+~A
 "
               project-name
               project-name
               asm-filename
-              runtime-filename))
+              runtime-filename
+              (if generate-get-exe-path-target
+                  (format nil "
+add_custom_target(get_exe_path
+  COMMAND ${CMAKE_COMMAND} -E echo \"target executable path = $<TARGET_FILE:~A>\"
+  DEPENDS ~A
+)"
+                          project-name
+                          project-name)
+                  "")))
     (uiop:copy-file in-runtime-pathname out-runtime-pathname)
     (with-open-file (out asm-pathname
                          :direction :output
