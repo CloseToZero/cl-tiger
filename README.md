@@ -4,29 +4,30 @@ The Tiger programming language is from the book: *Modern Compiler Implementation
 
 # Support platforms
 
-Right now, we only support x86-64 architecture on Windows platform,
-in the future, we should also support Linux and Mac platforms (only x86-64 architecture).
-
-Things need to be fixed/done to support Linux and Mac platforms:
-
-- We only support [x64 calling convention of Microsoft](https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention),
-  need to support [System V AMD64 ABI](https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI) for Linux and Mac.
-- We only generate assembly instructions in MASM syntax which doesn't supported on other platforms.
+x86-64 architecture on Windows, Linux and Mac.
 
 # How to compile and build a tiger program
 
-First, generate CMake project:
+We compile a tiger source to an assembly file ``tiger.asm/tiger.s``,
+then generate a CMake project including the assembly file ``tiger.asm/tiger.s``
+and the runtime C source `runtime.c`, then, user can use CMake to generate a native
+project and compile the native project to an executable.
+
+First, we compile a tiger source and generate a CMake project:
 
 ```common-lisp
 (ql:quickload :cl-tiger)
 (cl-tiger:compile-tiger
   "path/to/tiger-source.tig"
-  "path/to/output-project-dir" ; Parent directories will be created if needed.
-  (cl-tiger/target:target cl-tiger/target:arch-x86-64 cl-tiger/target:os-windows))
+  "path/to/output-project-dir" ; Parent directories will be created as needed.
+  ;; Choose one of platforms.
+  (cl-tiger/target:target cl-tiger/target:arch-x86-64 cl-tiger/target:os-windows)
+  ;; (cl-tiger/target:target cl-tiger/target:arch-x86-64 cl-tiger/target:os-linux)
+  ;; (cl-tiger/target:target cl-tiger/target:arch-x86-64 cl-tiger/target:os-mac)
+  )
 ```
 
-Next, build the generated CMake project:
-
+Next, build the generated CMake project.
 Open a terminal/cmd, then execute the following commands:
 
 ```sh
