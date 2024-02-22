@@ -73,7 +73,7 @@
   (uiop:merge-pathnames*
    source-name
    (uiop:ensure-directory-pathname
-    (asdf:system-relative-pathname "cl-tiger" "tiger-programs"))))
+    (asdf:system-relative-pathname "cl-tiger" "tiger-program"))))
 
 (defmacro with-temporary-directory ((dir-pathname-var dir-name &optional keep-dir) &body body)
   `(let ((,dir-pathname-var (uiop:ensure-pathname

@@ -42,7 +42,11 @@
          (asm-filename "tiger.asm")
          (asm-pathname (uiop:merge-pathnames* asm-filename dst-dir-pathname))
          (runtime-filename "runtime.c")
-         (in-runtime-pathname (asdf:system-relative-pathname  "cl-tiger" runtime-filename))
+         (in-runtime-pathname
+           (uiop:merge-pathnames*
+            runtime-filename
+            (uiop:ensure-directory-pathname
+             (asdf:system-relative-pathname "cl-tiger" "src"))))
          (out-runtime-pathname (uiop:merge-pathnames* runtime-filename dst-dir-pathname)))
     (with-open-file (out cmakelists-pathname
                          :direction :output
@@ -116,7 +120,11 @@ add_custom_target(get_exe_path
          (asm-filename "tiger.s")
          (asm-pathname (uiop:merge-pathnames* asm-filename dst-dir-pathname))
          (runtime-filename "runtime.c")
-         (in-runtime-pathname (asdf:system-relative-pathname  "cl-tiger" runtime-filename))
+         (in-runtime-pathname
+           (uiop:merge-pathnames*
+            runtime-filename
+            (uiop:ensure-directory-pathname
+             (asdf:system-relative-pathname "cl-tiger" "src"))))
          (out-runtime-pathname (uiop:merge-pathnames* runtime-filename dst-dir-pathname)))
     (with-open-file (out cmakelists-pathname
                          :direction :output

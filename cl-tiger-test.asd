@@ -9,5 +9,6 @@
                "parachute"
                "trivial-features")
   :serial t
-  :components ((:file "test"))
+  :components ((:module "test"
+                :components ((:file "test"))))
   :perform (asdf:test-op (op c) (uiop:symbol-call :parachute :test :cl-tiger/test)))
