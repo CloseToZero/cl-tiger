@@ -1,7 +1,8 @@
 (cl:defpackage :cl-tiger/test
   (:use :cl)
   (:local-nicknames
-   (:target :cl-tiger/target)))
+   (:target :cl-tiger/target)
+   (:straight-line :cl-tiger/straight-line)))
 
 (cl:in-package :cl-tiger/test)
 
@@ -95,6 +96,49 @@
      (uiop:ensure-directory-pathname
       (asdf:system-relative-pathname "cl-tiger-test" "test"))))
    ""))
+
+(parachute:define-test straight-line
+  (parachute:is
+   equal
+   (list
+    (concatenate
+     'string
+     "8 7"
+     (string #\Newline)
+     "80"
+     (string #\Newline))
+    '(("b" . 80) ("a" . 8)))
+   (let ((result-env nil))
+     (list
+      (with-output-to-string (s)
+        (let ((*standard-output* s))
+          (setf result-env
+                (straight-line:interpret-stm
+                 (straight-line:stm-compound
+                  (straight-line:stm-assign
+                   "a"
+                   (straight-line:expr-op
+                    (straight-line:expr-int 5)
+                    straight-line:op-plus
+                    (straight-line:expr-int 3)))
+                  (straight-line:stm-compound
+                   (straight-line:stm-assign
+                    "b"
+                    (straight-line:expr-stm-then-expr
+                     (straight-line:stm-print
+                      (list (straight-line:expr-id "a")
+                            (straight-line:expr-op
+                             (straight-line:expr-id "a")
+                             straight-line:op-minus
+                             (straight-line:expr-int 1))))
+                     (straight-line:expr-op
+                      (straight-line:expr-int 10)
+                      straight-line:op-times
+                      (straight-line:expr-id "a"))))
+                   (straight-line:stm-print
+                    (list (straight-line:expr-id "b")))))
+                 nil))))
+      result-env))))
 
 (parachute:define-test queens
   (parachute:is

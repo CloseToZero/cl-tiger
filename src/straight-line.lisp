@@ -1,5 +1,37 @@
 (cl:defpackage :cl-tiger/straight-line
-  (:use :cl))
+  (:use :cl)
+  (:export
+   #:op
+   #:op-plus
+   #:op-minus
+   #:op-times
+   #:op-div
+
+   #:stm
+   #:stm-compound
+   #:stm-compound-first
+   #:stm-compound-second
+   #:stm-assign
+   #:stm-assign-id
+   #:stm-assign-expr
+   #:stm-print
+   #:stm-print-exprs
+
+   #:expr
+   #:expr-id
+   #:expr-id-id
+   #:expr-int
+   #:expr-int-value
+   #:expr-op
+   #:expr-op-left
+   #:expr-op-op
+   #:expr-op-right
+   #:expr-stm-then-expr
+   #:expr-stm-then-expr-stm
+   #:expr-stm-then-expr-expr
+
+   #:interpret-stm
+   #:interpret-expr))
 
 (cl:in-package :cl-tiger/straight-line)
 
@@ -34,18 +66,6 @@
   (expr-stm-then-expr
    (stm stm)
    (expr expr)))
-
-(defvar *prog*
-  (stm-compound
-   (stm-assign "a" (expr-op (expr-int 5) op-plus (expr-int 3)))
-   (stm-compound
-    (stm-assign "b"
-                (expr-stm-then-expr
-                 (stm-print
-                  (list (expr-id "a")
-                        (expr-op (expr-id "a") op-minus (expr-int 1))))
-                 (expr-op (expr-int 10) op-times (expr-id "a"))))
-    (stm-print (list (expr-id "b"))))))
 
 (defun interpret-stm (stm env)
   ;; Returns another assoc list as new env.
@@ -91,5 +111,3 @@
     ((expr-stm-then-expr stm expr)
      (let ((new-env (interpret-stm stm env)))
        (interpret-expr expr new-env)))))
-
-;; (interpret-stm *prog* nil)
