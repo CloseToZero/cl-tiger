@@ -78,7 +78,13 @@
 
 (defmacro with-temporary-directory ((dir-pathname-var dir-name &optional keep-dir) &body body)
   `(let ((,dir-pathname-var (uiop:ensure-pathname
-                             (uiop:merge-pathnames* ,dir-name (uiop:temporary-directory))
+                             (uiop:merge-pathnames*
+                              ,dir-name
+                              (uiop:ensure-directory-pathname
+                               (uiop:merge-pathnames*
+                                (uiop:with-temporary-file (:pathname pathname)
+                                  (pathname-name pathname))
+                                (uiop:temporary-directory))))
                              :want-pathname t
                              :ensure-directory t
                              :ensure-directories-exist t)))
