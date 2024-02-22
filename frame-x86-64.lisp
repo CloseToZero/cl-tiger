@@ -194,10 +194,6 @@
                                             (target-arch target:arch-x86-64) target-os)
   (concatenate 'string "tiger_" name))
 
-(defmethod frame:external-call-label-name% (name target
-                                            (target-arch target:arch-x86-64) (target-os target:os-mac))
-  (concatenate 'string "_tiger_" name))
-
 (defmethod frame:label-name%
     (label target
      (target-arch target:arch-x86-64) target-os)
