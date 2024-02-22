@@ -5,6 +5,14 @@
 
 (cl:in-package :cl-tiger/test)
 
+(defvar *target-os*
+  #+windows
+  target:os-windows
+  #+linux
+  target:os-linux
+  #+mac
+  target:os-mac)
+
 (defun build-dir (project-dir-pathname)
   (uiop:ensure-directory-pathname (merge-pathnames "build" project-dir-pathname)))
 
@@ -84,9 +92,9 @@
         (cl-tiger:compile-tiger
          (tiger-source-path "queens.tig")
          project-dir
-         (cl-tiger/target:target cl-tiger/target:arch-x86-64 cl-tiger/target:os-windows)
+         (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
          :build-args (list :generate-get-exe-path-target t))
-        (build-and-run-project project-dir cl-tiger/target:os-windows))
+        (build-and-run-project project-dir *target-os*))
       " O . . . . . . .
  . . . . O . . .
  . . . . . . . O

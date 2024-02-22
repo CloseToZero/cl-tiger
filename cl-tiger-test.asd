@@ -6,7 +6,8 @@
   :depends-on ("cl-tiger"
                "uiop"
                "cl-ppcre"
-               "parachute")
+               "parachute"
+               "trivial-features")
   :serial t
   :components ((:file "test"))
   :perform (asdf:test-op (op c) (uiop:symbol-call :parachute :test :cl-tiger/test)))
