@@ -107,3 +107,87 @@
       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
       :build-args (list :generate-get-exe-path-target t))
      (build-and-run-project project-dir *target-os*))))
+
+(parachute:define-test merge
+  (parachute:is
+   string=
+   (concatenate 'string
+                "-7897 -45 -34 3 637 789 896 987 3748 3784 7632 7667 9767 7823743"
+                (string #\Space)
+                (string #\Newline))
+   (with-temporary-directory (project-dir "merge")
+     (cl-tiger:compile-tiger
+      (tiger-source-path "merge.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (build-and-run-project
+      project-dir *target-os*
+      :input-string "-45 3 896 3748 3784 7823743; -7897 -34 637 789 987 7632 7667 9767;"))))
+
+(parachute:define-test lots-of-args
+  (parachute:is
+   string=
+   (read-test-file-string "lots-of-args-output.txt")
+   (with-temporary-directory (project-dir "lots-of-args")
+     (cl-tiger:compile-tiger
+      (tiger-source-path "lots-of-args.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (build-and-run-project
+      project-dir *target-os*))))
+
+(parachute:define-test reference-nil-record
+  (parachute:is
+   string=
+   (concatenate 'string
+                "Reference a field of a nil record"
+                (string #\Newline))
+   (with-temporary-directory (project-dir "reference-nil-record")
+     (cl-tiger:compile-tiger
+      (tiger-source-path "reference-nil-record.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (handler-bind ((uiop:subprocess-error
+                      (lambda (condition)
+                        (when (= (uiop:subprocess-error-code condition) 1)
+                          (continue)))))
+       (build-and-run-project project-dir *target-os*)))))
+
+(parachute:define-test array-index-out-of-range-1
+  (parachute:is
+   string=
+   (concatenate 'string
+                "Index -1 out of range [0, 8)"
+                (string #\Newline))
+   (with-temporary-directory (project-dir "array-index-out-of-range-1")
+     (cl-tiger:compile-tiger
+      (tiger-source-path "array-index-out-of-range-1.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (handler-bind ((uiop:subprocess-error
+                      (lambda (condition)
+                        (when (= (uiop:subprocess-error-code condition) 1)
+                          (continue)))))
+       (build-and-run-project project-dir *target-os*)))))
+
+(parachute:define-test array-index-out-of-range-2
+  (parachute:is
+   string=
+   (concatenate 'string
+                "Index 8 out of range [0, 8)"
+                (string #\Newline))
+   (with-temporary-directory (project-dir "array-index-out-of-range-2")
+     (cl-tiger:compile-tiger
+      (tiger-source-path "array-index-out-of-range-2.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (handler-bind ((uiop:subprocess-error
+                      (lambda (condition)
+                        (when (= (uiop:subprocess-error-code condition) 1)
+                          (continue)))))
+       (build-and-run-project project-dir *target-os*)))))
