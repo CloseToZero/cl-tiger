@@ -69,7 +69,7 @@
             types:*built-in-function-bindings*
             :initial-value env)))
 
-(defun check-type-circular-dependencie (ty pos)
+(defun check-type-circular-dependency (ty pos)
   (let ((visited (make-hash-table))
         (path nil))
     (labels ((rec (ty)
@@ -79,7 +79,7 @@
                   (when (gethash sym visited)
                     (type-check-error
                      pos *line-map*
-                     "Circular type dependencie: ~{~A~^ -> ~}." (nreverse path)))
+                     "Circular type dependency: ~{~A~^ -> ~}." (nreverse path)))
                   (alexandria:when-let (type-ref-value (types:ty-ref-value ty-ref))
                     (setf (gethash sym visited) t)
                     (rec type-ref-value)))
@@ -217,7 +217,7 @@
                   (types:ty-ref-value (types:ty-name-ty-ref
                                        (types:get-type new-type-env (ast:decl-type-name decl-type))))
                   ty)
-                 (check-type-circular-dependencie ty (ast:decl-type-pos decl-type))))
+                 (check-type-circular-dependency ty (ast:decl-type-pos decl-type))))
              decl-types)
        (list new-type-env type-check-env)))
     ((ast:decl-functions decl-functions)
