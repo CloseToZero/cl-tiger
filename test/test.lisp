@@ -11,7 +11,7 @@
   target:os-windows
   #+linux
   target:os-linux
-  #+mac
+  #+darwin
   target:os-mac)
 
 (defun build-dir (project-dir-pathname)
