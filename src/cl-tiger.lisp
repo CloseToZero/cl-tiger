@@ -22,8 +22,9 @@
 ;; The source can be pathname (file), stream or string (source code, not file path).
 (defun compile-tiger (source dst-dir target
                       &key
+                        dont-generate-project
                         (string-literal-as-comment t)
-                        (build-args nil))
+                        build-args)
   (let* ((text (etypecase source
                  (stream (uiop:slurp-stream-string source))
                  (pathname (uiop:read-file-string source))
@@ -64,4 +65,5 @@
                               (trivia:let-match1 (list prolog instrs epilog)
                                   (frame:wrap-entry-exit frame instrs target)
                                 (build:frag-fun prolog instrs epilog))))))))
-          (apply #'build:build build-frag-strs build-frag-funs dst-dir target build-args))))))
+          (unless dont-generate-project
+            (apply #'build:build build-frag-strs build-frag-funs dst-dir target build-args)))))))
