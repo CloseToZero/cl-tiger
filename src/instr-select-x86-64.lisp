@@ -208,6 +208,34 @@
         (ir:expr-temp d)
         (ir:expr-mem
          (ir:expr-bin-op
+          (ir:expr-bin-op
+           (ir:expr-temp s0)
+           (ir:bin-op-plus)
+           (ir:expr-bin-op
+            (ir:expr-temp s1)
+            (ir:bin-op-times)
+            (ir:expr-int c)))
+          (ir:bin-op-plus)
+          (ir:expr-int o))))
+       (member c '(2 4 8))))
+     (emit
+      (instr:instr-op
+       (asm->string
+        (asm-bin-op
+         op-mov
+         *d0-arg*
+         (arg-mem
+          (mem-base-index-scale-disp *s0* *s1* c o)))
+        target)
+       (list d)
+       (list s0 s1)
+       instr:not-jump)))
+    ((commute-patterns-stm!
+      (trivia:guard
+       (ir:stm-move
+        (ir:expr-temp d)
+        (ir:expr-mem
+         (ir:expr-bin-op
           (ir:expr-temp s0)
           (ir:bin-op-plus)
           (ir:expr-bin-op
@@ -222,8 +250,7 @@
          op-mov
          *d0-arg*
          (arg-mem
-          (mem-base-index-scale-disp
-           *s0* *s1* c 0)))
+          (mem-base-index-scale-disp *s0* *s1* c 0)))
         target)
        (list d)
        (list s0 s1)
@@ -306,6 +333,34 @@
        (ir:stm-move
         (ir:expr-mem
          (ir:expr-bin-op
+          (ir:expr-bin-op
+           (ir:expr-temp s1)
+           (ir:bin-op-plus)
+           (ir:expr-bin-op
+            (ir:expr-temp s2)
+            (ir:bin-op-times)
+            (ir:expr-int c)))
+          (ir:bin-op-plus)
+          (ir:expr-int o)))
+        (ir:expr-temp s0))
+       (member c '(2 4 8))))
+     (emit
+      (instr:instr-op
+       (asm->string
+        (asm-bin-op
+         op-mov
+         (arg-mem
+          (mem-base-index-scale-disp *s1* *s2* c o))
+         *s0-arg*)
+        target)
+       nil
+       (list s0 s1 s2)
+       instr:not-jump)))
+    ((commute-patterns-stm!
+      (trivia:guard
+       (ir:stm-move
+        (ir:expr-mem
+         (ir:expr-bin-op
           (ir:expr-temp s1)
           (ir:bin-op-plus)
           (ir:expr-bin-op
@@ -325,6 +380,34 @@
         target)
        nil
        (list s0 s1 s2)
+       instr:not-jump)))
+    ((commute-patterns-stm!
+      (trivia:guard
+       (ir:stm-move
+        (ir:expr-mem
+         (ir:expr-bin-op
+          (ir:expr-bin-op
+           (ir:expr-temp s0)
+           (ir:bin-op-plus)
+           (ir:expr-bin-op
+            (ir:expr-temp s1)
+            (ir:bin-op-times)
+            (ir:expr-int c0)))
+          (ir:bin-op-plus)
+          (ir:expr-int o)))
+        (ir:expr-int c1))
+       (member c0 '(2 4 8))))
+     (emit
+      (instr:instr-op
+       (asm->string
+        (asm-bin-op
+         op-mov
+         (arg-mem
+          (mem-base-index-scale-disp *s0* *s1* c0 o))
+         (arg-int c1))
+        target)
+       nil
+       (list s0 s1)
        instr:not-jump)))
     ((commute-patterns-stm!
       (trivia:guard
@@ -676,6 +759,34 @@
           target)
          (list r)
          (list (temp:named-temp "rcx") r)
+         instr:not-jump))
+       r))
+    ((commute-patterns-expr!
+      (trivia:guard
+       (ir:expr-mem
+        (ir:expr-bin-op
+         (ir:expr-bin-op
+          (ir:expr-temp s0)
+          (ir:bin-op-plus)
+          (ir:expr-bin-op
+           (ir:expr-temp s1)
+           (ir:bin-op-times)
+           (ir:expr-int c)))
+         (ir:bin-op-plus)
+         (ir:expr-int o)))
+       (member c '(2 4 8))))
+     (let ((r (temp:new-temp)))
+       (emit
+        (instr:instr-op
+         (asm->string
+          (asm-bin-op
+           op-mov
+           *d0-arg*
+           (arg-mem
+            (mem-base-index-scale-disp *s0* *s1* c o)))
+          target)
+         (list r)
+         (list s0 s1)
          instr:not-jump))
        r))
     ((commute-patterns-expr!
