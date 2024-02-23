@@ -19,11 +19,15 @@
 
 (cl:in-package :cl-tiger)
 
-(defun compile-tiger (file dst-dir target
+;; The source can be pathname (file), stream or string (source code, not file path).
+(defun compile-tiger (source dst-dir target
                       &key
                         (string-literal-as-comment t)
                         (build-args nil))
-  (let* ((text (uiop:read-file-string file))
+  (let* ((text (etypecase source
+                 (stream (uiop:slurp-stream-string source))
+                 (pathname (uiop:read-file-string source))
+                 (string source)))
          (line-map (utils:get-line-map text))
          (ast (parse:parse-program text)))
     (type-check:type-check-program ast line-map)

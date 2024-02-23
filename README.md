@@ -18,8 +18,8 @@ First, we compile a tiger source and generate a CMake project:
 ```common-lisp
 (ql:quickload :cl-tiger)
 (cl-tiger:compile-tiger
-  "path/to/tiger-source.tig"
-  "path/to/output-project-dir" ; Parent directories will be created as needed.
+  #p"path/to/tiger-source.tig"
+  #p"path/to/output-project-dir" ; Parent directories will be created as needed.
   ;; Choose one of platforms.
   (cl-tiger/target:target cl-tiger/target:arch-x86-64 cl-tiger/target:os-windows)
   ;; (cl-tiger/target:target cl-tiger/target:arch-x86-64 cl-tiger/target:os-linux)
