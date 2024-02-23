@@ -2,7 +2,8 @@
   (:use :cl)
   (:local-nicknames
    (:target :cl-tiger/target)
-   (:straight-line :cl-tiger/straight-line)))
+   (:straight-line :cl-tiger/straight-line)
+   (:type-check :cl-tiger/type-check)))
 
 (cl:in-package :cl-tiger/test)
 
@@ -148,6 +149,28 @@
                     (list (straight-line:expr-id "b")))))
                  nil))))
       result-env))))
+
+(parachute:define-test break-not-within-loop
+  (parachute:fail
+      (with-temporary-directory (project-dir "break-not-within-loop")
+        (cl-tiger:compile-tiger
+         (tiger-source-path "break-not-within-loop.tig")
+         project-dir
+         (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+         :build-args (list :generate-get-exe-path-target t))
+        (build-and-run-project project-dir *target-os*))
+      'type-check:break-not-within-loop))
+
+(parachute:define-test circular-dep
+  (parachute:fail
+      (with-temporary-directory (project-dir "circular-dep")
+        (cl-tiger:compile-tiger
+         (tiger-source-path "circular-dep.tig")
+         project-dir
+         (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+         :build-args (list :generate-get-exe-path-target t))
+        (build-and-run-project project-dir *target-os*))
+      'type-check:circular-dep))
 
 (parachute:define-test queens
   (parachute:is

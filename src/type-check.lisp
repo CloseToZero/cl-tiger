@@ -6,6 +6,10 @@
    (:ast :cl-tiger/ast)
    (:types :cl-tiger/types))
   (:export
+   #:type-check-error
+   #:break-not-within-loop
+   #:circular-dep
+
    #:type-check-program))
 
 (cl:in-package :cl-tiger/type-check)
@@ -38,10 +42,21 @@
                            (second line-info))
                    (format stream " (pos: ~A)" (type-check-error-pos type-check-error)))))))
 
+(define-condition break-not-within-loop (type-check-error)
+  ())
+
+(define-condition circular-dep (type-check-error)
+  ())
+
+(defmacro def-type-check-error-constructor (type)
+  `(defun ,type (pos line-map format &rest args)
+     (error ',type :msg (apply #'format nil format args)
+                   :pos pos :line-map line-map)))
+
 ;; line-map can be nil
-(defun type-check-error (pos line-map format &rest args)
-  (error 'type-check-error :msg (apply #'format nil format args)
-                           :pos pos :line-map line-map))
+(def-type-check-error-constructor type-check-error)
+(def-type-check-error-constructor break-not-within-loop)
+(def-type-check-error-constructor circular-dep)
 
 (defvar *line-map* nil)
 
@@ -77,7 +92,7 @@
                  ((types:ty-name sym ty-ref)
                   (push (symbol:sym-name sym) path)
                   (when (gethash sym visited)
-                    (type-check-error
+                    (circular-dep
                      pos *line-map*
                      "Circular type dependency: ~{~A~^ -> ~}." (nreverse path)))
                   (alexandria:when-let (type-ref-value (types:ty-ref-value ty-ref))
@@ -462,7 +477,7 @@ doesn't match the expected type."
              body-ty)))))
     ((ast:expr-break pos)
      (unless within-loop
-       (type-check-error
+       (break-not-within-loop
         pos *line-map*
         "break expression not within a loop expression."))
      (types:get-unnamed-base-type (symbol:get-sym "unit")))
