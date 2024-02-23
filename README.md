@@ -49,7 +49,7 @@ you should be able to run it and see its output.
 
 # How to test the system
 
-In the first time, we haven't download the dependencies of `cl-tiger`
+At the first time, we haven't download the dependencies of `cl-tiger`
 and `cl-tiger-test` systems, we use `quicklisp` to do that:
 
 ```common-lisp
