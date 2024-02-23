@@ -173,7 +173,12 @@ static void InitChStrings(void) {
 int main(void)
 {
   InitChStrings();
-  intmax_t code = tiger_main(0);
-  CheckExitCode(code, "main");
-  return (int)code;
+  /* intmax_t code =  */tiger_main(0);
+  /* CheckExitCode(code, "main"); */
+  /* return (int)code; */
+  // Many test cases of the book don't return a meaningful value as
+  // exit code from the main expression, so we simply ignore the value
+  // of the main expression, if the tiger program want different exit
+  // code, it can use the exit function.
+  return 0;
 }
