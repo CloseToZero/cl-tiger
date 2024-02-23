@@ -14,6 +14,9 @@
   #+darwin
   target:os-mac)
 
+(unless *target-os*
+  (error "Unknown target OS."))
+
 (defun build-dir (project-dir-pathname)
   (uiop:ensure-directory-pathname (merge-pathnames "build" project-dir-pathname)))
 
