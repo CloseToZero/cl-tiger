@@ -123,9 +123,86 @@
     (select-instr-stm stm frame target)
     (nreverse *instrs*)))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun combine-patterns (patterns)
+    (if (rest patterns)
+        `(or ,@patterns)
+        (first patterns)))
+
+  (defun commute-patterns-expr (expr-pattern)
+    (trivia:match expr-pattern
+      ((or (list 'ir:expr-int _)
+           (list 'ir:expr-label _)
+           (list 'ir:expr-temp _))
+       (list expr-pattern))
+      ((list 'ir:expr-bin-op left-pattern op right-pattern)
+       (let ((new-left-pattern (combine-commute-patterns-expr left-pattern))
+             (new-right-pattern (combine-commute-patterns-expr right-pattern)))
+         (list (list 'ir:expr-bin-op new-left-pattern op new-right-pattern)
+               (list 'ir:expr-bin-op new-right-pattern op new-left-pattern))))
+      ((list 'ir:expr-mem value-pattern)
+       (list (list 'ir:expr-mem (combine-commute-patterns-expr value-pattern))))
+      ((list 'ir:expr-call fun-pattern arg-patterns)
+       (list (list 'ir:expr-call
+                   (combine-commute-patterns-expr fun-pattern)
+                   (mapcan (lambda (arg-pattern)
+                             (combine-commute-patterns-expr arg-pattern))
+                           arg-patterns))))
+      ((list 'ir:expr-stm-then-expr stm-pattern expr-pattern)
+       (list (list 'ir:expr-stm-then-expr
+                   (combine-commute-patterns-stm stm-pattern)
+                   (combine-commute-patterns-expr expr-pattern))))
+      ((list 'trivia:guard expr-pattern test-form)
+       ;; We simply assume the pattern is expr-pattern.
+       (list (list 'trivia:guard
+                   (combine-commute-patterns-expr expr-pattern)
+                   test-form)))
+      ;; Don't dive into other patterns right now.
+      (_ (list expr-pattern))))
+
+  (defun combine-commute-patterns-expr (expr-pattern)
+    (combine-patterns (commute-patterns-expr expr-pattern)))
+
+  (defun combine-commute-patterns-stm (pattern-stm)
+    (trivia:match pattern-stm
+      ((list 'ir:stm-move left-pattern right-pattern)
+       (list 'ir:stm-move
+             (combine-commute-patterns-expr left-pattern)
+             (combine-commute-patterns-expr right-pattern)))
+      ((list 'ir:stm-expr value-pattern)
+       (list 'ir:stm-expr (combine-commute-patterns-expr value-pattern)))
+      ((list 'ir:stm-jump target-pattern possible-labels)
+       (list 'ir:stm-jump (combine-commute-patterns-expr target-pattern)
+             possible-labels))
+      ((list 'ir:stm-cjump left-pattern op right-pattern true-target false-target)
+       (list 'ir:stm-cjump
+             (combine-commute-patterns-expr left-pattern)
+             op
+             (combine-commute-patterns-expr right-pattern)
+             true-target false-target))
+      ((list 'ir:stm-compound first-pattern second-pattern)
+       (list 'ir:stm-compound
+             (combine-commute-patterns-stm first-pattern)
+             (combine-commute-patterns-stm second-pattern)))
+      ((list 'ir:stm-label _)
+       pattern-stm)
+      ((list 'trivia:guard stm-pattern test-form)
+       ;; We simply assume the pattern is stm-pattern.
+       (list 'trivia:guard
+             (combine-commute-patterns-stm stm-pattern)
+             test-form))
+      ;; Don't dive into other patterns right now.
+      (_ pattern-stm)))
+
+  (trivia:defpattern commute-patterns-expr! (expr-pattern)
+    (combine-commute-patterns-expr expr-pattern))
+
+  (trivia:defpattern commute-patterns-stm! (stm-pattern)
+    (combine-commute-patterns-stm stm-pattern)))
+
 (defun select-instr-stm (stm frame target)
   (trivia:ematch stm
-    ((or
+    ((commute-patterns-stm!
       (trivia:guard
        (ir:stm-move
         (ir:expr-temp d)
@@ -137,18 +214,6 @@
            (ir:expr-temp s1)
            (ir:bin-op-times)
            (ir:expr-int c)))))
-       (member c '(2 4 8)))
-      (trivia:guard
-       (ir:stm-move
-        (ir:expr-temp d)
-        (ir:expr-mem
-         (ir:expr-bin-op
-          (ir:expr-bin-op
-           (ir:expr-temp s1)
-           (ir:bin-op-times)
-           (ir:expr-int c))
-          (ir:bin-op-plus)
-          (ir:expr-temp s0))))
        (member c '(2 4 8))))
      (emit
       (instr:instr-op
@@ -163,21 +228,14 @@
        (list d)
        (list s0 s1)
        instr:not-jump)))
-    ((or
+    ((commute-patterns-stm!
       (ir:stm-move
        (ir:expr-temp d)
        (ir:expr-mem
         (ir:expr-bin-op
          (ir:expr-temp s0)
          (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
-         (ir:expr-int c))))
-      (ir:stm-move
-       (ir:expr-temp d)
-       (ir:expr-mem
-        (ir:expr-bin-op
-         (ir:expr-int c)
-         (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
-         (ir:expr-temp s0)))))
+         (ir:expr-int c)))))
      (emit
       (instr:instr-op
        (asm->string
@@ -243,7 +301,7 @@
         target)
        d
        (select-instr-expr right frame target))))
-    ((or
+    ((commute-patterns-stm!
       (trivia:guard
        (ir:stm-move
         (ir:expr-mem
@@ -254,18 +312,6 @@
            (ir:expr-temp s2)
            (ir:bin-op-times)
            (ir:expr-int c))))
-        (ir:expr-temp s0))
-       (member c '(2 4 8)))
-      (trivia:guard
-       (ir:stm-move
-        (ir:expr-mem
-         (ir:expr-bin-op
-          (ir:expr-bin-op
-           (ir:expr-temp s2)
-           (ir:bin-op-times)
-           (ir:expr-int c))
-          (ir:bin-op-plus)
-          (ir:expr-temp s1)))
         (ir:expr-temp s0))
        (member c '(2 4 8))))
      (emit
@@ -280,7 +326,7 @@
        nil
        (list s0 s1 s2)
        instr:not-jump)))
-    ((or
+    ((commute-patterns-stm!
       (trivia:guard
        (ir:stm-move
         (ir:expr-mem
@@ -291,18 +337,6 @@
            (ir:expr-temp s1)
            (ir:bin-op-times)
            (ir:expr-int c0))))
-        (ir:expr-int c1))
-       (member c0 '(2 4 8)))
-      (trivia:guard
-       (ir:stm-move
-        (ir:expr-mem
-         (ir:expr-bin-op
-          (ir:expr-bin-op
-           (ir:expr-temp s1)
-           (ir:bin-op-times)
-           (ir:expr-int c0))
-          (ir:bin-op-plus)
-          (ir:expr-temp s0)))
         (ir:expr-int c1))
        (member c0 '(2 4 8))))
      (emit
@@ -317,20 +351,13 @@
        nil
        (list s0 s1)
        instr:not-jump)))
-    ((or
+    ((commute-patterns-stm!
       (ir:stm-move
        (ir:expr-mem
         (ir:expr-bin-op
          (ir:expr-temp s1)
          (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
          (ir:expr-int c)))
-       (ir:expr-temp s0))
-      (ir:stm-move
-       (ir:expr-mem
-        (ir:expr-bin-op
-         (ir:expr-int c)
-         (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
-         (ir:expr-temp s1)))
        (ir:expr-temp s0)))
      (emit
       (instr:instr-op
@@ -651,7 +678,7 @@
          (list (temp:named-temp "rcx") r)
          instr:not-jump))
        r))
-    ((or
+    ((commute-patterns-expr!
       (trivia:guard
        (ir:expr-mem
         (ir:expr-bin-op
@@ -661,16 +688,6 @@
           (ir:expr-temp s1)
           (ir:bin-op-times)
           (ir:expr-int c))))
-       (member c '(2 4 8)))
-      (trivia:guard
-       (ir:expr-mem
-        (ir:expr-bin-op
-         (ir:expr-bin-op
-          (ir:expr-temp s1)
-          (ir:bin-op-times)
-          (ir:expr-int c))
-         (ir:bin-op-plus)
-         (ir:expr-temp s0)))
        (member c '(2 4 8))))
      (let ((r (temp:new-temp)))
        (emit
@@ -686,17 +703,12 @@
          (list s0 s1)
          instr:not-jump))
        r))
-    ((or
+    ((commute-patterns-expr!
       (ir:expr-mem
        (ir:expr-bin-op
         (ir:expr-temp s0)
         (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
-        (ir:expr-int c)))
-      (ir:expr-mem
-       (ir:expr-bin-op
-        (ir:expr-int c)
-        (trivia:<> (or (ir:bin-op-plus) (ir:bin-op-minus)) op op)
-        (ir:expr-temp s0))))
+        (ir:expr-int c))))
      (let ((r (temp:new-temp)))
        (emit
         (instr:instr-op
