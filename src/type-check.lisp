@@ -13,8 +13,11 @@
    #:then-else-types-of-if-mismatch-then-ty
    #:then-else-types-of-if-mismatch-else-ty
    #:body-of-while-not-unit
+   #:body-of-while-not-unit-ty
    #:for-low-not-int
+   #:for-low-not-int-ty
    #:for-high-not-int
+   #:for-high-not-int-ty
    #:assign-index-var
    #:assign-index-var-var
 
@@ -67,13 +70,22 @@
     :reader then-else-types-of-if-mismatch-else-ty)))
 
 (define-condition body-of-while-not-unit (type-check-error)
-  ())
+  ((ty
+    :type types:ty
+    :initarg :ty
+    :reader body-of-while-not-unit-ty)))
 
 (define-condition for-low-not-int (type-check-error)
-  ())
+  ((ty
+    :type types:ty
+    :initarg :ty
+    :reader for-low-not-int-ty)))
 
 (define-condition for-high-not-int (type-check-error)
-  ())
+  ((ty
+    :type types:ty
+    :initarg :ty
+    :reader for-high-not-int-ty)))
 
 (define-condition assign-index-var (type-check-error)
   ((var
@@ -95,9 +107,9 @@
 (def-type-check-error-constructor break-not-within-loop)
 (def-type-check-error-constructor circular-dep)
 (def-type-check-error-constructor then-else-types-of-if-mismatch then-ty else-ty)
-(def-type-check-error-constructor body-of-while-not-unit)
-(def-type-check-error-constructor for-low-not-int)
-(def-type-check-error-constructor for-high-not-int)
+(def-type-check-error-constructor body-of-while-not-unit ty)
+(def-type-check-error-constructor for-low-not-int ty)
+(def-type-check-error-constructor for-high-not-int ty)
 (def-type-check-error-constructor assign-index-var var)
 
 (defvar *line-map* nil)
@@ -510,7 +522,7 @@ doesn't match the expected type."
           "The type of the test expression of a while expression should be int."))
        (unless (types:type-compatible body-ty (types:get-unnamed-base-type (symbol:get-sym "unit")))
          (body-of-while-not-unit
-          pos *line-map*
+          pos *line-map* body-ty
           "The body expression of a while expression should product no value."))
        body-ty))
     ((ast:expr-for var low high body pos _)
@@ -519,11 +531,11 @@ doesn't match the expected type."
        (let ((ty-int (types:get-type types:*base-type-env* (symbol:get-sym "int"))))
          (unless (types:type-compatible low-ty ty-int)
            (for-low-not-int
-            pos *line-map*
+            pos *line-map* low-ty
             "The type of the low expression of a for expression should be int."))
          (unless (types:type-compatible high-ty ty-int)
            (for-high-not-int
-            pos *line-map*
+            pos *line-map* high-ty
             "The type of the high expression of a for expression should be int."))
          (let ((new-type-check-env
                  (insert-type-check-entry type-check-env var (type-check-entry-var ty-int t))))
