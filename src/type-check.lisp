@@ -26,6 +26,10 @@
    #:unsupport-operation-op
    #:unsupport-operation-left-ty
    #:unsupport-operation-right-ty
+   #:undefined-type
+   #:undefined-type-type-id
+   #:undefined-field-type
+   #:undefined-field-type-field-name
 
    #:continue-type-check
 
@@ -121,6 +125,18 @@
     :initarg :right-ty
     :reader unsupport-operation-right-ty)))
 
+(define-condition undefined-type (type-check-error)
+  ((type-id
+    :type symbol:sym
+    :initarg :type-id
+    :reader undefined-type-type-id)))
+
+(define-condition undefined-field-type (undefined-type)
+  ((field-name
+    :type symbol:sym
+    :initarg :field-name
+    :reader undefined-field-type-field-name)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -142,6 +158,8 @@
 (def-type-check-error-constructor for-high-not-int ty)
 (def-type-check-error-constructor assign-index-var var)
 (def-type-check-error-constructor unsupport-operation op left-ty right-ty)
+(def-type-check-error-constructor undefined-type type-id)
+(def-type-check-error-constructor undefined-field-type type-id field-name)
 
 (defvar *line-map* nil)
 
@@ -195,7 +213,7 @@
     ((ast:ty-name name pos)
      (let ((ty (types:get-type type-env name)))
        (unless ty
-         (type-check-error pos *line-map* "Undefined type: ~A." (symbol:sym-name name)))
+         (undefined-type pos *line-map* name "Undefined type: ~A." (symbol:sym-name name)))
        ty))
     ((ast:ty-record fields)
      (types:ty-record
@@ -203,8 +221,9 @@
                 (trivia:let-match1 (ast:field name type-id pos _) field
                   (let ((ty (types:get-type type-env type-id)))
                     (unless ty
-                      (type-check-error
+                      (undefined-field-type
                        pos *line-map*
+                       type-id name
                        "The type of field ~A is an undefined type: ~A."
                        (symbol:sym-name name)
                        (symbol:sym-name type-id)))
