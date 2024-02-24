@@ -65,6 +65,11 @@ intmax_t tiger_print(const char *s) {
   return 0;
 }
 
+intmax_t tiger_printn(intmax_t n) {
+  printf("%jd", n);
+  return 0;
+}
+
 intmax_t tiger_flush(void) {
   fflush(stdin);
   return 0;

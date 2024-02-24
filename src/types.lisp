@@ -111,6 +111,10 @@
                 ;; print(s: string)
                 ;; print s on std output.
                 (list ty-string) ty-unit)
+          (list "printn"
+                ;; print(n: int)
+                ;; print n on std output.
+                (list ty-int) ty-unit)
           (list "flush"
                 ;; flush()
                 ;; flush the std output buffer.
