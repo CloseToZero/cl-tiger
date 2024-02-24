@@ -63,6 +63,12 @@
 (define-condition body-of-while-not-unit (type-check-error)
   ())
 
+(define-condition for-low-not-int (type-check-error)
+  ())
+
+(define-condition for-high-not-int (type-check-error)
+  ())
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (error ',type :msg (apply #'format nil format args)
@@ -78,6 +84,8 @@
 (def-type-check-error-constructor circular-dep)
 (def-type-check-error-constructor then-else-types-of-if-mismatch then-ty else-ty)
 (def-type-check-error-constructor body-of-while-not-unit)
+(def-type-check-error-constructor for-low-not-int)
+(def-type-check-error-constructor for-high-not-int)
 
 (defvar *line-map* nil)
 
@@ -482,11 +490,11 @@ doesn't match the expected type."
            (high-ty (type-check-expr type-env type-check-env within-loop high)))
        (let ((ty-int (types:get-type types:*base-type-env* (symbol:get-sym "int"))))
          (unless (types:type-compatible low-ty ty-int)
-           (type-check-error
+           (for-low-not-int
             pos *line-map*
             "The type of the low expression of a for expression should be int."))
          (unless (types:type-compatible high-ty ty-int)
-           (type-check-error
+           (for-high-not-int
             pos *line-map*
             "The type of the high expression of a for expression should be int."))
          (let ((new-type-check-env
