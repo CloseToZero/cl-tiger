@@ -2,10 +2,10 @@ let
   type any = { any: int }
   var buffer := getchar()
 
-  function readint(any: any) : int =
+  function readint(any: any): int =
     let
       var i := 0
-      function isdigit(s: string) : int =
+      function isdigit(s: string): int =
 		ord(buffer) >= ord("0") & ord(buffer) <= ord("9")
       var neg := 0
     in
@@ -27,7 +27,7 @@ let
 
   type list = { first: int, rest: list }
 
-  function readlist() : list =
+  function readlist(): list =
     let
       var any := any { any = 0 }
       var i := readint(any)
@@ -37,7 +37,7 @@ let
       else (buffer := getchar(); nil)
     end
 
-  function merge(a: list, b: list) : list =
+  function merge(a: list, b: list): list =
     if a = nil then b
     else if b = nil then a
     else if a.first < b.first
