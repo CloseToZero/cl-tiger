@@ -191,7 +191,7 @@
        (tiger-source-path "break-not-within-loop.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:break-not-within-loop))
 
 (parachute:define-test circular-dep
@@ -200,7 +200,7 @@
        (tiger-source-path "circular-dep.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:circular-dep))
 
 (parachute:define-test queens
@@ -385,7 +385,7 @@
        (tiger-book-test-source-path "test-09.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:then-else-types-of-if-mismatch))
 
 (parachute:define-test book-test-10
@@ -394,7 +394,7 @@
        (tiger-book-test-source-path "test-10.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:body-of-while-not-unit))
 
 (parachute:define-test book-test-11
@@ -449,7 +449,7 @@
        (tiger-book-test-source-path "test-16.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:circular-dep))
 
 (parachute:define-test book-test-17
@@ -458,7 +458,7 @@
        (tiger-book-test-source-path "test-17.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:undefined-field-type))
 
 (parachute:define-test book-test-18
@@ -467,7 +467,7 @@
        (tiger-book-test-source-path "test-18.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:undefined-fun))
 
 (parachute:define-test book-test-19
@@ -476,7 +476,7 @@
        (tiger-book-test-source-path "test-19.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:undefined-var))
 
 (parachute:define-test book-test-20
@@ -485,5 +485,5 @@
        (tiger-book-test-source-path "test-20.tig")
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :build-args (list :generate-get-exe-path-target t))
+       :dont-generate-project t)
       'type-check:undefined-var))
