@@ -907,13 +907,17 @@
      (select-instr-expr expr frame target))))
 
 (defun select-instr-args (args frame target)
-  ;; The first four arguments are passed in rcx, rdx, r8, r9,
+  ;; Note:
+  ;; For Microsoft x64 calling convention,
+  ;; the first four arguments are passed in rcx, rdx, r8, r9,
   ;; remaining arguments get pushed on the stack in right to left,
   ;; see https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention for details.
   ;; We will scan the whole function to find the maximum number of arguments M,
   ;; and x86-64-frame will reserve (M - 4) * word-size bytes stack space for remaining arguments,
   ;; So in here, we should use "mov [rbp + offset], arg-temp" to "push" a argument,
   ;; rather than use "push arg-temp".
+  ;; The case for System V AMD64 ABI is similar,
+  ;; see https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI.
   (let* ((arg-regs (frame:arg-regs target))
          (arg-regs-len (length arg-regs))
          (word-size (frame:word-size target))
