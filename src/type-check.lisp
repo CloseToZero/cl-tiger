@@ -44,6 +44,8 @@
 
 (cl:in-package :cl-tiger/type-check)
 
+;; TODO Printing recursive types will cause stack overflow.
+
 (define-condition type-check-error (error)
   ((msg
     :type string
