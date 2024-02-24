@@ -56,9 +56,9 @@
     (_ ty)))
 
 ;; Compare two actual types.
-(defun type-compatible (ty1 ty2)
-  (or (eq ty1 ty2)
-      (trivia:match (list ty1 ty2)
+(defun type-compatible (ty-1 ty-2)
+  (or (eq ty-1 ty-2)
+      (trivia:match (list ty-1 ty-2)
         ((list (ty-array base-type-1)
                (ty-array base-type-2))
          (type-compatible base-type-1 base-type-2))
@@ -67,13 +67,13 @@
          t)
         (_ nil))))
 
-(defun upgrade-from-compatible-types (ty1 ty2)
-  (trivia:match (list ty1 ty2)
+(defun upgrade-from-compatible-types (ty-1 ty-2)
+  (trivia:match (list ty-1 ty-2)
     ((list (ty-record _) (ty-nil))
-     ty1)
+     ty-1)
     ((list (ty-nil) (ty-record _))
-     ty2)
-    (_ ty1)))
+     ty-2)
+    (_ ty-1)))
 
 ;; A map from symbol:sym to ty
 (defvar *base-type-env*
