@@ -69,6 +69,12 @@
 (define-condition for-high-not-int (type-check-error)
   ())
 
+(define-condition assign-index-var (type-check-error)
+  ((var
+    :initarg :var
+    :type ast:var
+    :reader assign-index-var-var)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (error ',type :msg (apply #'format nil format args)
@@ -86,12 +92,16 @@
 (def-type-check-error-constructor body-of-while-not-unit)
 (def-type-check-error-constructor for-low-not-int)
 (def-type-check-error-constructor for-high-not-int)
+(def-type-check-error-constructor assign-index-var var)
 
 (defvar *line-map* nil)
 
 (serapeum:defunion type-check-entry
   (type-check-entry-var
-   (ty types:ty))
+   (ty types:ty)
+   ;; We can instead introduce a readonly? field,
+   ;; but we want more concrete error messages.
+   (is-index-var boolean))
   (type-check-entry-fun
    ;; A list of types:ty
    (formal-types list)
@@ -161,13 +171,17 @@
           (symbol:sym-name base-type-id)))
        (types:ty-array ty)))))
 
+(serapeum:defconstructor type-check-var-result
+  (ty types:ty)
+  (is-index-var boolean))
+
 (defun type-check-var (type-env type-check-env within-loop var)
   (serapeum:match-of ast:var var
     ((ast:var-simple sym pos)
      (alexandria:if-let (type-check-entry (get-type-check-entry type-check-env sym))
        (serapeum:match-of type-check-entry type-check-entry
-         ((type-check-entry-var ty)
-          (types:actual-ty ty))
+         ((type-check-entry-var ty is-index-var)
+          (type-check-var-result (types:actual-ty ty) is-index-var))
          ((type-check-entry-fun _ _)
           (type-check-error
            pos *line-map*
@@ -176,7 +190,7 @@
         pos *line-map*
         "Undefined variable: ~A." (symbol:sym-name sym))))
     ((ast:var-field var sym pos)
-     (let ((ty (type-check-var type-env type-check-env within-loop var)))
+     (trivia:let-match1 (type-check-var-result ty _) (type-check-var type-env type-check-env within-loop var)
        (serapeum:match-of types:ty ty
          ((types:ty-record fields)
           (alexandria:if-let
@@ -185,7 +199,7 @@
                           ;; field is of the form (sym ty)
                           (eq (first field) sym))
                         fields))
-            (types:actual-ty (second field))
+            (type-check-var-result (types:actual-ty (second field)) nil)
             (type-check-error
              pos *line-map*
              "Unknow field of the record.")))
@@ -194,10 +208,11 @@
              "You can only access the field of a record.")))))
     ((ast:var-subscript var expr pos)
      (prog1
-         (let ((ty (type-check-var type-env type-check-env within-loop var)))
+         (trivia:let-match1 (type-check-var-result ty _)
+             (type-check-var type-env type-check-env within-loop var)
            (serapeum:match-of types:ty ty
              ((types:ty-array base-type)
-              (types:actual-ty base-type))
+              (type-check-var-result (types:actual-ty base-type) nil))
              (_ (type-check-error
                  pos *line-map*
                  "You can only subscript an array."))))
@@ -229,7 +244,7 @@
                    (symbol:sym-name (first typ)))))))
        (list type-env
              (insert-type-check-entry
-              type-check-env name (type-check-entry-var final-ty)))))
+              type-check-env name (type-check-entry-var final-ty nil)))))
     ((ast:decl-types decl-types)
      (let ((name-exists-table (make-hash-table)))
        (mapc (lambda (decl-type)
@@ -319,7 +334,7 @@
                                    (insert-type-check-entry
                                     acc-type-check-env
                                     (ast:field-name param-field)
-                                    (type-check-entry-var formal-type)))
+                                    (type-check-entry-var formal-type nil)))
                           finally (return acc-type-check-env))
                     ;; Cannot break into the outer function.
                     nil
@@ -336,7 +351,9 @@
 (defun type-check-expr (type-env type-check-env within-loop expr)
   (serapeum:match-of ast:expr expr
     ((ast:expr-var var)
-     (type-check-var type-env type-check-env within-loop var))
+     (trivia:let-match1 (type-check-var-result ty _)
+         (type-check-var type-env type-check-env within-loop var)
+       ty))
     ((ast:expr-nil)
      (types:get-unnamed-base-type (symbol:get-sym "nil")))
     ((ast:expr-int _)
@@ -446,8 +463,13 @@ doesn't match the expected type."
              exprs
              :initial-value (types:get-unnamed-base-type (symbol:get-sym "unit"))))
     ((ast:expr-assign var expr pos)
-     (let ((var-ty (type-check-var type-env type-check-env within-loop var))
-           (expr-ty (type-check-expr type-env type-check-env within-loop expr)))
+     (trivia:let-match (((type-check-var-result var-ty is-index-var)
+                         (type-check-var type-env type-check-env within-loop var))
+                        (expr-ty (type-check-expr type-env type-check-env within-loop expr)))
+       (when is-index-var
+         (assign-index-var
+          pos *line-map* var
+          "Cannot assign an index variable."))
        (unless (types:type-compatible var-ty expr-ty)
          (type-check-error
           pos *line-map*
@@ -498,7 +520,7 @@ doesn't match the expected type."
             pos *line-map*
             "The type of the high expression of a for expression should be int."))
          (let ((new-type-check-env
-                 (insert-type-check-entry type-check-env var (type-check-entry-var ty-int))))
+                 (insert-type-check-entry type-check-env var (type-check-entry-var ty-int t))))
            (let ((body-ty (type-check-expr type-env new-type-check-env t body)))
              (unless (types:type-compatible body-ty (types:get-unnamed-base-type (symbol:get-sym "unit")))
                (type-check-error
