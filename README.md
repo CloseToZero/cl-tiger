@@ -66,3 +66,8 @@ Then, we can test the system using `asdf:test-system`:
 Next time, we can use `asdf:test-system` directly without
 `ql:quickload` since we already download the dependencies of
 `cl-tiger` and `cl-tiger-test` systems.
+
+# ABI references
+
+- For Windows, see [x64 calling convention of Microsoft](https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention).
+- For Linux and Mac, see [System V AMD64 ABI](https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI).
