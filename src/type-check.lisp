@@ -9,6 +9,9 @@
    #:type-check-error
    #:break-not-within-loop
    #:circular-dep
+   #:then-else-types-of-if-mismatch
+   #:then-else-types-of-if-mismatch-then-ty
+   #:then-else-types-of-if-mismatch-else-ty
 
    #:type-check-program))
 
@@ -48,15 +51,28 @@
 (define-condition circular-dep (type-check-error)
   ())
 
-(defmacro def-type-check-error-constructor (type)
-  `(defun ,type (pos line-map format &rest args)
+(define-condition then-else-types-of-if-mismatch (type-check-error)
+  ((then-ty
+    :initarg :then-ty
+    :type then-else-types-of-if-mismatch-then-ty)
+   (else-ty
+    :initarg :else-ty
+    :reader then-else-types-of-if-mismatch-else-ty)))
+
+(defmacro def-type-check-error-constructor (type &rest initargs)
+  `(defun ,type (pos line-map ,@initargs format &rest args)
      (error ',type :msg (apply #'format nil format args)
-                   :pos pos :line-map line-map)))
+                   :pos pos :line-map line-map
+                   ,@(mapcan (lambda (initarg)
+                               (list (intern (symbol-name initarg) :keyword)
+                                     initarg))
+                             initargs))))
 
 ;; line-map can be nil
 (def-type-check-error-constructor type-check-error)
 (def-type-check-error-constructor break-not-within-loop)
 (def-type-check-error-constructor circular-dep)
+(def-type-check-error-constructor then-else-types-of-if-mismatch then-ty else-ty)
 
 (defvar *line-map* nil)
 
@@ -434,8 +450,9 @@ doesn't match the expected type."
           "The type of the test expression of an if expression should be int."))
        (if else
            (unless (types:type-compatible then-ty else-ty)
-             (type-check-error
+             (then-else-types-of-if-mismatch
               pos *line-map*
+              then-ty else-ty
               "The types of then and else branchs of an if expression should be the same."))
            (unless (types:type-compatible then-ty (types:get-unnamed-base-type (symbol:get-sym "unit")))
              (type-check-error
