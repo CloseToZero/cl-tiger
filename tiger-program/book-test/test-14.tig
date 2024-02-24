@@ -1,4 +1,4 @@
-/* error : compare rec with array */
+/* error: compare rec with array */
 let
   type arrtype = array of int
   type rectype = { name:string, id: int }
