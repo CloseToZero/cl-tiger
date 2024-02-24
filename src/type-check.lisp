@@ -30,6 +30,8 @@
    #:undefined-type-type-id
    #:undefined-field-type
    #:undefined-field-type-field-name
+   #:undefined-fun
+   #:undefined-fun-name
 
    #:continue-type-check
 
@@ -137,6 +139,12 @@
     :initarg :field-name
     :reader undefined-field-type-field-name)))
 
+(define-condition undefined-fun (type-check-error)
+  ((name
+    :type symbol:sym
+    :initarg :name
+    :reader undefined-fun-name)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -160,6 +168,7 @@
 (def-type-check-error-constructor unsupport-operation op left-ty right-ty)
 (def-type-check-error-constructor undefined-type type-id)
 (def-type-check-error-constructor undefined-field-type type-id field-name)
+(def-type-check-error-constructor undefined-fun name)
 
 (defvar *line-map* nil)
 
@@ -451,8 +460,8 @@
          (_ (type-check-error
              pos *line-map*
              "You can only call a function.")))
-       (type-check-error
-        pos *line-map*
+       (undefined-fun
+        pos *line-map* fun
         "Undefined function ~A." (symbol:sym-name fun))))
     ((ast:expr-op left op right pos)
      (let ((left-ty (type-check-expr type-env type-check-env within-loop left))
