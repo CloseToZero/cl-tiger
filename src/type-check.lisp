@@ -20,6 +20,10 @@
    #:for-high-not-int-ty
    #:assign-index-var
    #:assign-index-var-var
+   #:unsupport-operation
+   #:unsupport-operation-op
+   #:unsupport-operation-left-ty
+   #:unsupport-operation-right-ty
 
    #:continue-type-check
 
@@ -95,6 +99,20 @@
     :initarg :var
     :reader assign-index-var-var)))
 
+(define-condition unsupport-operation (type-check-error)
+  ((op
+    :type op
+    :initarg :op
+    :reader unsupport-operation-op)
+   (left-ty
+    :type types:ty
+    :initarg :left-ty
+    :reader unsupport-operation-left-ty)
+   (right-ty
+    :type types:ty
+    :initarg :right-ty
+    :reader unsupport-operation-right-ty)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -114,6 +132,7 @@
 (def-type-check-error-constructor for-low-not-int ty)
 (def-type-check-error-constructor for-high-not-int ty)
 (def-type-check-error-constructor assign-index-var var)
+(def-type-check-error-constructor unsupport-operation op left-ty right-ty)
 
 (defvar *line-map* nil)
 
@@ -418,8 +437,8 @@
                     ((or ast:op-eq ast:op-neq ast:op-lt ast:op-le ast:op-gt ast:op-ge)
                      t)
                     (_ nil))
-            (type-check-error
-             pos *line-map*
+            (unsupport-operation
+             pos *line-map* op left-ty right-ty
              "Unsupport operation ~A on strings." op))
           (types:get-type types:*base-type-env* (symbol:get-sym "int")))
          (_
@@ -429,8 +448,8 @@
                       t)
                      (_ nil))
                    (types:type-compatible left-ty right-ty))
-            (type-check-error
-             pos *line-map*
+            (unsupport-operation
+             pos *line-map* op left-ty right-ty
              "Unsupport operation ~A." op))
           (types:get-type types:*base-type-env* (symbol:get-sym "int"))))))
     ((ast:expr-record type-id fields pos)
