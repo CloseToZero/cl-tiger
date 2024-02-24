@@ -13,6 +13,10 @@
    #:then-else-types-of-if-mismatch-then-ty
    #:then-else-types-of-if-mismatch-else-ty
    #:body-of-while-not-unit
+   #:for-low-not-int
+   #:for-high-not-int
+   #:assign-index-var
+   #:assign-index-var-var
 
    #:type-check-program))
 
