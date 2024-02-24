@@ -58,9 +58,11 @@
 
 (define-condition then-else-types-of-if-mismatch (type-check-error)
   ((then-ty
+    :type types:ty
     :initarg :then-ty
-    :type then-else-types-of-if-mismatch-then-ty)
+    :reader then-else-types-of-if-mismatch-then-ty)
    (else-ty
+    :type types:ty
     :initarg :else-ty
     :reader then-else-types-of-if-mismatch-else-ty)))
 
@@ -75,8 +77,8 @@
 
 (define-condition assign-index-var (type-check-error)
   ((var
-    :initarg :var
     :type ast:var
+    :initarg :var
     :reader assign-index-var-var)))
 
 (defmacro def-type-check-error-constructor (type &rest initargs)
