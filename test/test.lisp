@@ -18,6 +18,35 @@
 (unless *target-os*
   (error "Unknown target OS."))
 
+(defmacro expect-type-check-errors (errors exhaustive &body body)
+  (let ((errors-var (gensym "errors"))
+        (error-occurred-table-var (gensym "error-occurred-table"))
+        (extra-errors-var (gensym "errors")))
+    `(let ((,errors-var ,errors)
+           (,error-occurred-table-var (make-hash-table))
+           (,extra-errors-var nil))
+       (handler-bind ((type-check:type-check-error
+                        (lambda (condition)
+                          ;; We don't need to generate variable name for the following introduced variable e,
+                          ;; since it's not within the scope for user provided form.
+                          (alexandria:if-let (e (find-if (lambda (e)
+                                                           (typep condition e))
+                                                         ,errors-var))
+                            (setf (gethash e ,error-occurred-table-var) t)
+                            (push condition ,extra-errors-var))
+                          (invoke-restart 'type-check:continue-type-check))))
+         (prog1 (progn ,@body)
+           (unless (every (lambda (e)
+                            (gethash e ,error-occurred-table-var))
+                          ,errors-var)
+             (error "Missing type check errors: ~{~S~^,~}"
+                    (remove-if (lambda (e)
+                                 (gethash e ,error-occurred-table-var))
+                               ,errors-var)))
+           (when (and ,exhaustive
+                      (not (null ,extra-errors-var)))
+             (error "Extra errors: ~{~S~^,~}" (nreverse ,extra-errors-var))))))))
+
 (defun build-dir (project-dir-pathname)
   (uiop:ensure-directory-pathname (merge-pathnames "build" project-dir-pathname)))
 
@@ -367,3 +396,94 @@
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
        :build-args (list :generate-get-exe-path-target t))
       'type-check:body-of-while-not-unit))
+
+(parachute:define-test book-test-11
+  (parachute:finish
+   (expect-type-check-errors
+       '(type-check:for-high-not-int type-check:assign-index-var)
+       t
+     (cl-tiger:compile-tiger
+      (tiger-book-test-source-path "test-11.tig")
+      nil
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :dont-generate-project t))))
+
+(parachute:define-test book-test-12
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-12.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-13
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-13.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      type-check:unsupport-operation))
+
+(parachute:define-test book-test-14
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-14.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      'type-check:unsupport-operation))
+
+(parachute:define-test book-test-15
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-15.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      'type-check:then-of-if-then-not-unit))
+
+(parachute:define-test book-test-16
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-16.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
+      'type-check:circular-dep))
+
+(parachute:define-test book-test-17
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-17.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
+      'type-check:undefined-field-type))
+
+(parachute:define-test book-test-18
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-18.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
+      'type-check:undefined-fun))
+
+(parachute:define-test book-test-19
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-19.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
+      'type-check:undefined-var))
+
+(parachute:define-test book-test-20
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-20.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
+      'type-check:undefined-var))

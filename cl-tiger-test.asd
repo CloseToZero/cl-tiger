@@ -5,6 +5,7 @@
   :licence "MIT"
   :depends-on ("cl-tiger"
                "uiop"
+               "alexandria"
                "cl-ppcre"
                "parachute"
                "trivial-features")
