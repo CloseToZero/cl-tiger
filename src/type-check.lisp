@@ -12,6 +12,7 @@
    #:then-else-types-of-if-mismatch
    #:then-else-types-of-if-mismatch-then-ty
    #:then-else-types-of-if-mismatch-else-ty
+   #:body-of-while-not-unit
 
    #:type-check-program))
 
@@ -59,6 +60,9 @@
     :initarg :else-ty
     :reader then-else-types-of-if-mismatch-else-ty)))
 
+(define-condition body-of-while-not-unit (type-check-error)
+  ())
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (error ',type :msg (apply #'format nil format args)
@@ -73,6 +77,7 @@
 (def-type-check-error-constructor break-not-within-loop)
 (def-type-check-error-constructor circular-dep)
 (def-type-check-error-constructor then-else-types-of-if-mismatch then-ty else-ty)
+(def-type-check-error-constructor body-of-while-not-unit)
 
 (defvar *line-map* nil)
 
@@ -468,7 +473,7 @@ doesn't match the expected type."
           pos *line-map*
           "The type of the test expression of a while expression should be int."))
        (unless (types:type-compatible body-ty (types:get-unnamed-base-type (symbol:get-sym "unit")))
-         (type-check-error
+         (body-of-while-not-unit
           pos *line-map*
           "The body expression of a while expression should product no value."))
        body-ty))
