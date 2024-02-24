@@ -74,11 +74,17 @@
                               :error-output t))))
     (ppcre:regex-replace-all "\\r" output "")))
 
-(defun tiger-source-path (source-name)
+(defun tiger-source-path (name)
   (uiop:merge-pathnames*
-   source-name
+   name
    (uiop:ensure-directory-pathname
     (asdf:system-relative-pathname "cl-tiger-test" "tiger-program"))))
+
+
+(defun tiger-book-test-source-path (name)
+  (uiop:merge-pathnames*
+   name
+   (uiop:ensure-directory-pathname (tiger-source-path "book-test"))))
 
 (defmacro with-temporary-directory ((dir-pathname-var dir-name &optional keep-dir) &body body)
   `(let ((,dir-pathname-var (uiop:ensure-pathname
@@ -152,24 +158,20 @@
 
 (parachute:define-test break-not-within-loop
   (parachute:fail
-      (with-temporary-directory (project-dir "break-not-within-loop")
-        (cl-tiger:compile-tiger
-         (tiger-source-path "break-not-within-loop.tig")
-         project-dir
-         (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-         :build-args (list :generate-get-exe-path-target t))
-        (build-and-run-project project-dir *target-os*))
+      (cl-tiger:compile-tiger
+       (tiger-source-path "break-not-within-loop.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
       'type-check:break-not-within-loop))
 
 (parachute:define-test circular-dep
   (parachute:fail
-      (with-temporary-directory (project-dir "circular-dep")
-        (cl-tiger:compile-tiger
-         (tiger-source-path "circular-dep.tig")
-         project-dir
-         (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-         :build-args (list :generate-get-exe-path-target t))
-        (build-and-run-project project-dir *target-os*))
+      (cl-tiger:compile-tiger
+       (tiger-source-path "circular-dep.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
       'type-check:circular-dep))
 
 (parachute:define-test queens
@@ -267,3 +269,101 @@
                         (when (= (uiop:subprocess-error-code condition) 1)
                           (continue)))))
        (build-and-run-project project-dir *target-os*)))))
+
+(parachute:define-test book-test-01
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-01.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-02
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-02.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-03
+  (parachute:is
+   string=
+   "Somebody 1000"
+   (with-temporary-directory (project-dir "book-test-03")
+     (cl-tiger:compile-tiger
+      (tiger-book-test-source-path "test-03.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (handler-bind ((uiop:subprocess-error
+                      (lambda (condition)
+                        (when (= (uiop:subprocess-error-code condition) 1)
+                          (continue)))))
+       (build-and-run-project project-dir *target-os*)))))
+
+(parachute:define-test book-test-04
+  (parachute:is
+   string=
+   "3628800"
+   (with-temporary-directory (project-dir "book-test-04")
+     (cl-tiger:compile-tiger
+      (tiger-book-test-source-path "test-04.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (handler-bind ((uiop:subprocess-error
+                      (lambda (condition)
+                        (when (= (uiop:subprocess-error-code condition) 1)
+                          (continue)))))
+       (build-and-run-project project-dir *target-os*)))))
+
+(parachute:define-test book-test-05
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-05.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-06
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-06.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-07
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-07.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-08
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-08.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-09
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-09.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
+      'type-check:then-else-types-of-if-mismatch))
+
+(parachute:define-test book-test-10
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-book-test-source-path "test-10.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :build-args (list :generate-get-exe-path-target t))
+      'type-check:body-of-while-not-unit))
