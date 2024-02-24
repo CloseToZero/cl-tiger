@@ -30,6 +30,8 @@
    #:undefined-type-type-id
    #:undefined-field-type
    #:undefined-field-type-field-name
+   #:undefined-var
+   #:undefined-var-name
    #:undefined-fun
    #:undefined-fun-name
 
@@ -139,6 +141,12 @@
     :initarg :field-name
     :reader undefined-field-type-field-name)))
 
+(define-condition undefined-var (type-check-error)
+  ((name
+    :type symbol:sym
+    :initarg :name
+    :reader undefined-var-name)))
+
 (define-condition undefined-fun (type-check-error)
   ((name
     :type symbol:sym
@@ -168,6 +176,7 @@
 (def-type-check-error-constructor unsupport-operation op left-ty right-ty)
 (def-type-check-error-constructor undefined-type type-id)
 (def-type-check-error-constructor undefined-field-type type-id field-name)
+(def-type-check-error-constructor undefined-var name)
 (def-type-check-error-constructor undefined-fun name)
 
 (defvar *line-map* nil)
@@ -263,8 +272,8 @@
           (type-check-error
            pos *line-map*
            "var-simple cannot reference to a function.")))
-       (type-check-error
-        pos *line-map*
+       (undefined-var
+        pos *line-map* sym
         "Undefined variable: ~A." (symbol:sym-name sym))))
     ((ast:var-field var sym pos)
      (trivia:let-match1 (type-check-var-result ty _) (type-check-var type-env type-check-env within-loop var)
