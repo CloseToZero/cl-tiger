@@ -423,29 +423,30 @@
                      decl-functions
                      :initial-value type-check-env)))
        (mapc (lambda (decl-function)
-               (let ((type-check-entry (get-type-check-entry new-type-check-env (ast:decl-function-name decl-function))))
+               (let ((type-check-entry
+                       (get-type-check-entry new-type-check-env (ast:decl-function-name decl-function))))
                  (trivia:let-match1 (type-check-entry-fun formal-types result-ty) type-check-entry
-                   (let ((body-ty (type-check-expr
-                                   type-env
-                                   (loop with acc-type-check-env = new-type-check-env
-                                         for formal-type in formal-types
-                                         for param-field in (ast:decl-function-params decl-function)
-                                         do (setf acc-type-check-env
-                                                  (insert-type-check-entry
-                                                   acc-type-check-env
-                                                   (ast:field-name param-field)
-                                                   (type-check-entry-var formal-type nil)))
-                                         finally (return acc-type-check-env))
-                                   ;; Cannot break into the outer function.
-                                   nil
-                                   (ast:decl-function-body decl-function))))
-                     (unless (types:type-compatible result-ty body-ty)
+                   (let ((body-ty
+                           (type-check-expr
+                            type-env
+                            (loop with acc-type-check-env = new-type-check-env
+                                  for formal-type in formal-types
+                                  for param-field in (ast:decl-function-params decl-function)
+                                  do (setf acc-type-check-env
+                                           (insert-type-check-entry
+                                            acc-type-check-env
+                                            (ast:field-name param-field)
+                                            (type-check-entry-var formal-type nil)))
+                                  finally (return acc-type-check-env))
+                            ;; Cannot break into the outer function.
+                            nil
+                            (ast:decl-function-body decl-function))))
+                     (unless (types:type-compatible (types:actual-ty result-ty) body-ty)
                        (return-value-type-mismatch
                         (ast:decl-function-pos decl-function)
                         *line-map* result-ty body-ty
                         "Function ~A declared to return a value with type ~A, but actually return a value with type ~A."
-                        (symbol:sym-name (ast:decl-function-name decl-function)) result-ty body-ty))
-                     body-ty))))
+                        (symbol:sym-name (ast:decl-function-name decl-function)) result-ty body-ty))))))
              decl-functions)
        (list type-env new-type-check-env)))))
 
