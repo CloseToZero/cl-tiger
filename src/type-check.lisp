@@ -302,7 +302,7 @@
             (type-check-var-result (types:actual-ty (second field)) nil)
             (type-check-error
              pos *line-map*
-             "Unknow field of the record.")))
+             "Unknown field of the record.")))
          (_ (type-check-error
              pos *line-map*
              "You can only access the field of a record.")))))
