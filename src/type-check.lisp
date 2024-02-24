@@ -12,6 +12,8 @@
    #:then-else-types-of-if-mismatch
    #:then-else-types-of-if-mismatch-then-ty
    #:then-else-types-of-if-mismatch-else-ty
+   #:then-of-if-then-not-unit
+   #:then-of-if-then-not-unit-ty
    #:body-of-while-not-unit
    #:body-of-while-not-unit-ty
    #:for-low-not-int
@@ -75,6 +77,12 @@
     :initarg :else-ty
     :reader then-else-types-of-if-mismatch-else-ty)))
 
+(define-condition then-of-if-then-not-unit (type-check-error)
+  ((ty
+    :type types:ty
+    :initarg :ty
+    :reader then-of-if-then-not-unit-ty)))
+
 (define-condition body-of-while-not-unit (type-check-error)
   ((ty
     :type types:ty
@@ -128,6 +136,7 @@
 (def-type-check-error-constructor break-not-within-loop)
 (def-type-check-error-constructor circular-dep)
 (def-type-check-error-constructor then-else-types-of-if-mismatch then-ty else-ty)
+(def-type-check-error-constructor then-of-if-then-not-unit ty)
 (def-type-check-error-constructor body-of-while-not-unit ty)
 (def-type-check-error-constructor for-low-not-int ty)
 (def-type-check-error-constructor for-high-not-int ty)
@@ -530,8 +539,8 @@ doesn't match the expected type."
               then-ty else-ty
               "The types of then and else branchs of an if expression should be the same."))
            (unless (types:type-compatible then-ty (types:get-unnamed-base-type (symbol:get-sym "unit")))
-             (type-check-error
-              pos *line-map*
+             (then-of-if-then-not-unit
+              pos *line-map* then-ty
               "The then branch of an if-then expression should product no value.")))
        (if else (types:upgrade-from-compatible-types then-ty else-ty)
            (types:get-unnamed-base-type (symbol:get-sym "unit")))))
