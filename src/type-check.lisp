@@ -47,6 +47,9 @@
    #:subscript-non-array-var-ty
    #:access-field-of-non-record
    #:access-field-of-non-record-var-ty
+   #:init-expr-type-mismatch
+   #:init-expr-type-mismatch-decl-ty
+   #:init-expr-type-mismatch-init-ty
 
    #:continue-type-check
 
@@ -208,6 +211,16 @@
     :initarg :var-ty
     :reader access-field-of-non-record-var-ty)))
 
+(define-condition init-expr-type-mismatch (type-check-error)
+  ((decl-ty
+    :type types:ty
+    :initarg :decl-ty
+    :reader init-expr-type-mismatch-decl-ty)
+   (init-ty
+    :type types:ty
+    :initarg :init-ty
+    :reader init-expr-type-mismatch-init-ty)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -240,6 +253,7 @@
 (def-type-check-error-constructor type-mismatch-of-assignment var-ty expr-ty)
 (def-type-check-error-constructor subscript-non-array var-ty)
 (def-type-check-error-constructor access-field-of-non-record var-ty)
+(def-type-check-error-constructor init-expr-type-mismatch decl-ty init-ty)
 
 (defvar *line-map* nil)
 
@@ -386,8 +400,11 @@
            (cond ((types:type-compatible init-ty decl-ty)
                   (setf final-ty decl-ty))
                  (t
-                  (type-check-error
-                   pos *line-map*
+                  ;; FIXME The init-ty should also be a ty-name,
+                  ;; otherwise, it's not easy to tell what's going wrong,
+                  ;; modify type-check-xx functions to also return a "short" name (like ty-name for records).
+                  (init-expr-type-mismatch
+                   pos *line-map* (first typ) init-ty
                    "The type of the init expression of the variable doesn't match the type ~A."
                    (symbol:sym-name (first typ)))))))
        (list type-env
