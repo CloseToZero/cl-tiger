@@ -40,6 +40,9 @@
    #:reference-unknown-record-field
    #:reference-unknown-record-field-record-ty
    #:reference-unknown-record-field-unknown-field
+   #:type-mismatch-of-assignment
+   #:type-mismatch-of-assignment-var-ty
+   #:type-mismatch-of-assignment-expr-ty
 
    #:continue-type-check
 
@@ -179,6 +182,16 @@
     :initarg :unknown-field
     :reader reference-unknown-record-field-unknown-field)))
 
+(define-condition type-mismatch-of-assignment (type-check-error)
+  ((var-ty
+    :type types:ty
+    :initarg :var-ty
+    :reader type-mismatch-of-assignment-var-ty)
+   (expr-ty
+    :type types:ty
+    :initarg :expr-ty
+    :reader type-mismatch-of-assignment-expr-ty)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -208,6 +221,7 @@
 (def-type-check-error-constructor undefined-fun name)
 (def-type-check-error-constructor return-value-type-mismatch declared-ty actual-ty)
 (def-type-check-error-constructor reference-unknown-record-field record-ty unknown-field)
+(def-type-check-error-constructor type-mismatch-of-assignment var-ty expr-ty)
 
 (defvar *line-map* nil)
 
@@ -595,9 +609,10 @@ doesn't match the expected type."
           pos *line-map* var
           "Cannot assign an index variable."))
        (unless (types:type-compatible var-ty expr-ty)
-         (type-check-error
-          pos *line-map*
-          "Assignment type mismatch."))
+         (type-mismatch-of-assignment
+          pos *line-map* var-ty expr-ty
+          "Type mismatch of the assignment, expected type (left): ~A, given value of type (right): ~A."
+          var-ty expr-ty))
        (types:get-unnamed-base-type (symbol:get-sym "unit"))))
     ((ast:expr-if test then else pos)
      (let ((test-ty (type-check-expr type-env type-check-env within-loop test))
