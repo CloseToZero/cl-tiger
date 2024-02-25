@@ -43,6 +43,8 @@
    #:type-mismatch-of-assignment
    #:type-mismatch-of-assignment-var-ty
    #:type-mismatch-of-assignment-expr-ty
+   #:subscript-non-array
+   #:subscript-non-array-var-ty
 
    #:continue-type-check
 
@@ -192,6 +194,12 @@
     :initarg :expr-ty
     :reader type-mismatch-of-assignment-expr-ty)))
 
+(define-condition subscript-non-array (type-check-error)
+  ((var-ty
+    :type types:ty
+    :initarg :var-ty
+    :reader subscript-non-array-var-ty)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -222,6 +230,7 @@
 (def-type-check-error-constructor return-value-type-mismatch declared-ty actual-ty)
 (def-type-check-error-constructor reference-unknown-record-field record-ty unknown-field)
 (def-type-check-error-constructor type-mismatch-of-assignment var-ty expr-ty)
+(def-type-check-error-constructor subscript-non-array var-ty)
 
 (defvar *line-map* nil)
 
@@ -343,8 +352,8 @@
            (serapeum:match-of types:ty ty
              ((types:ty-array base-type)
               (type-check-var-result (types:actual-ty base-type) nil))
-             (_ (type-check-error
-                 pos *line-map*
+             (_ (subscript-non-array
+                 pos *line-map* ty
                  "You can only subscript an array."))))
        (let ((index-ty (type-check-expr type-env type-check-env within-loop expr)))
          (unless (types:type-compatible index-ty (types:get-type types:*base-type-env* (symbol:get-sym "int")))
