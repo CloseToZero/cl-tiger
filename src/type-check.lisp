@@ -45,6 +45,8 @@
    #:type-mismatch-of-assignment-expr-ty
    #:subscript-non-array
    #:subscript-non-array-var-ty
+   #:access-field-of-non-record
+   #:access-field-of-non-record-var-ty
 
    #:continue-type-check
 
@@ -200,6 +202,12 @@
     :initarg :var-ty
     :reader subscript-non-array-var-ty)))
 
+(define-condition access-field-of-non-record (type-check-error)
+  ((var-ty
+    :type types:ty
+    :initarg :var-ty
+    :reader access-field-of-non-record-var-ty)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -231,6 +239,7 @@
 (def-type-check-error-constructor reference-unknown-record-field record-ty unknown-field)
 (def-type-check-error-constructor type-mismatch-of-assignment var-ty expr-ty)
 (def-type-check-error-constructor subscript-non-array var-ty)
+(def-type-check-error-constructor access-field-of-non-record var-ty)
 
 (defvar *line-map* nil)
 
@@ -342,8 +351,8 @@
             (reference-unknown-record-field
              pos *line-map* ty sym
              "Reference an unknown field ~A of the record." (symbol:sym-name sym))))
-         (_ (type-check-error
-             pos *line-map*
+         (_ (access-field-of-non-record
+             pos *line-map* ty
              "You can only access the field of a record.")))))
     ((ast:var-subscript var expr pos)
      (prog1
