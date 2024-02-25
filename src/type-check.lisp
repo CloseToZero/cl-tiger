@@ -44,8 +44,6 @@
 
 (cl:in-package :cl-tiger/type-check)
 
-;; TODO Printing recursive types will cause stack overflow.
-
 (define-condition type-check-error (error)
   ((msg
     :type string
@@ -171,12 +169,14 @@
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
-       (error ',type :msg (apply #'format nil format args)
-                     :pos pos :line-map line-map
-                     ,@(mapcan (lambda (initarg)
-                                 (list (intern (symbol-name initarg) :keyword)
-                                       initarg))
-                               initargs)))))
+       (error ',type
+              :msg (let ((*print-circle* t))
+                     (apply #'format nil format args))
+              :pos pos :line-map line-map
+              ,@(mapcan (lambda (initarg)
+                          (list (intern (symbol-name initarg) :keyword)
+                                initarg))
+                        initargs)))))
 
 ;; line-map can be nil
 (def-type-check-error-constructor type-check-error)
