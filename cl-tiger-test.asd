@@ -3,6 +3,7 @@
   :author "Zhexuan Chen <2915234902@qq.com>"
   :licence "MIT"
   :depends-on ("cl-tiger"
+               "trivial-package-local-nicknames"
                "uiop"
                "alexandria"
                "cl-ppcre"
