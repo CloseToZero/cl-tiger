@@ -51,17 +51,12 @@
   (serapeum:match-of ty ty
     ((ty-name _ ty-ref)
      (if (null ty) ty (actual-ty (ty-ref-value ty-ref))))
-    ((ty-array base-type) (ty-array (actual-ty base-type)))
-    ;; NOTE: We don't need to recursive into ty-record since we use nominal type system.
     (_ ty)))
 
 ;; Compare two actual types.
 (defun type-compatible (ty-1 ty-2)
   (or (eq ty-1 ty-2)
       (trivia:match (list ty-1 ty-2)
-        ((list (ty-array base-type-1)
-               (ty-array base-type-2))
-         (type-compatible base-type-1 base-type-2))
         ((or (list (ty-record _) (ty-nil))
              (list (ty-nil) (ty-record _)))
          t)

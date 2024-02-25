@@ -716,7 +716,7 @@ doesn't match the expected type."
              (type-check-error
               pos *line-map*
               "The type of size expression of array creation expression should be int."))
-           (unless (types:type-compatible init-ty base-type)
+           (unless (types:type-compatible init-ty (types:actual-ty base-type))
              (type-check-error
               pos *line-map*
               "The type of init expression of array creation expression \
