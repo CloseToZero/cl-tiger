@@ -325,11 +325,7 @@
       project-dir
       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
       :build-args (list :generate-get-exe-path-target t))
-     (handler-bind ((uiop:subprocess-error
-                      (lambda (condition)
-                        (when (= (uiop:subprocess-error-code condition) 1)
-                          (continue)))))
-       (build-and-run-project project-dir *target-os*)))))
+     (build-and-run-project project-dir *target-os*))))
 
 (parachute:define-test book-test-04
   (parachute:is
@@ -341,11 +337,7 @@
       project-dir
       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
       :build-args (list :generate-get-exe-path-target t))
-     (handler-bind ((uiop:subprocess-error
-                      (lambda (condition)
-                        (when (= (uiop:subprocess-error-code condition) 1)
-                          (continue)))))
-       (build-and-run-project project-dir *target-os*)))))
+     (build-and-run-project project-dir *target-os*))))
 
 (parachute:define-test book-test-05
   (parachute:finish
