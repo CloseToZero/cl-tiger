@@ -487,3 +487,97 @@
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
        :dont-generate-project t)
       'type-check:undefined-var))
+
+(parachute:define-test book-test-21
+  (parachute:finish
+   (expect-type-check-errors
+       '(type-check:unsupport-operation type-check:return-value-type-mismatch)
+       t
+     (cl-tiger:compile-tiger
+      (tiger-book-test-source-path "test-21.tig")
+      nil
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :dont-generate-project t))))
+
+(parachute:define-test book-test-22
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-22.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:reference-unknown-record-field))
+
+(parachute:define-test book-test-23
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-23.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:type-mismatch-of-assignment))
+
+(parachute:define-test book-test-24
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-24.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:subscript-non-array))
+
+(parachute:define-test book-test-25
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-25.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:access-field-of-non-record))
+
+(parachute:define-test book-test-26
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-26.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:unsupport-operation))
+
+(parachute:define-test book-test-27
+  (parachute:is
+   string=
+   "2"
+   (with-temporary-directory (project-dir "book-test-27")
+     (cl-tiger:compile-tiger
+      (tiger-book-test-source-path "test-27.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (build-and-run-project project-dir *target-os*))))
+
+(parachute:define-test book-test-28
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-28.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:init-expr-type-mismatch))
+
+(parachute:define-test book-test-29
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-29.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:init-expr-type-mismatch))
+
+(parachute:define-test book-test-30
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-30.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
