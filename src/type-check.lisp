@@ -37,6 +37,9 @@
    #:return-value-type-mismatch
    #:return-value-type-mismatch-declared-ty
    #:return-value-type-mismatch-actual-ty
+   #:reference-unknown-record-field
+   #:reference-unknown-record-field-record-ty
+   #:reference-unknown-record-field-unknown-field
 
    #:continue-type-check
 
@@ -166,6 +169,16 @@
     :initarg :actual-ty
     :reader return-value-type-mismatch-actual-ty)))
 
+(define-condition reference-unknown-record-field (type-check-error)
+  ((record-ty
+    :type types:ty
+    :initarg :record-ty
+    :reader reference-unknown-record-field-record-ty)
+   (unknown-field
+    :type symbol:sym
+    :initarg :unknown-field
+    :reader reference-unknown-record-field-unknown-field)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -194,6 +207,7 @@
 (def-type-check-error-constructor undefined-var name)
 (def-type-check-error-constructor undefined-fun name)
 (def-type-check-error-constructor return-value-type-mismatch declared-ty actual-ty)
+(def-type-check-error-constructor reference-unknown-record-field record-ty unknown-field)
 
 (defvar *line-map* nil)
 
@@ -302,9 +316,9 @@
                           (eq (first field) sym))
                         fields))
             (type-check-var-result (types:actual-ty (second field)) nil)
-            (type-check-error
-             pos *line-map*
-             "Unknown field of the record.")))
+            (reference-unknown-record-field
+             pos *line-map* ty sym
+             "Reference an unknown field ~A of the record." (symbol:sym-name sym))))
          (_ (type-check-error
              pos *line-map*
              "You can only access the field of a record.")))))
