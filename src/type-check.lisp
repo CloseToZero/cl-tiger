@@ -523,8 +523,8 @@
                        pos *line-map*
                        short-decl-ty short-init-ty decl-ty init-ty
                        "The type of the init expression is ~A, it doesn't match the declared type ~A of the variable ~A."
-                       (types:short-type->string short-decl-ty)
                        (types:short-type->string short-init-ty)
+                       (types:short-type->string short-decl-ty)
                        (symbol:sym-name name))))))))
        (list type-env
              (insert-type-check-entry
