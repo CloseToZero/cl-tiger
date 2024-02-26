@@ -415,7 +415,7 @@
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
        :dont-generate-project t)
-      type-check:unsupport-operation))
+      type-check:unsupported-operation))
 
 (parachute:define-test book-test-14
   (parachute:fail
@@ -424,7 +424,7 @@
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
        :dont-generate-project t)
-      'type-check:unsupport-operation))
+      'type-check:unsupported-operation))
 
 (parachute:define-test book-test-15
   (parachute:fail
@@ -483,7 +483,7 @@
 (parachute:define-test book-test-21
   (parachute:finish
    (expect-type-check-errors
-       '(type-check:unsupport-operation type-check:return-value-type-mismatch)
+       '(type-check:unsupported-operation type-check:return-value-type-mismatch)
        t
      (cl-tiger:compile-tiger
       (tiger-book-test-source-path "test-21.tig")
@@ -534,7 +534,7 @@
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:unsupport-operation))
+   'type-check:unsupported-operation))
 
 (parachute:define-test book-test-27
   (parachute:is

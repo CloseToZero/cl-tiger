@@ -28,12 +28,12 @@
    #:for-high-not-int-ty
    #:assign-index-var
    #:assign-index-var-var
-   #:unsupport-operation
-   #:unsupport-operation-op
-   #:unsupport-operation-short-left-ty
-   #:unsupport-operation-short-right-ty
-   #:unsupport-operation-left-ty
-   #:unsupport-operation-right-ty
+   #:unsupported-operation
+   #:unsupported-operation-op
+   #:unsupported-operation-short-left-ty
+   #:unsupported-operation-short-right-ty
+   #:unsupported-operation-left-ty
+   #:unsupported-operation-right-ty
    #:undefined-type
    #:undefined-type-type-id
    #:undefined-field-type
@@ -43,9 +43,9 @@
    #:undefined-fun
    #:undefined-fun-name
    #:return-value-type-mismatch
-   #:return-value-type-mismatch-short-declared-ty
+   #:return-value-type-mismatch-short-decl-ty
    #:return-value-type-mismatch-short-actual-ty
-   #:return-value-type-mismatch-declared-ty
+   #:return-value-type-mismatch-decl-ty
    #:return-value-type-mismatch-actual-ty
    #:reference-unknown-record-field
    #:reference-unknown-record-field-short-record-ty
@@ -172,27 +172,27 @@
     :initarg :var
     :reader assign-index-var-var)))
 
-(define-condition unsupport-operation (type-check-error)
+(define-condition unsupported-operation (type-check-error)
   ((op
     :type op
     :initarg :op
-    :reader unsupport-operation-op)
+    :reader unsupported-operation-op)
    (short-left-ty
     :type types:ty
     :initarg :short-left-ty
-    :reader unsupport-operation-short-left-ty)
+    :reader unsupported-operation-short-left-ty)
    (short-right-ty
     :type types:ty
     :initarg :short-right-ty
-    :reader unsupport-operation-short-right-ty)
+    :reader unsupported-operation-short-right-ty)
    (left-ty
     :type types:ty
     :initarg :left-ty
-    :reader unsupport-operation-left-ty)
+    :reader unsupported-operation-left-ty)
    (right-ty
     :type types:ty
     :initarg :right-ty
-    :reader unsupport-operation-right-ty)))
+    :reader unsupported-operation-right-ty)))
 
 (define-condition undefined-type (type-check-error)
   ((type-id
@@ -219,18 +219,18 @@
     :reader undefined-fun-name)))
 
 (define-condition return-value-type-mismatch (type-check-error)
-  ((short-declared-ty
+  ((short-decl-ty
     :type types:ty
-    :initarg :short-declared-ty
-    :reader return-value-type-mismatch-short-declared-ty)
+    :initarg :short-decl-ty
+    :reader return-value-type-mismatch-short-decl-ty)
    (short-actual-ty
     :type types:ty
     :initarg :short-actual-ty
     :reader return-value-type-mismatch-short-actual-ty)
-   (declared-ty
+   (decl-ty
     :type types:ty
-    :initarg :declared-ty
-    :reader return-value-type-mismatch-declared-ty)
+    :initarg :decl-ty
+    :reader return-value-type-mismatch-decl-ty)
    (actual-ty
     :type types:ty
     :initarg :actual-ty
@@ -329,14 +329,14 @@
 (def-type-check-error-constructor for-low-not-int short-ty ty)
 (def-type-check-error-constructor for-high-not-int short-ty ty)
 (def-type-check-error-constructor assign-index-var var)
-(def-type-check-error-constructor unsupport-operation
+(def-type-check-error-constructor unsupported-operation
   op short-left-ty short-right-ty left-ty right-ty)
 (def-type-check-error-constructor undefined-type type-id)
 (def-type-check-error-constructor undefined-field-type type-id field-name)
 (def-type-check-error-constructor undefined-var name)
 (def-type-check-error-constructor undefined-fun name)
 (def-type-check-error-constructor return-value-type-mismatch
-  short-declared-ty short-actual-ty declared-ty actual-ty)
+  short-decl-ty short-actual-ty decl-ty actual-ty)
 (def-type-check-error-constructor reference-unknown-record-field
   short-record-ty record-ty unknown-field)
 (def-type-check-error-constructor type-mismatch-of-assignment
@@ -713,9 +713,9 @@
                     ((or ast:op-eq ast:op-neq ast:op-lt ast:op-le ast:op-gt ast:op-ge)
                      t)
                     (_ nil))
-            (unsupport-operation
+            (unsupported-operation
              pos *line-map* op short-left-ty short-right-ty left-ty right-ty
-             "Unsupport operation ~A on strings."
+             "Unsupported operation ~A on strings."
              (ast:op->string op)))
           (type-check-expr-result ty-int ty-int))
          (_
@@ -725,9 +725,9 @@
                       t)
                      (_ nil))
                    (types:type-compatible left-ty right-ty))
-            (unsupport-operation
+            (unsupported-operation
              pos *line-map* op short-left-ty short-right-ty left-ty right-ty
-             "Unsupport operation (type ~A) ~A (type ~A)."
+             "Unsupported operation (type ~A) ~A (type ~A)."
              (types:short-type->string short-left-ty)
              (ast:op->string op)
              (types:short-type->string short-right-ty)))
