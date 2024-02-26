@@ -20,6 +20,8 @@
    #:actual-ty
    #:type-compatible
    #:upgrade-from-compatible-types
+   #:upgrade-from-compatible-short-types
+   #:short-type->string
    #:*base-type-env*
    #:get-type
    #:get-unnamed-base-type
@@ -69,6 +71,25 @@
     ((list (ty-nil) (ty-record _))
      ty-2)
     (_ ty-1)))
+
+(defun upgrade-from-compatible-short-types (short-ty-1 short-ty-2)
+  (trivia:match (list short-ty-1 short-ty-2)
+    ((list (ty-name _) (ty-nil))
+     short-ty-1)
+    ((list (ty-nil) (ty-name _))
+     short-ty-2)
+    (_ short-ty-1)))
+
+(defun short-type->string (short-ty)
+  (serapeum:match-of ty short-ty
+    (ty-int "int")
+    (ty-string "string")
+    (ty-record "Short type should not be a record type, but got: ~S." short-ty)
+    (ty-array "Short type should not be an array type, but got: ~S." short-ty)
+    (ty-nil "nil")
+    (ty-unit "unit")
+    ((ty-name sym _)
+     (symbol:sym-name sym))))
 
 ;; A map from symbol:sym to ty
 (defvar *base-type-env*

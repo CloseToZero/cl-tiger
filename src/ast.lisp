@@ -126,7 +126,9 @@
    #:expr-let
    #:expr-let-decls
    #:expr-let-body
-   #:expr-let-pos))
+   #:expr-let-pos
+
+   #:op->string))
 
 (cl:in-package :cl-tiger/ast)
 
@@ -270,3 +272,16 @@
    (decls list)
    (body expr)
    (pos pos)))
+
+(defun op->string (op)
+  (serapeum:match-of op op
+    (op-plus "+")
+    (op-minus "-")
+    (op-times "*")
+    (op-div "/")
+    (op-eq "=")
+    (op-neq "<>")
+    (op-lt "<")
+    (op-le "<=")
+    (op-gt ">")
+    (op-ge ">=")))
