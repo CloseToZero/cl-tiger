@@ -359,10 +359,10 @@
    (is-index-var boolean))
   (type-check-entry-fun
    ;; A list of types:ty
-   (formal-types list)
-   (short-formal-types list)
-   (result-type types:ty)
-   (short-result-type types:ty)))
+   (formal-tys list)
+   (short-formal-tys list)
+   (result-ty types:ty)
+   (short-result-ty types:ty)))
 
 (serapeum:defconstructor type-check-var-result
   (ty types:ty)
@@ -382,12 +382,12 @@
 (defvar *base-type-check-env*
   (let ((env (fset:empty-map)))
     (reduce (lambda (env binding)
-              (trivia:let-match1 (list name formal-types result-type) binding
+              (trivia:let-match1 (list name formal-tys result-ty) binding
                 (fset:with
                  env
                  (symbol:get-sym name)
                  ;; Right now, we assume all types in the bindings are "short".
-                 (type-check-entry-fun formal-types formal-types result-type result-type))))
+                 (type-check-entry-fun formal-tys formal-tys result-ty result-ty))))
             types:*built-in-function-bindings*
             :initial-value env)))
 
@@ -620,21 +620,21 @@
                      :initial-value type-check-env)))
        (mapc (lambda (decl-function)
                (trivia:let-match1
-                   (type-check-entry-fun formal-types short-formal-types result-ty short-result-ty)
+                   (type-check-entry-fun formal-tys short-formal-tys result-ty short-result-ty)
                    (get-type-check-entry new-type-check-env (ast:decl-function-name decl-function))
                  (trivia:let-match1
                      (type-check-expr-result body-ty short-body-ty)
                      (type-check-expr
                       type-env
                       (loop with acc-type-check-env = new-type-check-env
-                            for formal-type in formal-types
-                            for short-formal-type in short-formal-types
+                            for formal-ty in formal-tys
+                            for short-formal-ty in short-formal-tys
                             for param-field in (ast:decl-function-params decl-function)
                             do (setf acc-type-check-env
                                      (insert-type-check-entry
                                       acc-type-check-env
                                       (ast:field-name param-field)
-                                      (type-check-entry-var formal-type short-formal-type nil)))
+                                      (type-check-entry-var formal-ty short-formal-ty nil)))
                             finally (return acc-type-check-env))
                       ;; Cannot break into the outer function.
                       nil
@@ -674,24 +674,24 @@
     ((ast:expr-call fun args pos)
      (alexandria:if-let (type-check-entry (get-type-check-entry type-check-env fun))
        (serapeum:match-of type-check-entry type-check-entry
-         ((type-check-entry-fun formal-types _ result-type short-result-type)
-          (unless (eql (length args) (length formal-types))
+         ((type-check-entry-fun formal-tys _ result-ty short-result-ty)
+          (unless (eql (length args) (length formal-tys))
             (type-check-error
              pos *line-map*
              "Function ~A expect ~A args but got ~A args."
-             (symbol:sym-name fun) (length formal-types) (length args)))
-          (loop for formal-type in formal-types
+             (symbol:sym-name fun) (length formal-tys) (length args)))
+          (loop for formal-ty in formal-tys
                 for type-check-arg-result in (mapcar (lambda (arg)
                                               (type-check-expr type-env type-check-env within-loop arg))
                                             args)
                 for i from 1
-                do (trivia:let-match1 (type-check-expr-result arg-type _) type-check-arg-result
-                     (unless (types:type-compatible (types:actual-ty formal-type) arg-type)
+                do (trivia:let-match1 (type-check-expr-result arg-ty _) type-check-arg-result
+                     (unless (types:type-compatible (types:actual-ty formal-ty) arg-ty)
                        (type-check-error
                         pos *line-map*
                         "Function ~A ~Ath arg expect type ~A, but got a arg of type ~A."
-                        (symbol:sym-name fun) i formal-type arg-type))))
-          (type-check-expr-result (types:actual-ty result-type) short-result-type))
+                        (symbol:sym-name fun) i formal-ty arg-ty))))
+          (type-check-expr-result (types:actual-ty result-ty) short-result-ty))
          (_ (type-check-error
              pos *line-map*
              "You can only call a function.")))
