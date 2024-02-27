@@ -72,6 +72,11 @@
    #:array-init-expr-type-mismatch-short-init-ty
    #:array-init-expr-type-mismatch-array-ty
    #:array-init-expr-type-mismatch-init-ty
+   #:function-formal-actual-type-mismatch
+   #:function-formal-actual-type-mismatch-short-formal-ty
+   #:function-formal-actual-type-mismatch-short-actual-ty
+   #:function-formal-actual-type-mismatch-formal-ty
+   #:function-formal-actual-type-mismatch-actual-ty
 
    #:continue-type-check
 
@@ -329,6 +334,24 @@
     :initarg :init-ty
     :reader array-init-expr-type-mismatch-init-ty)))
 
+(define-condition function-formal-actual-type-mismatch (type-check-error)
+  ((short-formal-ty
+    :type types:ty
+    :initarg :short-formal-ty
+    :reader function-formal-actual-type-mismatch-short-formal-ty)
+   (short-actual-ty
+    :type types:ty
+    :initarg :short-actual-ty
+    :reader function-formal-actual-type-mismatch-short-actual-ty)
+   (formal-ty
+    :type types:ty
+    :initarg :formal-ty
+    :reader function-formal-actual-type-mismatch-formal-ty)
+   (actual-ty
+    :type types:ty
+    :initarg :actual-ty
+    :reader function-formal-actual-type-mismatch-actual-ty)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -372,6 +395,8 @@
   short-decl-ty short-init-ty decl-ty init-ty)
 (def-type-check-error-constructor array-init-expr-type-mismatch
   short-array-ty short-init-ty array-ty init-ty)
+(def-type-check-error-constructor function-formal-actual-type-mismatch
+  short-formal-ty short-actual-ty formal-ty actual-ty)
 
 (defvar *line-map* nil)
 
@@ -701,21 +726,22 @@
     ((ast:expr-call fun args pos)
      (alexandria:if-let (type-check-entry (get-type-check-entry type-check-env fun))
        (serapeum:match-of type-check-entry type-check-entry
-         ((type-check-entry-fun formal-tys _ result-ty short-result-ty)
+         ((type-check-entry-fun formal-tys short-formal-tys result-ty short-result-ty)
           (unless (eql (length args) (length formal-tys))
             (type-check-error
              pos *line-map*
              "Function ~A expect ~A args but got ~A args."
              (symbol:sym-name fun) (length formal-tys) (length args)))
           (loop for formal-ty in formal-tys
+                for short-formal-ty in short-formal-tys
                 for type-check-arg-result in (mapcar (lambda (arg)
                                               (type-check-expr ty-env type-check-env within-loop arg))
                                             args)
                 for i from 1
-                do (trivia:let-match1 (type-check-expr-result arg-ty _) type-check-arg-result
+                do (trivia:let-match1 (type-check-expr-result arg-ty short-arg-ty) type-check-arg-result
                      (unless (types:ty-compatible (types:actual-ty formal-ty) arg-ty)
-                       (type-check-error
-                        pos *line-map*
+                       (function-formal-actual-type-mismatch
+                        pos *line-map* short-formal-ty short-arg-ty formal-ty arg-ty
                         "Function ~A ~Ath arg expect type ~A, but got a arg of type ~A."
                         (symbol:sym-name fun) i formal-ty arg-ty))))
           (type-check-expr-result (types:actual-ty result-ty) short-result-ty))
