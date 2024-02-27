@@ -67,6 +67,11 @@
    #:init-expr-type-mismatch-short-init-ty
    #:init-expr-type-mismatch-decl-ty
    #:init-expr-type-mismatch-init-ty
+   #:array-init-expr-type-mismatch
+   #:array-init-expr-type-mismatch-short-array-ty
+   #:array-init-expr-type-mismatch-short-init-ty
+   #:array-init-expr-type-mismatch-array-ty
+   #:array-init-expr-type-mismatch-init-ty
 
    #:continue-type-check
 
