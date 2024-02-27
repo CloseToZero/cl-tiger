@@ -523,8 +523,8 @@
      ;; typ form: (sym pos) or nil.
      (when typ
        (unless (types:get-ty ty-env (first typ))
-         (type-check-error
-          (second typ) *line-map*
+         (undefined-type
+          (second typ) *line-map* (first typ)
           "Undefined type: ~A." (symbol:sym-name (first typ)))))
      (trivia:let-match*
          (((type-check-expr-result init-ty short-init-ty)
@@ -796,8 +796,8 @@ doesn't match the expected type."
            (type-check-error
             pos *line-map*
             "Type ~A is not a record." (symbol:sym-name type-id))))
-       (type-check-error
-        pos *line-map*
+       (undefined-type
+        pos *line-map* type-id
         "Undefined type: ~A." (symbol:sym-name type-id))))
     ((ast:expr-seq exprs)
      (reduce (lambda (acc-type expr-with-pos)
