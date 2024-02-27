@@ -9,7 +9,7 @@
    #:ty-record
    #:ty-record-fields
    #:ty-array
-   #:ty-array-base-type
+   #:ty-array-base-ty
    #:ty-nil
    #:ty-unit
    #:ty-name
@@ -18,14 +18,14 @@
    #:ty-ref
    #:ty-ref-value
    #:actual-ty
-   #:type-compatible
-   #:upgrade-from-compatible-types
-   #:upgrade-from-compatible-short-types
-   #:short-type->string
-   #:*base-type-env*
-   #:get-type
-   #:get-unnamed-base-type
-   #:insert-type
+   #:ty-compatible
+   #:upgrade-from-compatible-tys
+   #:upgrade-from-compatible-short-tys
+   #:short-ty->string
+   #:*base-ty-env*
+   #:get-ty
+   #:get-unnamed-base-ty
+   #:insert-ty
    #:*built-in-function-bindings*))
 
 (cl:in-package :cl-tiger/types)
@@ -37,7 +37,7 @@
    ;; A list of (sym ty)
    (fields list))
   (ty-array
-   (base-type ty))
+   (base-ty ty))
   ty-nil
   ty-unit
   (ty-name
@@ -56,7 +56,7 @@
     (_ ty)))
 
 ;; Compare two actual types.
-(defun type-compatible (ty-1 ty-2)
+(defun ty-compatible (ty-1 ty-2)
   (or (eq ty-1 ty-2)
       (trivia:match (list ty-1 ty-2)
         ((or (list (ty-record _) (ty-nil))
@@ -64,7 +64,7 @@
          t)
         (_ nil))))
 
-(defun upgrade-from-compatible-types (ty-1 ty-2)
+(defun upgrade-from-compatible-tys (ty-1 ty-2)
   (trivia:match (list ty-1 ty-2)
     ((list (ty-record _) (ty-nil))
      ty-1)
@@ -72,7 +72,7 @@
      ty-2)
     (_ ty-1)))
 
-(defun upgrade-from-compatible-short-types (short-ty-1 short-ty-2)
+(defun upgrade-from-compatible-short-tys (short-ty-1 short-ty-2)
   (trivia:match (list short-ty-1 short-ty-2)
     ((list (ty-name _) (ty-nil))
      short-ty-1)
@@ -80,7 +80,7 @@
      short-ty-2)
     (_ short-ty-1)))
 
-(defun short-type->string (short-ty)
+(defun short-ty->string (short-ty)
   (serapeum:match-of ty short-ty
     (ty-int "int")
     (ty-string "string")
@@ -96,7 +96,7 @@
      (symbol:sym-name sym))))
 
 ;; A map from symbol:sym to ty
-(defvar *base-type-env*
+(defvar *base-ty-env*
   (reduce (lambda (env binding)
             (fset:with env (first binding) (second binding)))
           (list (list (symbol:get-sym "int")
@@ -105,7 +105,7 @@
                       ty-string))
           :initial-value (fset:empty-map)))
 
-(defvar *unnamed-base-type-env*
+(defvar *unnamed-base-ty-env*
   (reduce (lambda (env binding)
             (fset:with env (first binding) (second binding)))
           (list (list (symbol:get-sym "nil")
@@ -114,19 +114,19 @@
                       ty-unit))
           :initial-value (fset:empty-map)))
 
-(defun get-type (type-env sym)
-  (fset:@ type-env sym))
+(defun get-ty (ty-env sym)
+  (fset:@ ty-env sym))
 
-(defun get-unnamed-base-type (sym)
-  (fset:@ *unnamed-base-type-env* sym))
+(defun get-unnamed-base-ty (sym)
+  (fset:@ *unnamed-base-ty-env* sym))
 
-(defun insert-type (type-env sym ty)
-  (fset:with type-env sym ty))
+(defun insert-ty (ty-env sym ty)
+  (fset:with ty-env sym ty))
 
 (defvar *built-in-function-bindings*
-  (let ((ty-unit (get-unnamed-base-type (symbol:get-sym "unit")))
-        (ty-int (get-type *base-type-env* (symbol:get-sym "int")))
-        (ty-string (get-type *base-type-env* (symbol:get-sym "string"))))
+  (let ((ty-unit (get-unnamed-base-ty (symbol:get-sym "unit")))
+        (ty-int (get-ty *base-ty-env* (symbol:get-sym "int")))
+        (ty-string (get-ty *base-ty-env* (symbol:get-sym "string"))))
     (list (list "print"
                 ;; print(s: string)
                 ;; print s on std output.
