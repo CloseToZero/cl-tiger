@@ -81,6 +81,10 @@
    #:wrong-num-of-args-fun
    #:wrong-num-of-args-expected-num-of-args
    #:wrong-num-of-args-actual-num-of-args
+   #:duplicate-names-in-consecutive-type-decls
+   #:duplicate-names-in-consecutive-type-decls-name
+   #:duplicate-names-in-consecutive-fun-decls
+   #:duplicate-names-in-consecutive-fun-decls-name
 
    #:continue-type-check
 
@@ -370,6 +374,18 @@
     :initarg :actual-num-of-args
     :reader wrong-num-of-args-actual-num-of-args)))
 
+(define-condition duplicate-names-in-consecutive-type-decls (type-check-error)
+  ((name
+    :type symbol:sym
+    :initarg :name
+    :reader duplicate-names-in-consecutive-type-decls-name)))
+
+(define-condition duplicate-names-in-consecutive-fun-decls (type-check-error)
+  ((name
+    :type symbol:sym
+    :initarg :name
+    :reader duplicate-names-in-consecutive-fun-decls-name)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -417,6 +433,10 @@
   short-formal-ty short-actual-ty formal-ty actual-ty)
 (def-type-check-error-constructor wrong-num-of-args
   fun expected-num-of-args actual-num-of-args)
+(def-type-check-error-constructor duplicate-names-in-consecutive-type-decls
+  name)
+(def-type-check-error-constructor duplicate-names-in-consecutive-fun-decls
+  name)
 
 (defvar *line-map* nil)
 
@@ -605,8 +625,8 @@
                (let ((decl-type-name (ast:decl-type-name decl-type))
                      (decl-type-pos (ast:decl-type-pos decl-type)))
                  (when (gethash decl-type-name name-exists-table)
-                   (type-check-error
-                    decl-type-pos *line-map*
+                   (duplicate-names-in-consecutive-type-decls
+                    decl-type-pos *line-map* decl-type-name
                     "Duplicate names ~A in a consecutive type declarations."
                     (symbol:sym-name decl-type-name)))
                  (setf (gethash decl-type-name name-exists-table) t)
@@ -641,8 +661,8 @@
                (let ((decl-function-name (ast:decl-function-name decl-function))
                      (decl-function-pos (ast:decl-function-pos decl-function)))
                  (when (gethash decl-function-name name-exists-table)
-                   (type-check-error
-                    decl-function-pos *line-map*
+                   (duplicate-names-in-consecutive-fun-decls
+                    decl-function-pos *line-map* decl-function-name
                     "Duplicate names ~A in a consecutive function declarations."
                     (symbol:sym-name decl-function-name)))
                  (setf (gethash decl-function-name name-exists-table) t)))
