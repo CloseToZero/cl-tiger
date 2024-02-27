@@ -573,3 +573,92 @@
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)))
+
+(parachute:define-test book-test-31
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-31.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:init-expr-type-mismatch))
+
+(parachute:define-test book-test-32
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-32.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:array-init-expr-type-mismatch))
+
+(parachute:define-test book-test-33
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-33.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:undefined-type))
+
+(parachute:define-test book-test-34
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-34.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:function-formal-actual-type-mismatch))
+
+(parachute:define-test book-test-35
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-35.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:wrong-num-of-args))
+
+(parachute:define-test book-test-36
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-36.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:wrong-num-of-args))
+
+(parachute:define-test book-test-37
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-37.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-38
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-38.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:duplicate-names-in-consecutive-type-decls))
+
+(parachute:define-test book-test-39
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-39.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:duplicate-names-in-consecutive-fun-decls))
+
+(parachute:define-test book-test-40
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-40.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:return-value-type-mismatch))
