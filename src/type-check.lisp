@@ -77,6 +77,10 @@
    #:function-formal-actual-type-mismatch-short-actual-ty
    #:function-formal-actual-type-mismatch-formal-ty
    #:function-formal-actual-type-mismatch-actual-ty
+   #:wrong-num-of-args
+   #:wrong-num-of-args-fun
+   #:wrong-num-of-args-expected-num-of-args
+   #:wrong-num-of-args-actual-num-of-args
 
    #:continue-type-check
 
@@ -352,6 +356,20 @@
     :initarg :actual-ty
     :reader function-formal-actual-type-mismatch-actual-ty)))
 
+(define-condition wrong-num-of-args (type-check-error)
+  ((fun
+    :type symbol:sym
+    :initarg :fun
+    :reader wrong-num-of-args-fun)
+   (expected-num-of-args
+    :type integer
+    :initarg :expected-num-of-args
+    :reader wrong-num-of-args-expected-num-of-args)
+   (actual-num-of-args
+    :type integer
+    :initarg :actual-num-of-args
+    :reader wrong-num-of-args-actual-num-of-args)))
+
 (defmacro def-type-check-error-constructor (type &rest initargs)
   `(defun ,type (pos line-map ,@initargs format &rest args)
      (with-simple-restart (continue-type-check "Ignore the type check error and continue to check.")
@@ -397,6 +415,8 @@
   short-array-ty short-init-ty array-ty init-ty)
 (def-type-check-error-constructor function-formal-actual-type-mismatch
   short-formal-ty short-actual-ty formal-ty actual-ty)
+(def-type-check-error-constructor wrong-num-of-args
+  fun expected-num-of-args actual-num-of-args)
 
 (defvar *line-map* nil)
 
@@ -728,10 +748,12 @@
        (serapeum:match-of type-check-entry type-check-entry
          ((type-check-entry-fun formal-tys short-formal-tys result-ty short-result-ty)
           (unless (eql (length args) (length formal-tys))
-            (type-check-error
-             pos *line-map*
-             "Function ~A expect ~A args but got ~A args."
-             (symbol:sym-name fun) (length formal-tys) (length args)))
+            (let ((expected-num-of-args (length formal-tys))
+                  (actual-num-of-args (length args)))
+              (wrong-num-of-args
+               pos *line-map* fun expected-num-of-args actual-num-of-args
+               "Function ~A expect ~A args, but got ~A args."
+               (symbol:sym-name fun) expected-num-of-args actual-num-of-args)))
           (loop for formal-ty in formal-tys
                 for short-formal-ty in short-formal-tys
                 for type-check-arg-result in (mapcar (lambda (arg)
