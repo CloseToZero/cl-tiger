@@ -12,7 +12,7 @@ let
       while buffer = " " | buffer = "\n" do
         buffer := getchar();
 
-      if buffer="-"
+      if buffer = "-"
       then (neg := 1;
             buffer := getchar();
             if isdigit(buffer) = 0
