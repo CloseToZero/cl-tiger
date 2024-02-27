@@ -662,3 +662,77 @@
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
    'type-check:return-value-type-mismatch))
+
+(parachute:define-test book-test-41
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-41.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-42
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-42.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-43
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-43.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:unsupported-operation))
+
+(parachute:define-test book-test-44
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-44.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-45
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-45.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-46
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-46.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-47
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-47.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-48
+  (parachute:finish
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-48.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)))
+
+(parachute:define-test book-test-49
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-book-test-source-path "test-49.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'esrap:esrap-parse-error))
