@@ -755,46 +755,47 @@
              (types:short-ty->string short-right-ty)))
           (type-check-expr-result ty-int ty-int)))))
     ((ast:expr-record type-id fields pos)
-     (alexandria:if-let (ty (types:actual-ty (types:get-ty ty-env type-id)))
-       (trivia:if-match (types:ty-record decl-fields) ty
-         (progn
-           ;; decl-field form: (sym ty).
-           (loop for decl-field in decl-fields
-                 for decl-field-sym = (first decl-field)
-                 for decl-field-ty = (second decl-field)
-                 do
-                    (alexandria:if-let
-                        (field (find-if (lambda (field)
-                                          ;; field form: (sym expr pos)
-                                          (eql (first field) decl-field-sym))
-                                        fields))
-                      (trivia:let-match1 (type-check-expr-result field-ty _)
-                          (type-check-expr ty-env type-check-env within-loop (second field))
+     (alexandria:if-let (type-id-ty (types:get-ty ty-env type-id))
+       (let ((ty (types:actual-ty type-id-ty)))
+         (trivia:if-match (types:ty-record decl-fields) ty
+           (progn
+             ;; decl-field form: (sym ty).
+             (loop for decl-field in decl-fields
+                   for decl-field-sym = (first decl-field)
+                   for decl-field-ty = (second decl-field)
+                   do
+                      (alexandria:if-let
+                          (field (find-if (lambda (field)
+                                            ;; field form: (sym expr pos)
+                                            (eql (first field) decl-field-sym))
+                                          fields))
+                        (trivia:let-match1 (type-check-expr-result field-ty _)
+                            (type-check-expr ty-env type-check-env within-loop (second field))
                           (unless (types:ty-compatible field-ty (types:actual-ty decl-field-ty))
                             (type-check-error
                              (third field) *line-map*
                              "The type of the init expression of the field ~A \
 doesn't match the expected type."
                              (symbol:sym-name decl-field-sym))))
-                      (type-check-error
-                       pos *line-map*
-                       "Missing the init expression of the field: ~A."
-                       (symbol:sym-name decl-field-sym))))
-           (loop for field in fields
-                 ;; field form: (sym expr pos)
-                 for field-sym = (first field)
-                 do (unless (find-if (lambda (decl-field)
-                                       ;; decl-field form: (sym ty).
-                                       (eql (first decl-field) field-sym))
-                                     decl-fields)
-                      (type-check-error
-                       pos *line-map*
-                       "Unknown field ~A of the record." (symbol:sym-name field-sym))))
-           (type-check-expr-result
-            ty (types:ty-name type-id (types:ty-ref nil))))
-         (type-check-error
-          pos *line-map*
-          "Type ~A is not a record." (symbol:sym-name type-id)))
+                        (type-check-error
+                         pos *line-map*
+                         "Missing the init expression of the field: ~A."
+                         (symbol:sym-name decl-field-sym))))
+             (loop for field in fields
+                   ;; field form: (sym expr pos)
+                   for field-sym = (first field)
+                   do (unless (find-if (lambda (decl-field)
+                                         ;; decl-field form: (sym ty).
+                                         (eql (first decl-field) field-sym))
+                                       decl-fields)
+                        (type-check-error
+                         pos *line-map*
+                         "Unknown field ~A of the record." (symbol:sym-name field-sym))))
+             (type-check-expr-result
+              ty (types:ty-name type-id (types:ty-ref nil))))
+           (type-check-error
+            pos *line-map*
+            "Type ~A is not a record." (symbol:sym-name type-id))))
        (type-check-error
         pos *line-map*
         "Undefined type: ~A." (symbol:sym-name type-id))))
