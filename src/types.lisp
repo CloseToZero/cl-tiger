@@ -84,8 +84,12 @@
   (serapeum:match-of ty short-ty
     (ty-int "int")
     (ty-string "string")
-    (ty-record "Short type should not be a record type, but got: ~S." short-ty)
-    (ty-array "Short type should not be an array type, but got: ~S." short-ty)
+    (ty-record
+     (let ((*print-circle* t))
+       (error "Short type should not be a record type, but got: ~S." short-ty)))
+    (ty-array
+     (let ((*print-circle* t))
+       (error "Short type should not be an array type, but got: ~S." short-ty)))
     (ty-nil "nil")
     (ty-unit "unit")
     ((ty-name sym _)
