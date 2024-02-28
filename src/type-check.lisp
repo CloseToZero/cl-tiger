@@ -45,6 +45,9 @@
    #:undefined-field-type
    #:undefined-field-type-field-name
    #:undefined-array-base-type
+   #:undefined-fun-formal-type
+   #:undefined-fun-formal-type-formal-name
+   #:undefined-fun-formal-type-fun-name
    #:undefined-var
    #:undefined-var-name
    #:undefined-fun
@@ -260,6 +263,16 @@
 (define-condition undefined-array-base-type (undefined-type)
   ())
 
+(define-condition undefined-fun-formal-type (undefined-type)
+  ((formal-name
+    :type symbol:sym
+    :initarg :formal-name
+    :reader undefined-fun-formal-type-formal-name)
+   (fun-name
+    :type symbol:sym
+    :initarg :fun-name
+    :reader undefined-fun-formal-type-fun-name)))
+
 (define-condition undefined-var (type-check-error)
   ((name
     :type symbol:sym
@@ -472,6 +485,7 @@
 (def-type-check-error-constructor undefined-type type-id)
 (def-type-check-error-constructor undefined-field-type type-id field-name)
 (def-type-check-error-constructor undefined-array-base-type type-id)
+(def-type-check-error-constructor undefined-fun-formal-type type-id formal-name fun-name)
 (def-type-check-error-constructor undefined-var name)
 (def-type-check-error-constructor undefined-fun name)
 (def-type-check-error-constructor return-value-type-mismatch
@@ -744,12 +758,15 @@
                            (mapcar (lambda (param-field)
                                      (let ((ty (types:get-ty ty-env (ast:field-type-id param-field))))
                                        (unless ty
-                                         (type-check-error
-                                          (ast:field-pos param-field) *line-map*
-                                          "Undefined type ~A of param ~A of function ~A."
-                                          (symbol:sym-name (ast:field-type-id param-field))
-                                          (symbol:sym-name (ast:field-name param-field))
-                                          (symbol:sym-name function-name)))
+                                         (let ((param-name (ast:field-name param-field))
+                                               (param-type-id (ast:field-type-id param-field)))
+                                           (undefined-fun-formal-type
+                                            (ast:field-pos param-field) *line-map*
+                                            param-type-id param-name function-name
+                                            "Undefined type ~A of the formal ~A of the function ~A."
+                                            (symbol:sym-name param-type-id)
+                                            (symbol:sym-name param-name)
+                                            (symbol:sym-name function-name))))
                                        ty))
                                    function-params)
                            (mapcar (lambda (param-field)

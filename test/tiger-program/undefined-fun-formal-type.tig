@@ -1,0 +1,5 @@
+let
+  function f1(a: int, b: abc) = a
+in
+  3
+end

@@ -346,6 +346,15 @@
     :dont-generate-project t)
    'type-check:test-of-while-not-int))
 
+(parachute:define-test undefined-fun-formal-type
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "undefined-fun-formal-type.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:undefined-fun-formal-type))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger
