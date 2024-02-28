@@ -355,6 +355,15 @@
     :dont-generate-project t)
    'type-check:undefined-fun-formal-type))
 
+(parachute:define-test undefined-fun-result-type
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "undefined-fun-result-type.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:undefined-fun-result-type))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger

@@ -48,6 +48,8 @@
    #:undefined-fun-formal-type
    #:undefined-fun-formal-type-formal-name
    #:undefined-fun-formal-type-fun-name
+   #:undefined-fun-result-type
+   #:undefined-fun-result-type-fun-name
    #:undefined-var
    #:undefined-var-name
    #:undefined-fun
@@ -273,6 +275,12 @@
     :initarg :fun-name
     :reader undefined-fun-formal-type-fun-name)))
 
+(define-condition undefined-fun-result-type (undefined-type)
+  ((fun-name
+    :type symbol:sym
+    :initarg :fun-name
+    :reader undefined-fun-result-type-fun-name)))
+
 (define-condition undefined-var (type-check-error)
   ((name
     :type symbol:sym
@@ -486,6 +494,7 @@
 (def-type-check-error-constructor undefined-field-type type-id field-name)
 (def-type-check-error-constructor undefined-array-base-type type-id)
 (def-type-check-error-constructor undefined-fun-formal-type type-id formal-name fun-name)
+(def-type-check-error-constructor undefined-fun-result-type type-id fun-name)
 (def-type-check-error-constructor undefined-var name)
 (def-type-check-error-constructor undefined-fun name)
 (def-type-check-error-constructor return-value-type-mismatch
@@ -779,11 +788,13 @@
                                          (types:get-ty ty-env (first function-result))
                                          (types:get-unnamed-base-ty (symbol:get-sym "unit")))))
                              (unless ty
-                               (type-check-error
-                                (second function-result) *line-map*
-                                "Undefined result type ~A of function ~A."
-                                (symbol:sym-name (first function-result))
-                                (symbol:sym-name function-name)))
+                               (let ((result-type-id (first function-result)))
+                                 (undefined-fun-result-type
+                                  (second function-result) *line-map*
+                                  result-type-id function-name
+                                  "Undefined result type ~A of the function ~A."
+                                  (symbol:sym-name result-type-id)
+                                  (symbol:sym-name function-name))))
                              ty)
                            (if function-result
                                (types:ty-name
