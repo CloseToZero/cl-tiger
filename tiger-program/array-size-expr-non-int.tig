@@ -1,0 +1,6 @@
+let
+  type arrtype = array of int
+  var arr := arrtype ["abc"] of 0
+in
+ 8
+end

@@ -71,6 +71,9 @@
    #:init-expr-type-mismatch-short-init-ty
    #:init-expr-type-mismatch-decl-ty
    #:init-expr-type-mismatch-init-ty
+   #:array-size-expr-non-int
+   #:array-size-expr-non-int-short-ty
+   #:array-size-expr-non-int-ty
    #:array-init-expr-type-mismatch
    #:array-init-expr-type-mismatch-short-array-ty
    #:array-init-expr-type-mismatch-short-init-ty
@@ -341,6 +344,16 @@
     :initarg :init-ty
     :reader init-expr-type-mismatch-init-ty)))
 
+(define-condition array-size-expr-non-int (type-check-error)
+  ((short-ty
+    :type types:ty
+    :initarg :short-ty
+    :reader array-size-expr-non-int-short-ty)
+   (ty
+    :type types:ty
+    :initarg :ty
+    :reader array-size-expr-non-int-ty)))
+
 (define-condition array-init-expr-type-mismatch (type-check-error)
   ((short-array-ty
     :type types:ty
@@ -447,6 +460,8 @@
   short-ty ty)
 (def-type-check-error-constructor init-expr-type-mismatch
   short-decl-ty short-init-ty decl-ty init-ty)
+(def-type-check-error-constructor array-size-expr-non-int
+  short-ty ty)
 (def-type-check-error-constructor array-init-expr-type-mismatch
   short-array-ty short-init-ty array-ty init-ty)
 (def-type-check-error-constructor function-formal-actual-type-mismatch
@@ -1016,14 +1031,15 @@ doesn't match the expected type."
                   (types:actual-ty type-id-ty))))
        (trivia:if-match (types:ty-array base-ty) ty
          (trivia:let-match
-             (((type-check-expr-result size-ty _)
+             (((type-check-expr-result size-ty short-size-ty)
                (type-check-expr ty-env type-check-env within-loop size))
               ((type-check-expr-result init-ty short-init-ty)
                (type-check-expr ty-env type-check-env within-loop init)))
            (unless (types:ty-compatible size-ty (types:get-ty types:*base-ty-env* (symbol:get-sym "int")))
-             (type-check-error
-              pos *line-map*
-              "The type of size expression of array creation expression should be int."))
+             (array-size-expr-non-int
+              pos *line-map* short-size-ty size-ty
+              "The type of the size expression of the array creation expression should be int, but is ~A."
+              (types:short-ty->string short-size-ty)))
            (unless (types:ty-compatible init-ty (types:actual-ty base-ty))
              (let ((short-array-ty (types:ty-name type-id (types:ty-ref nil))))
                (array-init-expr-type-mismatch

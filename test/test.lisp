@@ -317,6 +317,15 @@
     :dont-generate-project t)
    'type-check:create-array-use-non-array-type))
 
+(parachute:define-test array-size-expr-non-int
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "array-size-expr-non-int.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:array-size-expr-non-int))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger
