@@ -38,6 +38,7 @@
    #:undefined-type-type-id
    #:undefined-field-type
    #:undefined-field-type-field-name
+   #:undefined-array-base-type
    #:undefined-var
    #:undefined-var-name
    #:undefined-fun
@@ -223,6 +224,9 @@
     :type symbol:sym
     :initarg :field-name
     :reader undefined-field-type-field-name)))
+
+(define-condition undefined-array-base-type (undefined-type)
+  ())
 
 (define-condition undefined-var (type-check-error)
   ((name
@@ -413,6 +417,7 @@
   op short-left-ty short-right-ty left-ty right-ty)
 (def-type-check-error-constructor undefined-type type-id)
 (def-type-check-error-constructor undefined-field-type type-id field-name)
+(def-type-check-error-constructor undefined-array-base-type type-id)
 (def-type-check-error-constructor undefined-var name)
 (def-type-check-error-constructor undefined-fun name)
 (def-type-check-error-constructor return-value-type-mismatch
@@ -523,9 +528,9 @@
     ((ast:ty-array base-type-id pos)
      (let ((ty (types:get-ty ty-env base-type-id)))
        (unless ty
-         (type-check-error
+         (undefined-array-base-type
           pos
-          *line-map*
+          *line-map* base-type-id
           "Undefined base type of an array: ~A."
           (symbol:sym-name base-type-id)))
        (types:ty-array ty)))))

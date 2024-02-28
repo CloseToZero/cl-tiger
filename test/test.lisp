@@ -299,6 +299,15 @@
                           (continue)))))
        (build-and-run-project project-dir *target-os*)))))
 
+(parachute:define-test undefined-array-base-type
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "undefined-array-base-type.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:undefined-array-base-type))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger
