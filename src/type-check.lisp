@@ -609,6 +609,8 @@
        (when typ
          (let ((ty-sym (first typ)))
            (setf short-final-ty (types:ty-name ty-sym (types:ty-ref nil)))
+           ;; Note: we already check (types:get-ty ty-env ty-sym) is not nil in the above,
+           ;; so is safe to use types:actual-ty without checking here.
            (let ((decl-ty (types:actual-ty (types:get-ty ty-env ty-sym))))
              (cond ((types:ty-compatible init-ty decl-ty)
                     (setf final-ty decl-ty))
@@ -876,7 +878,7 @@ doesn't match the expected type."
             "Type ~A is not a record." (symbol:sym-name type-id))))
        (undefined-type
         pos *line-map* type-id
-        "Undefined type: ~A." (symbol:sym-name type-id))))
+        "Undefined record type: ~A." (symbol:sym-name type-id))))
     ((ast:expr-seq exprs)
      (reduce (lambda (acc-type expr-with-pos)
                ;; expr-with-pos form: (expr pos).
@@ -990,7 +992,13 @@ doesn't match the expected type."
      (let ((ty (types:get-unnamed-base-ty (symbol:get-sym "unit"))))
        (type-check-expr-result ty ty)))
     ((ast:expr-array type-id size init pos)
-     (let ((ty (types:actual-ty (types:get-ty ty-env type-id))))
+     (let* ((type-id-ty (types:get-ty ty-env type-id))
+            (ty (progn
+                  (unless type-id-ty
+                    (undefined-type
+                     pos *line-map* type-id
+                     "Undefined array type: ~A." (symbol:sym-name type-id)))
+                  (types:actual-ty type-id-ty))))
        (trivia:if-match (types:ty-array base-ty) ty
          (trivia:let-match
              (((type-check-expr-result size-ty _)
