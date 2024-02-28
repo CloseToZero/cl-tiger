@@ -74,9 +74,9 @@
    #:init-expr-type-mismatch-short-init-ty
    #:init-expr-type-mismatch-decl-ty
    #:init-expr-type-mismatch-init-ty
-   #:array-size-expr-non-int
-   #:array-size-expr-non-int-short-ty
-   #:array-size-expr-non-int-ty
+   #:array-size-expr-not-int
+   #:array-size-expr-not-int-short-ty
+   #:array-size-expr-not-int-ty
    #:array-init-expr-type-mismatch
    #:array-init-expr-type-mismatch-short-array-ty
    #:array-init-expr-type-mismatch-short-init-ty
@@ -357,15 +357,15 @@
     :initarg :init-ty
     :reader init-expr-type-mismatch-init-ty)))
 
-(define-condition array-size-expr-non-int (type-check-error)
+(define-condition array-size-expr-not-int (type-check-error)
   ((short-ty
     :type types:ty
     :initarg :short-ty
-    :reader array-size-expr-non-int-short-ty)
+    :reader array-size-expr-not-int-short-ty)
    (ty
     :type types:ty
     :initarg :ty
-    :reader array-size-expr-non-int-ty)))
+    :reader array-size-expr-not-int-ty)))
 
 (define-condition array-init-expr-type-mismatch (type-check-error)
   ((short-array-ty
@@ -474,7 +474,7 @@
   short-ty ty)
 (def-type-check-error-constructor init-expr-type-mismatch
   short-decl-ty short-init-ty decl-ty init-ty)
-(def-type-check-error-constructor array-size-expr-non-int
+(def-type-check-error-constructor array-size-expr-not-int
   short-ty ty)
 (def-type-check-error-constructor array-init-expr-type-mismatch
   short-array-ty short-init-ty array-ty init-ty)
@@ -1051,7 +1051,7 @@ doesn't match the expected type."
               ((type-check-expr-result init-ty short-init-ty)
                (type-check-expr ty-env type-check-env within-loop init)))
            (unless (types:ty-compatible size-ty (types:get-ty types:*base-ty-env* (symbol:get-sym "int")))
-             (array-size-expr-non-int
+             (array-size-expr-not-int
               pos *line-map* short-size-ty size-ty
               "The type of the size expression of the array creation expression should be int, but is ~A."
               (types:short-ty->string short-size-ty)))
