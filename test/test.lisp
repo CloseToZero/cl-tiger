@@ -364,6 +364,15 @@
     :dont-generate-project t)
    'type-check:undefined-fun-result-type))
 
+(parachute:define-test call-non-function
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "call-non-function.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:call-non-function))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger

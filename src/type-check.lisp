@@ -77,6 +77,8 @@
    #:create-array-use-non-array-type
    #:create-array-use-non-array-type-short-ty
    #:create-array-use-non-array-type-ty
+   #:call-non-function
+   #:call-non-function-name
    #:init-expr-type-mismatch
    #:init-expr-type-mismatch-short-decl-ty
    #:init-expr-type-mismatch-short-init-ty
@@ -373,6 +375,12 @@
     :initarg :ty
     :reader create-array-use-non-array-type-ty)))
 
+(define-condition call-non-function (type-check-error)
+  ((name
+    :type symbol:sym
+    :initarg :name
+    :reader call-non-function-name)))
+
 (define-condition init-expr-type-mismatch (type-check-error)
   ((short-decl-ty
     :type types:ty
@@ -509,6 +517,7 @@
   short-var-ty var-ty)
 (def-type-check-error-constructor create-array-use-non-array-type
   short-ty ty)
+(def-type-check-error-constructor call-non-function name)
 (def-type-check-error-constructor init-expr-type-mismatch
   short-decl-ty short-init-ty decl-ty init-ty)
 (def-type-check-error-constructor array-size-expr-not-int
@@ -880,9 +889,11 @@
                         "Function ~A ~Ath arg expect type ~A, but got a arg of type ~A."
                         (symbol:sym-name fun) i formal-ty arg-ty))))
           (type-check-expr-result (types:actual-ty result-ty) short-result-ty))
-         (_ (type-check-error
-             pos *line-map*
-             "You can only call a function.")))
+         ((type-check-entry-var _ _ _)
+          (call-non-function
+           pos *line-map* fun
+           "You can only call a function, but ~A is a variable."
+           (symbol:sym-name fun))))
        (undefined-fun
         pos *line-map* fun
         "Undefined function ~A." (symbol:sym-name fun))))
