@@ -326,6 +326,15 @@
     :dont-generate-project t)
    'type-check:array-size-expr-non-int))
 
+(parachute:define-test body-of-for-not-unit
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "body-of-for-not-unit.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:body-of-for-not-unit))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger

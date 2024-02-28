@@ -20,6 +20,9 @@
    #:body-of-while-not-unit
    #:body-of-while-not-unit-short-ty
    #:body-of-while-not-unit-ty
+   #:body-of-for-not-unit
+   #:body-of-for-not-unit-short-ty
+   #:body-of-for-not-unit-ty
    #:for-low-not-int
    #:for-low-not-int-short-ty
    #:for-low-not-int-ty
@@ -170,6 +173,16 @@
     :type types:ty
     :initarg :ty
     :reader body-of-while-not-unit-ty)))
+
+(define-condition body-of-for-not-unit (type-check-error)
+  ((short-ty
+    :type types:ty
+    :initarg :short-ty
+    :reader body-of-for-not-unit-short-ty)
+   (ty
+    :type types:ty
+    :initarg :ty
+    :reader body-of-for-not-unit-ty)))
 
 (define-condition for-low-not-int (type-check-error)
   ((short-ty
@@ -436,6 +449,7 @@
   short-then-ty short-else-ty then-ty else-ty)
 (def-type-check-error-constructor then-of-if-then-not-unit short-ty ty)
 (def-type-check-error-constructor body-of-while-not-unit short-ty ty)
+(def-type-check-error-constructor body-of-for-not-unit short-ty ty)
 (def-type-check-error-constructor for-low-not-int short-ty ty)
 (def-type-check-error-constructor for-high-not-int short-ty ty)
 (def-type-check-error-constructor assign-index-var var)
@@ -1010,9 +1024,10 @@ doesn't match the expected type."
                (type-check-expr-result body-ty short-body-ty)
                (type-check-expr ty-env new-type-check-env t body)
              (unless (types:ty-compatible body-ty (types:get-unnamed-base-ty (symbol:get-sym "unit")))
-               (type-check-error
-                pos *line-map*
-                "The body expression of a for expression should product no value."))
+               (body-of-for-not-unit
+                pos *line-map* short-body-ty body-ty
+                "The type of the body expression of a for expression should be unit, but is ~A."
+                (types:short-ty->string short-body-ty)))
              (type-check-expr-result body-ty short-body-ty))))))
     ((ast:expr-break pos)
      (unless within-loop
