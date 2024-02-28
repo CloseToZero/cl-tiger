@@ -63,6 +63,9 @@
    #:access-field-of-non-record
    #:access-field-of-non-record-short-var-ty
    #:access-field-of-non-record-var-ty
+   #:create-array-use-non-array-type
+   #:create-array-use-non-array-type-short-ty
+   #:create-array-use-non-array-type-ty
    #:init-expr-type-mismatch
    #:init-expr-type-mismatch-short-decl-ty
    #:init-expr-type-mismatch-short-init-ty
@@ -310,6 +313,16 @@
     :initarg :var-ty
     :reader access-field-of-non-record-var-ty)))
 
+(define-condition create-array-use-non-array-type (type-check-error)
+  ((short-ty
+    :type types:ty
+    :initarg :short-ty
+    :reader create-array-use-non-array-type-short-ty)
+   (ty
+    :type types:ty
+    :initarg :ty
+    :reader create-array-use-non-array-type-ty)))
+
 (define-condition init-expr-type-mismatch (type-check-error)
   ((short-decl-ty
     :type types:ty
@@ -430,6 +443,8 @@
   short-var-ty var-ty)
 (def-type-check-error-constructor access-field-of-non-record
   short-var-ty var-ty)
+(def-type-check-error-constructor create-array-use-non-array-type
+  short-ty ty)
 (def-type-check-error-constructor init-expr-type-mismatch
   short-decl-ty short-init-ty decl-ty init-ty)
 (def-type-check-error-constructor array-init-expr-type-mismatch
@@ -1019,9 +1034,11 @@ doesn't match the expected type."
                 ;; following is safe.
                 (types:short-ty->string base-ty)
                 (types:short-ty->string short-init-ty)))))
-         (type-check-error
-          pos *line-map*
-          "Type ~A is not an array." (symbol:sym-name type-id)))
+         (let ((short-ty (types:ty-name type-id (types:ty-ref nil))))
+           (create-array-use-non-array-type
+            pos *line-map* short-ty ty
+            "Type ~A is not an array."
+            (types:short-ty->string short-ty))))
        (type-check-expr-result
         ty
         (types:ty-name type-id (types:ty-ref nil)))))

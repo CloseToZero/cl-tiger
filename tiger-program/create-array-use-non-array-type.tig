@@ -1,0 +1,6 @@
+let
+  type integer = int
+  var arr := integer [8] of 0
+in
+ 8
+end
