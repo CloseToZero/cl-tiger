@@ -107,8 +107,10 @@
   (uiop:merge-pathnames*
    name
    (uiop:ensure-directory-pathname
-    (asdf:system-relative-pathname "cl-tiger-test" "tiger-program"))))
-
+    (uiop:merge-pathnames*
+     "tiger-program"
+     (uiop:ensure-directory-pathname
+      (asdf:system-relative-pathname "cl-tiger-test" "test"))))))
 
 (defun tiger-book-test-source-path (name)
   (uiop:merge-pathnames*
