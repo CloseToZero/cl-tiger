@@ -1,7 +1,7 @@
 (cl:defpackage :cl-tiger/flow-graph
   (:use :cl)
   (:local-nicknames
-   (:utils :cl-tiger/utils)
+   (:util :cl-tiger/util)
    (:temp :cl-tiger/temp)
    (:instr :cl-tiger/instr)
    (:graph :cl-tiger/graph))
@@ -76,8 +76,8 @@
             do (serapeum:match-of instr:instr instr
                  ((instr:instr-op _ dsts srcs jumps)
                   (let ((node (instr->node instr)))
-                    (fset:includef defs-table node (utils:list->set dsts))
-                    (fset:includef uses-table node (utils:list->set srcs))
+                    (fset:includef defs-table node (util:list->set dsts))
+                    (fset:includef uses-table node (util:list->set srcs))
                     (serapeum:match-of instr:maybe-jump jumps
                       ((instr:is-jump targets)
                        (cond ((null targets)
@@ -91,8 +91,8 @@
                  ((or (instr:instr-stack-arg _ dsts srcs _)
                       (instr:instr-call _ dsts srcs _))
                   (let ((node (instr->node instr)))
-                    (fset:includef defs-table node (utils:list->set dsts))
-                    (fset:includef uses-table node (utils:list->set srcs))
+                    (fset:includef defs-table node (util:list->set dsts))
+                    (fset:includef uses-table node (util:list->set srcs))
                     (add-fall-through-edge node rest-instrs)))
                  ((instr:instr-label _ _)
                   (let ((node (instr->node instr)))

@@ -2,7 +2,7 @@
   (:use :cl)
   (:local-nicknames
    (:symbol :cl-tiger/symbol)
-   (:utils :cl-tiger/utils)
+   (:util :cl-tiger/util)
    (:temp :cl-tiger/temp)
    (:frame :cl-tiger/frame)
    (:ir :cl-tiger/ir)
@@ -145,9 +145,9 @@
                    (unless (flow-graph:is-fake-node flow-graph fnode)
                      (let* ((live-out-set (fset:@ live-out-table fnode))
                             (is-move (fset:contains? is-move-set fnode))
-                            (exclude-temp (and is-move (utils:set-singleton (fset:@ uses-table fnode)))))
+                            (exclude-temp (and is-move (util:set-singleton (fset:@ uses-table fnode)))))
                        (when is-move
-                         (let* ((dst (utils:set-singleton (fset:@ defs-table fnode)))
+                         (let* ((dst (util:set-singleton (fset:@ defs-table fnode)))
                                 (src exclude-temp))
                            ;; Avoid coalesce moves of those temps generated for spilled temps,
                            ;; even we will give high spill costs for these generated temps
@@ -609,13 +609,13 @@
   (maphash (lambda (temp adjs)
              (cond ((fset:empty? adjs)
                     (format stream "  \"(~A, ~A)\"~%"
-                            (utils:str-without-newlines (temp:temp-name temp))
+                            (util:str-without-newlines (temp:temp-name temp))
                             (temp:temp-num temp)))
                    (t
                     (fset:do-set (adj adjs)
                       (format stream "  \"(~A, ~A)\" -> \"(~A, ~A)\"~%"
-                              (utils:str-without-newlines (temp:temp-name temp)) (temp:temp-num temp)
-                              (utils:str-without-newlines (temp:temp-name adj)) (temp:temp-num adj))))))
+                              (util:str-without-newlines (temp:temp-name temp)) (temp:temp-num temp)
+                              (util:str-without-newlines (temp:temp-name adj)) (temp:temp-num adj))))))
            temp->adjs-table)
   (format stream "}~%"))
 
@@ -624,14 +624,14 @@
   (maphash (lambda (temp moves)
              (cond ((fset:empty? moves)
                     (format stream "  \"(~A, ~A)\"~%"
-                            (utils:str-without-newlines (temp:temp-name temp))
+                            (util:str-without-newlines (temp:temp-name temp))
                             (temp:temp-num temp)))
                    (t
                     (fset:do-set (move moves)
                       (apply #'format stream "  \"(~A, ~A)\" -> \"(~A, ~A)\"~%"
                              (with-slots (dst src) move
                                (list
-                                (utils:str-without-newlines (temp:temp-name src)) (temp:temp-num src)
-                                (utils:str-without-newlines (temp:temp-name dst)) (temp:temp-num dst))))))))
+                                (util:str-without-newlines (temp:temp-name src)) (temp:temp-num src)
+                                (util:str-without-newlines (temp:temp-name dst)) (temp:temp-num dst))))))))
            temp->moves-table)
   (format stream "}~%"))

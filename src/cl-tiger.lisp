@@ -1,7 +1,7 @@
 (cl:defpackage :cl-tiger
   (:use :cl)
   (:local-nicknames
-   (:utils :cl-tiger/utils)
+   (:util :cl-tiger/util)
    (:target :cl-tiger/target)
    (:frame :cl-tiger/frame)
    (:parse :cl-tiger/parse)
@@ -29,7 +29,7 @@
                  (stream (uiop:slurp-stream-string source))
                  (pathname (uiop:read-file-string source))
                  (string source)))
-         (line-map (utils:get-line-map text))
+         (line-map (util:get-line-map text))
          (ast (parse:parse-program text)))
     (type-check:type-check-program ast line-map)
     (let ((frags (translate:translate-program ast target)))

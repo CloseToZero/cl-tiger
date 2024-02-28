@@ -1,4 +1,4 @@
-(cl:defpackage :cl-tiger/types
+(cl:defpackage :cl-tiger/type
   (:use :cl)
   (:local-nicknames
    (:symbol :cl-tiger/symbol))
@@ -28,7 +28,7 @@
    #:insert-ty
    #:*built-in-function-bindings*))
 
-(cl:in-package :cl-tiger/types)
+(cl:in-package :cl-tiger/type)
 
 (serapeum:defunion ty
   ty-int

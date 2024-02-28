@@ -1,7 +1,7 @@
 (cl:defpackage :cl-tiger/graph
   (:use :cl)
   (:local-nicknames
-   (:utils :cl-tiger/utils)
+   (:util :cl-tiger/util)
    (:symbol :cl-tiger/symbol))
   (:export
    #:node
@@ -119,12 +119,12 @@
                (cond ((and (fset:empty? (node-succs node))
                            (fset:empty? (node-pres node)))
                       (format stream "  \"(~A, ~A)\"~%"
-                              (utils:str-without-newlines (node-name node)) (node-index node)))
+                              (util:str-without-newlines (node-name node)) (node-index node)))
                      (t
                       (fset:do-set (succ (node-succs node))
                         (format stream "  \"(~A, ~A)\" -> \"(~A, ~A)\"~%"
-                                (utils:str-without-newlines (node-name node)) (node-index node)
-                                (utils:str-without-newlines (node-name succ)) (node-index succ))
+                                (util:str-without-newlines (node-name node)) (node-index node)
+                                (util:str-without-newlines (node-name succ)) (node-index succ))
                         (unless (fset:contains? visited succ)
                           (print-node succ)))))))
       (format stream "digraph G {~%")

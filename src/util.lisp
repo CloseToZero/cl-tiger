@@ -1,4 +1,4 @@
-(cl:defpackage :cl-tiger/utils
+(cl:defpackage :cl-tiger/util
   (:use :cl)
   (:export
    #:get-line-map
@@ -8,7 +8,7 @@
    #:set-singleton
    #:round-up-multiple))
 
-(cl:in-package :cl-tiger/utils)
+(cl:in-package :cl-tiger/util)
 
 (defun get-line-map (text)
   "Construct a map of the following form:

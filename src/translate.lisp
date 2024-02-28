@@ -7,7 +7,7 @@
    (:ir :cl-tiger/ir)
    (:frame :cl-tiger/frame)
    (:ast :cl-tiger/ast)
-   (:types :cl-tiger/types))
+   (:type :cl-tiger/type))
   (:export
    #:translate-program))
 
@@ -230,12 +230,12 @@
 
 (serapeum:defunion ir-entry
   (ir-entry-var
-   (ty types:ty)
+   (ty type:ty)
    (access access))
   (ir-entry-fun
-   ;; A list of types:ty
+   ;; A list of type:ty
    (formal-types list)
-   (result-type types:ty)
+   (result-type type:ty)
    (label temp:label)
    (level level)))
 
@@ -255,7 +255,7 @@
                                            result-type
                                            (temp:new-named-label name)
                                            level)))))
-            types:*built-in-function-bindings*
+            type:*built-in-function-bindings*
             :initial-value env)))
 
 (defun get-ir-entry (ir-env sym)
@@ -267,35 +267,35 @@
 (defun translate-ty (ty-env ty)
   (serapeum:match-of ast:ty ty
     ((ast:ty-name name _)
-     (types:get-ty ty-env name))
+     (type:get-ty ty-env name))
     ((ast:ty-record fields)
-     (types:ty-record
+     (type:ty-record
       (mapcar (lambda (field)
                 (trivia:let-match1 (ast:field name type-id _ _) field
-                  (list name (types:get-ty ty-env type-id))))
+                  (list name (type:get-ty ty-env type-id))))
               fields)))
     ((ast:ty-array base-type-id _)
-     (types:ty-array (types:get-ty ty-env base-type-id)))))
+     (type:ty-array (type:get-ty ty-env base-type-id)))))
 
 (defun translate-var (ty-env ir-env level target break-target var)
   (serapeum:match-of ast:var var
     ((ast:var-simple sym _)
      (trivia:let-match1 (ir-entry-var ty access) (get-ir-entry ir-env sym)
        (list
-        (types:actual-ty ty)
+        (type:actual-ty ty)
         (tagged-expr (frame:access-expr
                       (access-frame-access access)
                       (fp-expr level (access-level access) target)
                       target)))))
     ((ast:var-field var sym _)
-     (trivia:let-match1 (list (types:ty-record fields) var-tagged-ir)
+     (trivia:let-match1 (list (type:ty-record fields) var-tagged-ir)
          (translate-var ty-env ir-env level target break-target var)
        (trivia:let-match1 (list _ ty index)
            (loop for (field-sym field-ty) in fields
                  for index from 0
                  when (eq field-sym sym)
                    return (list field-sym field-ty index))
-         (list (types:actual-ty ty)
+         (list (type:actual-ty ty)
                (tagged-expr
                 (ir:expr-stm-then-expr
                  (ir:stm-expr
@@ -309,11 +309,11 @@
                    ir:bin-op-plus
                    (ir:expr-int (* index (frame:word-size target)))))))))))
     ((ast:var-subscript var expr _)
-     (trivia:let-match (((list (types:ty-array base-ty) var-tagged-ir)
+     (trivia:let-match (((list (type:ty-array base-ty) var-tagged-ir)
                          (translate-var ty-env ir-env level target break-target var))
                         ((list _ expr-tagged-ir)
                          (translate-expr ty-env ir-env level target break-target expr)))
-       (list (types:actual-ty base-ty)
+       (list (type:actual-ty base-ty)
              (tagged-expr
               (ir:expr-stm-then-expr
                (ir:stm-expr
@@ -347,7 +347,7 @@
                 ir-env name
                 (ir-entry-var
                  (if typ
-                     (types:actual-ty (types:get-ty ty-env (first typ)))
+                     (type:actual-ty (type:get-ty ty-env (first typ)))
                      init-ty)
                  var-access))
                (list
@@ -361,15 +361,15 @@
     ((ast:decl-types decl-types)
      (let ((new-ty-env
              (reduce (lambda (acc-ty-env decl-type)
-                       (types:insert-ty acc-ty-env
+                       (type:insert-ty acc-ty-env
                                           (ast:decl-type-name decl-type)
-                                          (types:ty-name (ast:decl-type-name decl-type) (types:ty-ref nil))))
+                                          (type:ty-name (ast:decl-type-name decl-type) (type:ty-ref nil))))
                      decl-types
                      :initial-value ty-env)))
        (mapc (lambda (decl-type)
                (setf
-                (types:ty-ref-value (types:ty-name-ty-ref
-                                     (types:get-ty new-ty-env (ast:decl-type-name decl-type))))
+                (type:ty-ref-value (type:ty-name-ty-ref
+                                     (type:get-ty new-ty-env (ast:decl-type-name decl-type))))
                 (translate-ty new-ty-env (ast:decl-type-ty decl-type))))
              decl-types)
        (list new-ty-env ir-env nil)))
@@ -382,13 +382,13 @@
                           (ast:decl-function-name decl-function)
                           (ir-entry-fun
                            (mapcar (lambda (param-field)
-                                     (types:get-ty ty-env (ast:field-type-id param-field)))
+                                     (type:get-ty ty-env (ast:field-type-id param-field)))
                                    (ast:decl-function-params decl-function))
                            (let ((decl-function-result (ast:decl-function-result decl-function)))
                              ;; decl-function-result form: (sym pos).
                              (if decl-function-result
-                                 (types:get-ty ty-env (first decl-function-result))
-                                 (types:get-unnamed-base-ty (symbol:get-sym "unit"))))
+                                 (type:get-ty ty-env (first decl-function-result))
+                                 (type:get-unnamed-base-ty (symbol:get-sym "unit"))))
                            name
                            (new-level level name
                                       (mapcar (lambda (param-field)
@@ -447,7 +447,7 @@
      (translate-var ty-env ir-env level target break-target var))
     ((ast:expr-nil)
      (list
-      (types:get-unnamed-base-ty (symbol:get-sym "nil"))
+      (type:get-unnamed-base-ty (symbol:get-sym "nil"))
       ;; Should not product (tagged-expr (ir:expr-mem (ir:expr-int 0))),
       ;; otherwise, instruction selection will product an asm
       ;; instruction to load data from the zero address, cause memeory
@@ -455,17 +455,17 @@
       (tagged-expr (ir:expr-int 0))))
     ((ast:expr-int value)
      (list
-      (types:get-ty types:*base-ty-env* (symbol:get-sym "int"))
+      (type:get-ty type:*base-ty-env* (symbol:get-sym "int"))
       (tagged-expr (ir:expr-int value))))
     ((ast:expr-string str _)
-     (list (types:get-ty types:*base-ty-env* (symbol:get-sym "string"))
+     (list (type:get-ty type:*base-ty-env* (symbol:get-sym "string"))
            (let ((string-label (temp:new-label "string")))
              (alloc-string string-label str)
              (tagged-expr (ir:expr-label string-label)))))
     ((ast:expr-call fun args _)
      (let ((ir-entry (get-ir-entry ir-env fun)))
        (trivia:let-match1 (ir-entry-fun _ result-type fun-label fun-level) ir-entry
-         (list (types:actual-ty result-type)
+         (list (type:actual-ty result-type)
                (trivia:let-match1 (level-inner parent-level _) fun-level
                  (let ((arg-ir-exprs
                          (mapcar (lambda (arg)
@@ -492,7 +492,7 @@
                         ((list right-ty right-tagged-ir)
                          (translate-expr ty-env ir-env level target break-target right)))
        (list
-        (types:get-ty types:*base-ty-env* (symbol:get-sym "int"))
+        (type:get-ty type:*base-ty-env* (symbol:get-sym "int"))
         (cond ((member op (list ast:op-plus ast:op-minus ast:op-times ast:op-div))
                (tagged-expr
                 (ir:expr-bin-op (tagged-ir->expr left-tagged-ir)
@@ -504,7 +504,7 @@
                                 (tagged-ir->expr right-tagged-ir))))
               (t
                (trivia:match (list left-ty right-ty)
-                 ((list (types:ty-string) (types:ty-string))
+                 ((list (type:ty-string) (type:ty-string))
                   (tagged-condi
                    (lambda (true-target false-target)
                      (ir:stm-cjump
@@ -537,8 +537,8 @@
                       (tagged-ir->expr right-tagged-ir)
                       true-target false-target))))))))))
     ((ast:expr-record type-id fields _)
-     (let ((ty (types:actual-ty (types:get-ty ty-env type-id))))
-       (trivia:let-match1 (types:ty-record _) ty
+     (let ((ty (type:actual-ty (type:get-ty ty-env type-id))))
+       (trivia:let-match1 (type:ty-record _) ty
          (list ty
                (let ((m (temp:new-temp "record_memeory")))
                  (tagged-expr
@@ -571,7 +571,7 @@
                          (translate-expr ty-env ir-env level target break-target (first expr-with-pos))
                        (list ty (cons tagged-ir acc-tagged-irs)))))
                  exprs
-                 :initial-value (list (types:get-unnamed-base-ty (symbol:get-sym "unit")) nil))
+                 :initial-value (list (type:get-unnamed-base-ty (symbol:get-sym "unit")) nil))
        (list ty
              (labels ((rec (tagged-irs)
                         (trivia:ematch tagged-irs
@@ -590,7 +590,7 @@
                          (translate-var ty-env ir-env level target break-target var))
                         ((list _ expr-tagged-ir)
                          (translate-expr ty-env ir-env level target break-target expr)))
-       (list (types:get-unnamed-base-ty (symbol:get-sym "unit"))
+       (list (type:get-unnamed-base-ty (symbol:get-sym "unit"))
              (tagged-stm
               (ir:stm-move
                (tagged-ir->expr var-tagged-ir)
@@ -606,8 +606,8 @@
                              (list nil (tagged-expr (ir:expr-int 0))))))
        (list
         (if else
-            (types:upgrade-from-compatible-tys then-ty else-ty)
-            (types:get-unnamed-base-ty (symbol:get-sym "unit")))
+            (type:upgrade-from-compatible-tys then-ty else-ty)
+            (type:get-unnamed-base-ty (symbol:get-sym "unit")))
         (if else
             (let ((true-target (temp:new-label "true_target"))
                   (false-target (temp:new-label "false_target"))
@@ -667,7 +667,7 @@
                            (translate-expr ty-env ir-env level target break-target low))
                           ((list _ high-tagged-ir)
                            (translate-expr ty-env ir-env level target break-target high)))
-         (let ((ty-int (types:get-ty types:*base-ty-env* (symbol:get-sym "int"))))
+         (let ((ty-int (type:get-ty type:*base-ty-env* (symbol:get-sym "int"))))
            (let* ((var-access
                     (alloc-local level (ast:escape-ref-value escape-ref) target))
                   (new-ir-env
@@ -729,12 +729,12 @@
                             break-target)
                            (ir:stm-label break-target))))))))))))
     ((ast:expr-break _)
-     (list (types:get-unnamed-base-ty (symbol:get-sym "unit"))
+     (list (type:get-unnamed-base-ty (symbol:get-sym "unit"))
            (tagged-stm
             (ir:stm-jump (ir:expr-label break-target) (list break-target)))))
     ((ast:expr-array type-id size init _)
-     (let ((ty (types:actual-ty (types:get-ty ty-env type-id))))
-       (trivia:let-match1 (types:ty-array _) ty
+     (let ((ty (type:actual-ty (type:get-ty ty-env type-id))))
+       (trivia:let-match1 (type:ty-array _) ty
          (trivia:let-match (((list _ size-tagged-ir)
                              (translate-expr ty-env ir-env level target break-target size))
                             ((list _ init-tagged-ir)
@@ -773,7 +773,7 @@
   (let ((*frags* nil)
         (level (new-level level-top (temp:new-named-label "tiger_main") nil target)))
     (trivia:let-match1 (list _ prog-tagged-ir)
-        (translate-expr types:*base-ty-env*
+        (translate-expr type:*base-ty-env*
                         (base-ir-env target)
                         level
                         target

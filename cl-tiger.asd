@@ -18,7 +18,7 @@
   :components ((:module "src"
                 :components ((:file "straight-line")
                              (:file "symbol")
-                             (:file "utils")
+                             (:file "util")
                              (:file "temp")
                              (:file "target")
                              (:file "ir")
@@ -27,7 +27,7 @@
                              (:file "frame-x86-64")
                              (:file "ast")
                              (:file "parse")
-                             (:file "types")
+                             (:file "type")
                              (:file "type-check")
                              (:file "translate")
                              (:file "normalize")

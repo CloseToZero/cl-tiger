@@ -1,7 +1,7 @@
 (cl:defpackage :cl-tiger/x86-64-frame
   (:use :cl)
   (:local-nicknames
-   (:utils :cl-tiger/utils)
+   (:util :cl-tiger/util)
    (:target :cl-tiger/target)
    (:temp :cl-tiger/temp)
    (:ir :cl-tiger/ir)
@@ -322,7 +322,7 @@
                                      maximize (trivia:if-match (instr:instr-call _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
-         (total-frame-size (utils:round-up-multiple
+         (total-frame-size (util:round-up-multiple
                             (let ((num-of-arg-regs (length (frame:arg-regs target))))
                               (+ (frame-size frame)
                                  ;; Additional 32 bytes for home space
@@ -367,7 +367,7 @@
                                      maximize (trivia:if-match (instr:instr-call _ _ _ num-of-args) instr
                                                 num-of-args
                                                 0)))
-         (total-frame-size (utils:round-up-multiple
+         (total-frame-size (util:round-up-multiple
                             (let ((num-of-arg-regs (length (frame:arg-regs target))))
                               (+ (frame-size frame)
                                  ;; Preallocate space for arguments passing,
@@ -411,7 +411,7 @@
                      (format out ", "))
                  (format out "~A" byte)))
       (when string-literal-as-comment
-        (format out " ; ~S" (utils:str-without-newlines str))))))
+        (format out " ; ~S" (util:str-without-newlines str))))))
 
 (defmethod frame:frag-str->definition% (frag-str string-literal-as-comment target
                                         (target-arch target:arch-x86-64) target-os)
@@ -426,4 +426,4 @@
                      (format out ", "))
                  (format out "~A" byte)))
       (when string-literal-as-comment
-        (format out " # ~S" (utils:str-without-newlines str))))))
+        (format out " # ~S" (util:str-without-newlines str))))))

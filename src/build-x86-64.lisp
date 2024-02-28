@@ -1,9 +1,9 @@
 (cl:defpackage :cl-tiger/x86-64-build
   (:use :cl)
   (:local-nicknames
-   (:utils :cl-tiger/utils)
+   (:util :cl-tiger/util)
    (:temp :cl-tiger/temp)
-   (:types :cl-tiger/types)
+   (:type :cl-tiger/type)
    (:target :cl-tiger/target)
    (:frame :cl-tiger/frame)
    (:instr :cl-tiger/instr)
@@ -95,7 +95,7 @@ add_custom_target(get_exe_path
       (format out "public tiger_main~%")
       (dolist (runtime-function runtime:*runtime-functions*)
         (format out "extern ~A :proc~%" (frame:external-call-label-name runtime-function target)))
-      (dolist (binding types:*built-in-function-bindings*)
+      (dolist (binding type:*built-in-function-bindings*)
         (format out "extern ~A :proc~%" (frame:external-call-label-name (first binding) target)))
       (format out "~%")
 
@@ -174,7 +174,7 @@ add_custom_target(get_exe_path
               (frame:label-name (temp:new-named-label "tiger_main") target))
       (dolist (runtime-function runtime:*runtime-functions*)
         (format out ".global ~A~%" (frame:external-call-label-name runtime-function target)))
-      (dolist (binding types:*built-in-function-bindings*)
+      (dolist (binding type:*built-in-function-bindings*)
         (format out ".global ~A~%" (frame:external-call-label-name (first binding) target)))
       (format out "~%")
 
