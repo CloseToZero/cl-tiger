@@ -335,6 +335,15 @@
     :dont-generate-project t)
    'type-check:body-of-for-not-unit))
 
+(parachute:define-test test-of-while-not-int
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "test-of-while-not-int.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:test-of-while-not-int))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger

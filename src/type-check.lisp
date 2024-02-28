@@ -17,6 +17,9 @@
    #:then-of-if-then-not-unit
    #:then-of-if-then-not-unit-short-ty
    #:then-of-if-then-not-unit-ty
+   #:test-of-while-not-int
+   #:test-of-while-not-int-short-ty
+   #:test-of-while-not-int-ty
    #:body-of-while-not-unit
    #:body-of-while-not-unit-short-ty
    #:body-of-while-not-unit-ty
@@ -163,6 +166,16 @@
     :type types:ty
     :initarg :ty
     :reader then-of-if-then-not-unit-ty)))
+
+(define-condition test-of-while-not-int (type-check-error)
+  ((short-ty
+    :type types:ty
+    :initarg :short-ty
+    :reader test-of-while-not-int-short-ty)
+   (ty
+    :type types:ty
+    :initarg :ty
+    :reader test-of-while-not-int-ty)))
 
 (define-condition body-of-while-not-unit (type-check-error)
   ((short-ty
@@ -448,6 +461,7 @@
 (def-type-check-error-constructor then-else-types-of-if-mismatch
   short-then-ty short-else-ty then-ty else-ty)
 (def-type-check-error-constructor then-of-if-then-not-unit short-ty ty)
+(def-type-check-error-constructor test-of-while-not-int short-ty ty)
 (def-type-check-error-constructor body-of-while-not-unit short-ty ty)
 (def-type-check-error-constructor body-of-for-not-unit short-ty ty)
 (def-type-check-error-constructor for-low-not-int short-ty ty)
@@ -987,14 +1001,15 @@ doesn't match the expected type."
              (type-check-expr-result ty ty)))))
     ((ast:expr-while test body pos)
      (trivia:let-match
-         (((type-check-expr-result test-ty _)
+         (((type-check-expr-result test-ty short-test-ty)
            (type-check-expr ty-env type-check-env within-loop test))
           ((type-check-expr-result body-ty short-body-ty)
            (type-check-expr ty-env type-check-env t body)))
        (unless (types:ty-compatible test-ty (types:get-ty types:*base-ty-env* (symbol:get-sym "int")))
-         (type-check-error
-          pos *line-map*
-          "The type of the test expression of a while expression should be int."))
+         (test-of-while-not-int
+          pos *line-map* short-test-ty test-ty
+          "The type of the test expression of a while expression should be int, but is ~A."
+          (types:short-ty->string short-test-ty)))
        (unless (types:ty-compatible body-ty (types:get-unnamed-base-ty (symbol:get-sym "unit")))
          (body-of-while-not-unit
           pos *line-map* short-body-ty body-ty
