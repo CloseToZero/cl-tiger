@@ -400,6 +400,15 @@
     :dont-generate-project t)
    'type-check:field-init-expr-type-mismatch))
 
+(parachute:define-test missing-field-init-expr
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "missing-field-init-expr.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:missing-field-init-expr))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger

@@ -141,6 +141,11 @@
    #:field-init-expr-type-mismatch-short-decl-field-ty
    #:field-init-expr-type-mismatch-decl-field-ty
 
+   #:missing-field-init-expr
+   #:missing-field-init-expr-record-type-id
+   #:missing-field-init-expr-record-ty
+   #:missing-field-init-expr-missing-field-type-id
+
    #:function-formal-actual-type-mismatch
    #:function-formal-actual-type-mismatch-short-formal-ty
    #:function-formal-actual-type-mismatch-formal-ty
@@ -521,6 +526,20 @@
     :initarg :decl-field-ty
     :reader field-init-expr-type-mismatch-decl-field-ty)))
 
+(define-condition missing-field-init-expr (type-check-error)
+  ((record-type-id
+    :type symbol:sym
+    :initarg :record-type-id
+    :reader missing-field-init-expr-record-type-id)
+   (record-ty
+    :type type:ty
+    :initarg :record-ty
+    :reader missing-field-init-expr-record-ty)
+   (missing-field-type-id
+    :type symbol:sym
+    :initarg :missing-field-type-id
+    :reader missing-field-init-expr-missing-field-type-id)))
+
 (define-condition function-formal-actual-type-mismatch (type-check-error)
   ((short-formal-ty
     :type type:ty
@@ -623,6 +642,8 @@
   array-type-id array-ty short-init-ty init-ty)
 (def-type-check-error-constructor field-init-expr-type-mismatch
   record-type-id record-ty short-init-ty init-ty short-decl-field-ty decl-field-ty)
+(def-type-check-error-constructor missing-field-init-expr
+  record-type-id record-ty missing-field-type-id)
 (def-type-check-error-constructor function-formal-actual-type-mismatch
   short-formal-ty formal-ty short-actual-ty actual-ty)
 (def-type-check-error-constructor wrong-num-of-args
@@ -1060,10 +1081,11 @@
                                ;; We store decl-field-ty of ty-record as short-ty, so the
                                ;; following is safe.
                                (type:short-ty->string decl-field-ty)))))
-                        (type-check-error
-                         pos *line-map*
-                         "Missing the init expression of the field: ~A."
-                         (symbol:sym-name decl-field-sym))))
+                        (missing-field-init-expr
+                         pos *line-map* type-id ty decl-field-sym
+                         "Missing the init expression of the field ~A of the record type ~A."
+                         (symbol:sym-name decl-field-sym)
+                         (symbol:sym-name type-id))))
              (loop for field in fields
                    ;; field form: (sym expr pos)
                    for field-sym = (first field)
