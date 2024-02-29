@@ -9,6 +9,9 @@
    #:type-check-error
    #:break-not-within-loop
    #:circular-dep
+   #:test-of-if-not-int
+   #:test-of-if-not-int-short-ty
+   #:test-of-if-not-int-ty
    #:then-else-types-of-if-mismatch
    #:then-else-types-of-if-mismatch-short-then-ty
    #:then-else-types-of-if-mismatch-short-else-ty
@@ -145,6 +148,16 @@
 
 (define-condition circular-dep (type-check-error)
   ())
+
+(define-condition test-of-if-not-int (type-check-error)
+  ((short-ty
+    :type type:ty
+    :initarg :short-ty
+    :reader test-of-if-not-int-short-ty)
+   (ty
+    :type type:ty
+    :initarg :ty
+    :reader test-of-if-not-int-ty)))
 
 (define-condition then-else-types-of-if-mismatch (type-check-error)
   ((short-then-ty
@@ -487,6 +500,7 @@
 (def-type-check-error-constructor type-check-error)
 (def-type-check-error-constructor break-not-within-loop)
 (def-type-check-error-constructor circular-dep)
+(def-type-check-error-constructor test-of-if-not-int short-ty ty)
 (def-type-check-error-constructor then-else-types-of-if-mismatch
   short-then-ty short-else-ty then-ty else-ty)
 (def-type-check-error-constructor then-of-if-then-not-unit short-ty ty)
@@ -1004,7 +1018,7 @@ doesn't match the expected type."
          (type-check-expr-result ty ty))))
     ((ast:expr-if test then else pos)
      (trivia:let-match
-         (((type-check-expr-result test-ty _)
+         (((type-check-expr-result test-ty short-test-ty)
            (type-check-expr ty-env type-check-env within-loop test))
           ((type-check-expr-result then-ty short-then-ty)
            (type-check-expr ty-env type-check-env within-loop then))
@@ -1015,9 +1029,10 @@ doesn't match the expected type."
                  ;; Give some arbitrary types, we won't use them.
                  (type-check-expr-result ty ty)))))
        (unless (type:ty-compatible test-ty (type:get-ty type:*base-ty-env* (symbol:get-sym "int")))
-         (type-check-error
-          pos *line-map*
-          "The type of the test expression of an if expression should be int."))
+         (test-of-if-not-int
+          pos *line-map* short-test-ty test-ty
+          "The type of the test expression of an if expression should be int, but is ~A."
+          (type:short-ty->string short-test-ty)))
        (if else
            (unless (type:ty-compatible then-ty else-ty)
              (then-else-types-of-if-mismatch
