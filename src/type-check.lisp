@@ -6,98 +6,133 @@
    (:ast :cl-tiger/ast)
    (:type :cl-tiger/type))
   (:export
+   #:type-check-program
+
+   #:continue-type-check
+
    #:type-check-error
+
    #:break-not-within-loop
+
    #:circular-dep
+
    #:test-of-if-not-int
    #:test-of-if-not-int-short-ty
    #:test-of-if-not-int-ty
+
    #:then-else-types-of-if-mismatch
    #:then-else-types-of-if-mismatch-short-then-ty
-   #:then-else-types-of-if-mismatch-short-else-ty
    #:then-else-types-of-if-mismatch-then-ty
+   #:then-else-types-of-if-mismatch-short-else-ty
    #:then-else-types-of-if-mismatch-else-ty
+
    #:then-of-if-then-not-unit
    #:then-of-if-then-not-unit-short-ty
    #:then-of-if-then-not-unit-ty
+
    #:test-of-while-not-int
    #:test-of-while-not-int-short-ty
    #:test-of-while-not-int-ty
+
    #:body-of-while-not-unit
    #:body-of-while-not-unit-short-ty
    #:body-of-while-not-unit-ty
+
    #:body-of-for-not-unit
    #:body-of-for-not-unit-short-ty
    #:body-of-for-not-unit-ty
+
    #:for-low-not-int
    #:for-low-not-int-short-ty
    #:for-low-not-int-ty
+
    #:for-high-not-int
    #:for-high-not-int-short-ty
    #:for-high-not-int-ty
+
    #:assign-index-var
    #:assign-index-var-var
+
    #:unsupported-operation
    #:unsupported-operation-op
    #:unsupported-operation-short-left-ty
-   #:unsupported-operation-short-right-ty
    #:unsupported-operation-left-ty
+   #:unsupported-operation-short-right-ty
    #:unsupported-operation-right-ty
+
    #:undefined-type
    #:undefined-type-type-id
+
    #:undefined-field-type
    #:undefined-field-type-field-name
+
    #:undefined-array-base-type
+
    #:undefined-fun-formal-type
    #:undefined-fun-formal-type-formal-name
    #:undefined-fun-formal-type-fun-name
+
    #:undefined-fun-result-type
    #:undefined-fun-result-type-fun-name
+
    #:undefined-var
    #:undefined-var-name
+
    #:undefined-fun
    #:undefined-fun-name
+
    #:return-value-type-mismatch
    #:return-value-type-mismatch-short-decl-ty
-   #:return-value-type-mismatch-short-actual-ty
    #:return-value-type-mismatch-decl-ty
+   #:return-value-type-mismatch-short-actual-ty
    #:return-value-type-mismatch-actual-ty
+
    #:reference-unknown-record-field
    #:reference-unknown-record-field-short-record-ty
    #:reference-unknown-record-field-record-ty
    #:reference-unknown-record-field-unknown-field
+
    #:type-mismatch-of-assignment
    #:type-mismatch-of-assignment-short-var-ty
-   #:type-mismatch-of-assignment-short-expr-ty
    #:type-mismatch-of-assignment-var-ty
+   #:type-mismatch-of-assignment-short-expr-ty
    #:type-mismatch-of-assignment-expr-ty
+
    #:subscript-non-array
    #:subscript-non-array-short-var-ty
    #:subscript-non-array-var-ty
+
    #:access-field-of-non-record
    #:access-field-of-non-record-short-var-ty
    #:access-field-of-non-record-var-ty
+
    #:create-array-use-non-array-type
    #:create-array-use-non-array-type-type-id
    #:create-array-use-non-array-type-ty
+
    #:create-record-use-non-record-type
    #:create-record-use-non-record-type-type-id
    #:create-record-use-non-record-type-ty
+
    #:call-non-function
    #:call-non-function-name
+
    #:init-expr-type-mismatch
    #:init-expr-type-mismatch-type-id
-   #:init-expr-type-mismatch-short-init-ty
    #:init-expr-type-mismatch-decl-ty
+   #:init-expr-type-mismatch-short-init-ty
    #:init-expr-type-mismatch-init-ty
+
    #:array-size-expr-not-int
    #:array-size-expr-not-int-short-ty
    #:array-size-expr-not-int-ty
+
    #:array-init-expr-type-mismatch
    #:array-init-expr-type-mismatch-array-type-id
-   #:array-init-expr-type-mismatch-short-init-ty
    #:array-init-expr-type-mismatch-array-ty
+   #:array-init-expr-type-mismatch-short-init-ty
    #:array-init-expr-type-mismatch-init-ty
+
    #:field-init-expr-type-mismatch
    #:field-init-expr-type-mismatch-record-type-id
    #:field-init-expr-type-mismatch-record-ty
@@ -105,23 +140,23 @@
    #:field-init-expr-type-mismatch-init-ty
    #:field-init-expr-type-mismatch-short-decl-field-ty
    #:field-init-expr-type-mismatch-decl-field-ty
+
    #:function-formal-actual-type-mismatch
    #:function-formal-actual-type-mismatch-short-formal-ty
-   #:function-formal-actual-type-mismatch-short-actual-ty
    #:function-formal-actual-type-mismatch-formal-ty
+   #:function-formal-actual-type-mismatch-short-actual-ty
    #:function-formal-actual-type-mismatch-actual-ty
+
    #:wrong-num-of-args
    #:wrong-num-of-args-fun
    #:wrong-num-of-args-expected-num-of-args
    #:wrong-num-of-args-actual-num-of-args
+
    #:duplicate-names-in-consecutive-type-decls
    #:duplicate-names-in-consecutive-type-decls-name
+
    #:duplicate-names-in-consecutive-fun-decls
-   #:duplicate-names-in-consecutive-fun-decls-name
-
-   #:continue-type-check
-
-   #:type-check-program))
+   #:duplicate-names-in-consecutive-fun-decls-name))
 
 (cl:in-package :cl-tiger/type-check)
 
