@@ -78,15 +78,15 @@
    #:access-field-of-non-record-short-var-ty
    #:access-field-of-non-record-var-ty
    #:create-array-use-non-array-type
-   #:create-array-use-non-array-type-short-ty
+   #:create-array-use-non-array-type-type-id
    #:create-array-use-non-array-type-ty
    #:create-record-use-non-record-type
-   #:create-record-use-non-record-type-short-ty
+   #:create-record-use-non-record-type-type-id
    #:create-record-use-non-record-type-ty
    #:call-non-function
    #:call-non-function-name
    #:init-expr-type-mismatch
-   #:init-expr-type-mismatch-short-decl-ty
+   #:init-expr-type-mismatch-type-id
    #:init-expr-type-mismatch-short-init-ty
    #:init-expr-type-mismatch-decl-ty
    #:init-expr-type-mismatch-init-ty
@@ -94,7 +94,7 @@
    #:array-size-expr-not-int-short-ty
    #:array-size-expr-not-int-ty
    #:array-init-expr-type-mismatch
-   #:array-init-expr-type-mismatch-short-array-ty
+   #:array-init-expr-type-mismatch-array-type-id
    #:array-init-expr-type-mismatch-short-init-ty
    #:array-init-expr-type-mismatch-array-ty
    #:array-init-expr-type-mismatch-init-ty
@@ -389,20 +389,20 @@
     :reader access-field-of-non-record-var-ty)))
 
 (define-condition create-array-use-non-array-type (type-check-error)
-  ((short-ty
-    :type type:ty
-    :initarg :short-ty
-    :reader create-array-use-non-array-type-short-ty)
+  ((type-id
+    :type symbol:sym
+    :initarg :type-id
+    :reader create-array-use-non-array-type-type-id)
    (ty
     :type type:ty
     :initarg :ty
     :reader create-array-use-non-array-type-ty)))
 
 (define-condition create-record-use-non-record-type (type-check-error)
-  ((short-ty
-    :type type:ty
-    :initarg :short-ty
-    :reader create-record-use-non-record-type-short-ty)
+  ((type-id
+    :type symbol:sym
+    :initarg :type-id
+    :reader create-record-use-non-record-type-type-id)
    (ty
     :type type:ty
     :initarg :ty
@@ -415,10 +415,10 @@
     :reader call-non-function-name)))
 
 (define-condition init-expr-type-mismatch (type-check-error)
-  ((short-decl-ty
-    :type type:ty
-    :initarg :short-decl-ty
-    :reader init-expr-type-mismatch-short-decl-ty)
+  ((decl-type-id
+    :type symbol:sym
+    :initarg :decl-type-id
+    :reader init-expr-type-mismatch-decl-type-id)
    (decl-ty
     :type type:ty
     :initarg :decl-ty
@@ -443,10 +443,10 @@
     :reader array-size-expr-not-int-ty)))
 
 (define-condition array-init-expr-type-mismatch (type-check-error)
-  ((short-array-ty
-    :type type:ty
-    :initarg :short-array-ty
-    :reader array-init-expr-type-mismatch-short-array-ty)
+  ((array-type-id
+    :type symbol:sym
+    :initarg :array-type-id
+    :reader array-init-expr-type-mismatch-array-type)
    (array-ty
     :type type:ty
     :initarg :array-ty
@@ -576,16 +576,16 @@
 (def-type-check-error-constructor access-field-of-non-record
   short-var-ty var-ty)
 (def-type-check-error-constructor create-array-use-non-array-type
-  short-ty ty)
+  type-id ty)
 (def-type-check-error-constructor create-record-use-non-record-type
-  short-ty ty)
+  type-id ty)
 (def-type-check-error-constructor call-non-function name)
 (def-type-check-error-constructor init-expr-type-mismatch
-  short-decl-ty decl-ty short-init-ty init-ty)
+  decl-type-id decl-ty short-init-ty init-ty)
 (def-type-check-error-constructor array-size-expr-not-int
   short-ty ty)
 (def-type-check-error-constructor array-init-expr-type-mismatch
-  short-array-ty short-init-ty array-ty init-ty)
+  array-type-id array-ty short-init-ty init-ty)
 (def-type-check-error-constructor field-init-expr-type-mismatch
   record-type-id record-ty short-init-ty init-ty short-decl-field-ty decl-field-ty)
 (def-type-check-error-constructor function-formal-actual-type-mismatch
@@ -769,14 +769,13 @@
              (cond ((type:ty-compatible init-ty decl-ty)
                     (setf final-ty decl-ty))
                    (t
-                    (let ((short-decl-ty (type:ty-name ty-sym (type:ty-ref nil))))
-                      (init-expr-type-mismatch
-                       pos *line-map*
-                       short-decl-ty decl-ty short-init-ty init-ty
-                       "The type of the init expression is ~A, it doesn't match the declared type ~A of the variable ~A."
-                       (type:short-ty->string short-init-ty)
-                       (type:short-ty->string short-decl-ty)
-                       (symbol:sym-name name))))))))
+                    (init-expr-type-mismatch
+                     pos *line-map*
+                     ty-sym decl-ty short-init-ty init-ty
+                     "The type of the init expression is ~A, it doesn't match the declared type ~A of the variable ~A."
+                     (type:short-ty->string short-init-ty)
+                     (symbol:sym-name ty-sym)
+                     (symbol:sym-name name)))))))
        (list ty-env
              (insert-type-check-entry
               type-check-env name (type-check-entry-var final-ty short-final-ty nil)))))
@@ -1042,11 +1041,10 @@
                          "Unknown field ~A of the record." (symbol:sym-name field-sym))))
              (type-check-expr-result
               ty (type:ty-name type-id (type:ty-ref nil))))
-           (let ((short-ty (type:ty-name type-id (type:ty-ref nil))))
-             (create-record-use-non-record-type
-              pos *line-map* short-ty ty
-              "Type ~A is not a record."
-              (type:short-ty->string short-ty)))))
+           (create-record-use-non-record-type
+            pos *line-map* type-id ty
+            "Type ~A is not a record."
+            (symbol:sym-name type-id))))
        (undefined-type
         pos *line-map* type-id
         "Undefined record type: ~A." (symbol:sym-name type-id))))
@@ -1185,20 +1183,18 @@
               "The type of the size expression of the array creation expression should be int, but is ~A."
               (type:short-ty->string short-size-ty)))
            (unless (type:ty-compatible init-ty (type:actual-ty base-ty))
-             (let ((short-array-ty (type:ty-name type-id (type:ty-ref nil))))
-               (array-init-expr-type-mismatch
-                pos *line-map* short-array-ty ty short-init-ty init-ty
-                "The type of the init expression doesn't match the base type of the array type ~A, expected base type: ~A, but got: ~A."
-                (type:short-ty->string short-array-ty)
-                ;; We store base-ty of ty-array as short-ty, so the
-                ;; following is safe.
-                (type:short-ty->string base-ty)
-                (type:short-ty->string short-init-ty)))))
-         (let ((short-ty (type:ty-name type-id (type:ty-ref nil))))
-           (create-array-use-non-array-type
-            pos *line-map* short-ty ty
-            "Type ~A is not an array."
-            (type:short-ty->string short-ty))))
+             (array-init-expr-type-mismatch
+              pos *line-map* type-id ty short-init-ty init-ty
+              "The type of the init expression doesn't match the base type of the array type ~A, expected base type: ~A, but got: ~A."
+              (symbol:sym-name type-id)
+              ;; We store base-ty of ty-array as short-ty, so the
+              ;; following is safe.
+              (type:short-ty->string base-ty)
+              (type:short-ty->string short-init-ty))))
+         (create-array-use-non-array-type
+          pos *line-map* type-id ty
+          "Type ~A is not an array."
+          (symbol:sym-name type-id)))
        (type-check-expr-result
         ty
         (type:ty-name type-id (type:ty-ref nil)))))
