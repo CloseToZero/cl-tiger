@@ -98,6 +98,13 @@
    #:array-init-expr-type-mismatch-short-init-ty
    #:array-init-expr-type-mismatch-array-ty
    #:array-init-expr-type-mismatch-init-ty
+   #:field-init-expr-type-mismatch
+   #:field-init-expr-type-mismatch-record-type-id
+   #:field-init-expr-type-mismatch-record-ty
+   #:field-init-expr-type-mismatch-short-init-ty
+   #:field-init-expr-type-mismatch-init-ty
+   #:field-init-expr-type-mismatch-short-decl-field-ty
+   #:field-init-expr-type-mismatch-decl-field-ty
    #:function-formal-actual-type-mismatch
    #:function-formal-actual-type-mismatch-short-formal-ty
    #:function-formal-actual-type-mismatch-short-actual-ty
@@ -453,6 +460,32 @@
     :initarg :init-ty
     :reader array-init-expr-type-mismatch-init-ty)))
 
+(define-condition field-init-expr-type-mismatch (type-check-error)
+  ((record-type-id
+    :type symbol:sym
+    :initarg :record-type-id
+    :reader field-init-expr-type-mismatch-record-type-id)
+   (record-ty
+    :type type:ty
+    :initarg :record-ty
+    :reader field-init-expr-type-mismatch-record-ty)
+   (short-init-ty
+    :type type:ty
+    :initarg :short-init-ty
+    :reader field-init-expr-type-mismatch-short-init-ty)
+   (init-ty
+    :type type:ty
+    :initarg :init-ty
+    :reader field-init-expr-type-mismatch-init-ty)
+   (short-decl-field-ty
+    :type type:ty
+    :initarg :short-decl-field-ty
+    :reader field-init-expr-type-mismatch-short-decl-field-ty)
+   (decl-field-ty
+    :type type:ty
+    :initarg :decl-field-ty
+    :reader field-init-expr-type-mismatch-decl-field-ty)))
+
 (define-condition function-formal-actual-type-mismatch (type-check-error)
   ((short-formal-ty
     :type type:ty
@@ -553,6 +586,8 @@
   short-ty ty)
 (def-type-check-error-constructor array-init-expr-type-mismatch
   short-array-ty short-init-ty array-ty init-ty)
+(def-type-check-error-constructor field-init-expr-type-mismatch
+  record-type-id record-ty short-init-ty init-ty short-decl-field-ty decl-field-ty)
 (def-type-check-error-constructor function-formal-actual-type-mismatch
   short-formal-ty short-actual-ty formal-ty actual-ty)
 (def-type-check-error-constructor wrong-num-of-args
@@ -975,14 +1010,22 @@
                                             ;; field form: (sym expr pos)
                                             (eql (first field) decl-field-sym))
                                           fields))
-                        (trivia:let-match1 (type-check-expr-result field-ty _)
+                        (trivia:let-match1 (type-check-expr-result field-ty short-field-ty)
                             (type-check-expr ty-env type-check-env within-loop (second field))
-                          (unless (type:ty-compatible field-ty (type:actual-ty decl-field-ty))
-                            (type-check-error
-                             (third field) *line-map*
-                             "The type of the init expression of the field ~A \
-doesn't match the expected type."
-                             (symbol:sym-name decl-field-sym))))
+                          (let ((actual-decl-field-ty (type:actual-ty decl-field-ty)))
+                            (unless (type:ty-compatible field-ty actual-decl-field-ty)
+                              (field-init-expr-type-mismatch
+                               (third field) *line-map*
+                               type-id ty
+                               short-field-ty field-ty
+                               decl-field-ty actual-decl-field-ty
+                               "The type of the init expression of the field ~A of the record type ~A is ~A, it doesn't match the declared type ~A."
+                               (symbol:sym-name decl-field-sym)
+                               (symbol:sym-name type-id)
+                               (type:short-ty->string short-field-ty)
+                               ;; We store decl-field-ty of ty-record as short-ty, so the
+                               ;; following is safe.
+                               (type:short-ty->string decl-field-ty)))))
                         (type-check-error
                          pos *line-map*
                          "Missing the init expression of the field: ~A."

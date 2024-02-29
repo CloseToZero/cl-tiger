@@ -391,6 +391,15 @@
     :dont-generate-project t)
    'type-check:test-of-if-not-int))
 
+(parachute:define-test field-init-expr-type-mismatch
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "field-init-expr-type-mismatch.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:field-init-expr-type-mismatch))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger

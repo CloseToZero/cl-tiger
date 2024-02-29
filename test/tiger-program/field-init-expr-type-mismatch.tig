@@ -1,0 +1,6 @@
+let
+  type rectype = { name: string, age: int }
+  var rec := rectype { name = 123, age = 123 }
+in
+  rec.name
+end
