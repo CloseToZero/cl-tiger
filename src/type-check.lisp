@@ -323,14 +323,14 @@
     :type type:ty
     :initarg :short-decl-ty
     :reader return-value-type-mismatch-short-decl-ty)
-   (short-actual-ty
-    :type type:ty
-    :initarg :short-actual-ty
-    :reader return-value-type-mismatch-short-actual-ty)
    (decl-ty
     :type type:ty
     :initarg :decl-ty
     :reader return-value-type-mismatch-decl-ty)
+   (short-actual-ty
+    :type type:ty
+    :initarg :short-actual-ty
+    :reader return-value-type-mismatch-short-actual-ty)
    (actual-ty
     :type type:ty
     :initarg :actual-ty
