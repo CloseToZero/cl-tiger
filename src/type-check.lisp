@@ -146,6 +146,11 @@
    #:missing-field-init-expr-record-ty
    #:missing-field-init-expr-missing-field-type-id
 
+   #:init-unknown-field
+   #:init-unknown-field-record-type-id
+   #:init-unknown-field-record-ty
+   #:init-unknown-field-unknwon-field-type-id
+
    #:function-formal-actual-type-mismatch
    #:function-formal-actual-type-mismatch-short-formal-ty
    #:function-formal-actual-type-mismatch-formal-ty
@@ -540,6 +545,20 @@
     :initarg :missing-field-type-id
     :reader missing-field-init-expr-missing-field-type-id)))
 
+(define-condition init-unknown-field (type-check-error)
+  ((record-type-id
+    :type symbol:sym
+    :initarg :record-type-id
+    :reader init-unknown-field-record-type-id)
+   (record-ty
+    :type type:ty
+    :initarg :record-ty
+    :reader init-unknown-field-record-ty)
+   (unknown-field-type-id
+    :type symbol:sym
+    :initarg :unknown-field-type-id
+    :reader init-unknown-field-unknwon-field-type-id)))
+
 (define-condition function-formal-actual-type-mismatch (type-check-error)
   ((short-formal-ty
     :type type:ty
@@ -644,6 +663,8 @@
   record-type-id record-ty short-init-ty init-ty short-decl-field-ty decl-field-ty)
 (def-type-check-error-constructor missing-field-init-expr
   record-type-id record-ty missing-field-type-id)
+(def-type-check-error-constructor init-unknown-field
+  record-type-id record-ty unknown-field-type-id)
 (def-type-check-error-constructor function-formal-actual-type-mismatch
   short-formal-ty formal-ty short-actual-ty actual-ty)
 (def-type-check-error-constructor wrong-num-of-args
@@ -1093,9 +1114,11 @@
                                          ;; decl-field form: (sym ty).
                                          (eql (first decl-field) field-sym))
                                        decl-fields)
-                        (type-check-error
-                         pos *line-map*
-                         "Unknown field ~A of the record." (symbol:sym-name field-sym))))
+                        (init-unknown-field
+                         pos *line-map* type-id ty field-sym
+                         "Init an unknown field ~A of the record type ~A."
+                         (symbol:sym-name field-sym)
+                         (symbol:sym-name type-id))))
              (type-check-expr-result
               ty (type:ty-name type-id (type:ty-ref nil))))
            (create-record-use-non-record-type
