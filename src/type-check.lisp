@@ -174,14 +174,14 @@
     :type type:ty
     :initarg :short-then-ty
     :reader then-else-types-of-if-mismatch-short-then-ty)
-   (short-else-ty
-    :type type:ty
-    :initarg :short-else-ty
-    :reader then-else-types-of-if-mismatch-short-else-ty)
    (then-ty
     :type type:ty
     :initarg :then-ty
     :reader then-else-types-of-if-mismatch-then-ty)
+   (short-else-ty
+    :type type:ty
+    :initarg :short-else-ty
+    :reader then-else-types-of-if-mismatch-short-else-ty)
    (else-ty
     :type type:ty
     :initarg :else-ty
@@ -262,14 +262,14 @@
     :type type:ty
     :initarg :short-left-ty
     :reader unsupported-operation-short-left-ty)
-   (short-right-ty
-    :type type:ty
-    :initarg :short-right-ty
-    :reader unsupported-operation-short-right-ty)
    (left-ty
     :type type:ty
     :initarg :left-ty
     :reader unsupported-operation-left-ty)
+   (short-right-ty
+    :type type:ty
+    :initarg :short-right-ty
+    :reader unsupported-operation-short-right-ty)
    (right-ty
     :type type:ty
     :initarg :right-ty
@@ -355,14 +355,14 @@
     :type type:ty
     :initarg :short-var-ty
     :reader type-mismatch-of-assignment-short-var-ty)
-   (short-expr-ty
-    :type type:ty
-    :initarg :short-expr-ty
-    :reader type-mismatch-of-assignment-short-expr-ty)
    (var-ty
     :type type:ty
     :initarg :var-ty
     :reader type-mismatch-of-assignment-var-ty)
+   (short-expr-ty
+    :type type:ty
+    :initarg :short-expr-ty
+    :reader type-mismatch-of-assignment-short-expr-ty)
    (expr-ty
     :type type:ty
     :initarg :expr-ty
@@ -419,14 +419,14 @@
     :type type:ty
     :initarg :short-decl-ty
     :reader init-expr-type-mismatch-short-decl-ty)
-   (short-init-ty
-    :type type:ty
-    :initarg :short-init-ty
-    :reader init-expr-type-mismatch-short-init-ty)
    (decl-ty
     :type type:ty
     :initarg :decl-ty
     :reader init-expr-type-mismatch-decl-ty)
+   (short-init-ty
+    :type type:ty
+    :initarg :short-init-ty
+    :reader init-expr-type-mismatch-short-init-ty)
    (init-ty
     :type type:ty
     :initarg :init-ty
@@ -447,14 +447,14 @@
     :type type:ty
     :initarg :short-array-ty
     :reader array-init-expr-type-mismatch-short-array-ty)
-   (short-init-ty
-    :type type:ty
-    :initarg :short-init-ty
-    :reader array-init-expr-type-mismatch-short-init-ty)
    (array-ty
     :type type:ty
     :initarg :array-ty
     :reader array-init-expr-type-mismatch-array-ty)
+   (short-init-ty
+    :type type:ty
+    :initarg :short-init-ty
+    :reader array-init-expr-type-mismatch-short-init-ty)
    (init-ty
     :type type:ty
     :initarg :init-ty
@@ -491,14 +491,14 @@
     :type type:ty
     :initarg :short-formal-ty
     :reader function-formal-actual-type-mismatch-short-formal-ty)
-   (short-actual-ty
-    :type type:ty
-    :initarg :short-actual-ty
-    :reader function-formal-actual-type-mismatch-short-actual-ty)
    (formal-ty
     :type type:ty
     :initarg :formal-ty
     :reader function-formal-actual-type-mismatch-formal-ty)
+   (short-actual-ty
+    :type type:ty
+    :initarg :short-actual-ty
+    :reader function-formal-actual-type-mismatch-short-actual-ty)
    (actual-ty
     :type type:ty
     :initarg :actual-ty
@@ -548,7 +548,7 @@
 (def-type-check-error-constructor circular-dep)
 (def-type-check-error-constructor test-of-if-not-int short-ty ty)
 (def-type-check-error-constructor then-else-types-of-if-mismatch
-  short-then-ty short-else-ty then-ty else-ty)
+  short-then-ty then-ty short-else-ty else-ty)
 (def-type-check-error-constructor then-of-if-then-not-unit short-ty ty)
 (def-type-check-error-constructor test-of-while-not-int short-ty ty)
 (def-type-check-error-constructor body-of-while-not-unit short-ty ty)
@@ -557,7 +557,7 @@
 (def-type-check-error-constructor for-high-not-int short-ty ty)
 (def-type-check-error-constructor assign-index-var var)
 (def-type-check-error-constructor unsupported-operation
-  op short-left-ty short-right-ty left-ty right-ty)
+  op short-left-ty left-ty short-right-ty right-ty)
 (def-type-check-error-constructor undefined-type type-id)
 (def-type-check-error-constructor undefined-field-type type-id field-name)
 (def-type-check-error-constructor undefined-array-base-type type-id)
@@ -566,11 +566,11 @@
 (def-type-check-error-constructor undefined-var name)
 (def-type-check-error-constructor undefined-fun name)
 (def-type-check-error-constructor return-value-type-mismatch
-  short-decl-ty short-actual-ty decl-ty actual-ty)
+  short-decl-ty decl-ty short-actual-ty actual-ty)
 (def-type-check-error-constructor reference-unknown-record-field
   short-record-ty record-ty unknown-field)
 (def-type-check-error-constructor type-mismatch-of-assignment
-  short-var-ty short-expr-ty var-ty expr-ty)
+  short-var-ty var-ty short-expr-ty expr-ty)
 (def-type-check-error-constructor subscript-non-array
   short-var-ty var-ty)
 (def-type-check-error-constructor access-field-of-non-record
@@ -581,7 +581,7 @@
   short-ty ty)
 (def-type-check-error-constructor call-non-function name)
 (def-type-check-error-constructor init-expr-type-mismatch
-  short-decl-ty short-init-ty decl-ty init-ty)
+  short-decl-ty decl-ty short-init-ty init-ty)
 (def-type-check-error-constructor array-size-expr-not-int
   short-ty ty)
 (def-type-check-error-constructor array-init-expr-type-mismatch
@@ -589,7 +589,7 @@
 (def-type-check-error-constructor field-init-expr-type-mismatch
   record-type-id record-ty short-init-ty init-ty short-decl-field-ty decl-field-ty)
 (def-type-check-error-constructor function-formal-actual-type-mismatch
-  short-formal-ty short-actual-ty formal-ty actual-ty)
+  short-formal-ty formal-ty short-actual-ty actual-ty)
 (def-type-check-error-constructor wrong-num-of-args
   fun expected-num-of-args actual-num-of-args)
 (def-type-check-error-constructor duplicate-names-in-consecutive-type-decls
@@ -772,7 +772,7 @@
                     (let ((short-decl-ty (type:ty-name ty-sym (type:ty-ref nil))))
                       (init-expr-type-mismatch
                        pos *line-map*
-                       short-decl-ty short-init-ty decl-ty init-ty
+                       short-decl-ty decl-ty short-init-ty init-ty
                        "The type of the init expression is ~A, it doesn't match the declared type ~A of the variable ~A."
                        (type:short-ty->string short-init-ty)
                        (type:short-ty->string short-decl-ty)
@@ -900,7 +900,7 @@
                    (unless (type:ty-compatible (type:actual-ty result-ty) body-ty)
                      (return-value-type-mismatch
                       (ast:decl-function-pos decl-function)
-                      *line-map* short-result-ty short-body-ty result-ty body-ty
+                      *line-map* short-result-ty result-ty short-body-ty body-ty
                       "Function ~A declared to return a value with type ~A, but actually return a value with type ~A."
                       (symbol:sym-name (ast:decl-function-name decl-function))
                       (type:short-ty->string short-result-ty)
@@ -949,7 +949,7 @@
                 do (trivia:let-match1 (type-check-expr-result arg-ty short-arg-ty) type-check-arg-result
                      (unless (type:ty-compatible (type:actual-ty formal-ty) arg-ty)
                        (function-formal-actual-type-mismatch
-                        pos *line-map* short-formal-ty short-arg-ty formal-ty arg-ty
+                        pos *line-map* short-formal-ty formal-ty short-arg-ty arg-ty
                         "Function ~A ~Ath arg expect type ~A, but got a arg of type ~A."
                         (symbol:sym-name fun) i formal-ty arg-ty))))
           (type-check-expr-result (type:actual-ty result-ty) short-result-ty))
@@ -977,7 +977,7 @@
                      t)
                     (_ nil))
             (unsupported-operation
-             pos *line-map* op short-left-ty short-right-ty left-ty right-ty
+             pos *line-map* op short-left-ty left-ty short-right-ty right-ty
              "Unsupported operation ~A on strings."
              (ast:op->string op)))
           (type-check-expr-result ty-int ty-int))
@@ -989,7 +989,7 @@
                      (_ nil))
                    (type:ty-compatible left-ty right-ty))
             (unsupported-operation
-             pos *line-map* op short-left-ty short-right-ty left-ty right-ty
+             pos *line-map* op short-left-ty left-ty short-right-ty right-ty
              "Unsupported operation (type ~A) ~A (type ~A)."
              (type:short-ty->string short-left-ty)
              (ast:op->string op)
@@ -1070,7 +1070,7 @@
           "Cannot assign an index variable."))
        (unless (type:ty-compatible var-ty expr-ty)
          (type-mismatch-of-assignment
-          pos *line-map* short-var-ty short-expr-ty var-ty expr-ty
+          pos *line-map* short-var-ty var-ty short-expr-ty expr-ty
           "Type mismatch of the assignment, expect the type: ~A, but given a value of the type: ~A."
           (type:short-ty->string short-var-ty)
           (type:short-ty->string short-expr-ty)))
@@ -1097,8 +1097,8 @@
            (unless (type:ty-compatible then-ty else-ty)
              (then-else-types-of-if-mismatch
               pos *line-map*
-              short-then-ty short-else-ty
-              then-ty else-ty
+              short-then-ty then-ty
+              short-else-ty else-ty
               "The types of then and else branchs of an if expression should be the same, the type of then: ~A, the type of else: ~A."
               (type:short-ty->string short-then-ty)
               (type:short-ty->string short-else-ty)))
@@ -1187,7 +1187,7 @@
            (unless (type:ty-compatible init-ty (type:actual-ty base-ty))
              (let ((short-array-ty (type:ty-name type-id (type:ty-ref nil))))
                (array-init-expr-type-mismatch
-                pos *line-map* short-array-ty short-init-ty ty init-ty
+                pos *line-map* short-array-ty ty short-init-ty init-ty
                 "The type of the init expression doesn't match the base type of the array type ~A, expected base type: ~A, but got: ~A."
                 (type:short-ty->string short-array-ty)
                 ;; We store base-ty of ty-array as short-ty, so the
