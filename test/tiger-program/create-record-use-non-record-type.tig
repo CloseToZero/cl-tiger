@@ -1,0 +1,6 @@
+let
+  type integer = int
+  var rec := integer { name = "Name" }
+in
+ 8
+end

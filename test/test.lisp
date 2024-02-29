@@ -319,6 +319,15 @@
     :dont-generate-project t)
    'type-check:create-array-use-non-array-type))
 
+(parachute:define-test create-record-use-non-record-type
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "create-record-use-non-record-type.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:create-record-use-non-record-type))
+
 (parachute:define-test array-size-expr-not-int
   (parachute:fail
    (cl-tiger:compile-tiger

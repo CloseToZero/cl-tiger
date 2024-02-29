@@ -80,6 +80,9 @@
    #:create-array-use-non-array-type
    #:create-array-use-non-array-type-short-ty
    #:create-array-use-non-array-type-ty
+   #:create-record-use-non-record-type
+   #:create-record-use-non-record-type-short-ty
+   #:create-record-use-non-record-type-ty
    #:call-non-function
    #:call-non-function-name
    #:init-expr-type-mismatch
@@ -388,6 +391,16 @@
     :initarg :ty
     :reader create-array-use-non-array-type-ty)))
 
+(define-condition create-record-use-non-record-type (type-check-error)
+  ((short-ty
+    :type type:ty
+    :initarg :short-ty
+    :reader create-record-use-non-record-type-short-ty)
+   (ty
+    :type type:ty
+    :initarg :ty
+    :reader create-record-use-non-record-type-ty)))
+
 (define-condition call-non-function (type-check-error)
   ((name
     :type symbol:sym
@@ -530,6 +543,8 @@
 (def-type-check-error-constructor access-field-of-non-record
   short-var-ty var-ty)
 (def-type-check-error-constructor create-array-use-non-array-type
+  short-ty ty)
+(def-type-check-error-constructor create-record-use-non-record-type
   short-ty ty)
 (def-type-check-error-constructor call-non-function name)
 (def-type-check-error-constructor init-expr-type-mismatch
@@ -984,9 +999,11 @@ doesn't match the expected type."
                          "Unknown field ~A of the record." (symbol:sym-name field-sym))))
              (type-check-expr-result
               ty (type:ty-name type-id (type:ty-ref nil))))
-           (type-check-error
-            pos *line-map*
-            "Type ~A is not a record." (symbol:sym-name type-id))))
+           (let ((short-ty (type:ty-name type-id (type:ty-ref nil))))
+             (create-record-use-non-record-type
+              pos *line-map* short-ty ty
+              "Type ~A is not a record."
+              (type:short-ty->string short-ty)))))
        (undefined-type
         pos *line-map* type-id
         "Undefined record type: ~A." (symbol:sym-name type-id))))
