@@ -337,6 +337,15 @@
     :dont-generate-project t)
    'type-check:for-low-not-int))
 
+(parachute:define-test unsupported-operation-on-strings
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "unsupported-operation-on-strings.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:unsupported-operation))
+
 (parachute:define-test undefined-array-base-type
   (parachute:fail
       (cl-tiger:compile-tiger
