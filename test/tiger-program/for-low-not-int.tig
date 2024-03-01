@@ -1,0 +1,2 @@
+for i := "abc" to 10 do
+  print(i)

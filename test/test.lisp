@@ -328,6 +328,15 @@
     :dont-generate-project t)
    'type-check:body-of-for-not-unit))
 
+(parachute:define-test for-low-not-int
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "for-low-not-int.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:for-low-not-int))
+
 (parachute:define-test undefined-array-base-type
   (parachute:fail
       (cl-tiger:compile-tiger
