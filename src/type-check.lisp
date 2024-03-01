@@ -114,6 +114,9 @@
    #:create-record-use-non-record-type-type-id
    #:create-record-use-non-record-type-ty
 
+   #:reference-function-as-variable
+   #:reference-function-as-variable-name
+
    #:call-non-function
    #:call-non-function-name
 
@@ -457,6 +460,12 @@
     :initarg :ty
     :reader create-record-use-non-record-type-ty)))
 
+(define-condition reference-function-as-variable (type-check-error)
+  ((name
+    :type symbol:sym
+    :initarg :name
+    :reader reference-function-as-variable-name)))
+
 (define-condition call-non-function (type-check-error)
   ((name
     :type symbol:sym
@@ -666,6 +675,8 @@
   type-id ty)
 (def-type-check-error-constructor create-record-use-non-record-type
   type-id ty)
+(def-type-check-error-constructor reference-function-as-variable
+  name)
 (def-type-check-error-constructor call-non-function name)
 (def-type-check-error-constructor init-expr-type-mismatch
   decl-type-id decl-ty short-init-ty init-ty)
@@ -790,9 +801,10 @@
          ((type-check-entry-var ty short-ty is-index-var)
           (type-check-var-result (type:actual-ty ty) short-ty is-index-var))
          ((type-check-entry-fun _ _ _ _)
-          (type-check-error
-           pos *line-map*
-           "var-simple cannot reference to a function.")))
+          (reference-function-as-variable
+           pos *line-map* sym
+           "You cannot reference the function ~A as a variable."
+           (symbol:sym-name sym))))
        (undefined-var
         pos *line-map* sym
         "Undefined variable: ~A." (symbol:sym-name sym))))

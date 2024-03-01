@@ -373,6 +373,15 @@
     :dont-generate-project t)
    'type-check:undefined-fun-result-type))
 
+(parachute:define-test reference-function-as-variable
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "reference-function-as-variable.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:reference-function-as-variable))
+
 (parachute:define-test call-non-function
   (parachute:fail
    (cl-tiger:compile-tiger

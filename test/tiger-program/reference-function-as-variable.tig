@@ -1,0 +1,5 @@
+let
+  function abc(): int = 3
+in
+  abc * 3
+end
