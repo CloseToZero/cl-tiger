@@ -337,14 +337,14 @@
     :dont-generate-project t)
    'type-check:for-low-not-int))
 
-(parachute:define-test unsupported-operation-on-strings
+(parachute:define-test unsupported-op-on-strings
   (parachute:fail
    (cl-tiger:compile-tiger
-    (tiger-source-path "unsupported-operation-on-strings.tig")
+    (tiger-source-path "unsupported-op-on-strings.tig")
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:unsupported-operation))
+   'type-check:unsupported-op))
 
 (parachute:define-test undefined-array-base-type
   (parachute:fail
@@ -391,23 +391,23 @@
     :dont-generate-project t)
    'type-check:create-record-use-non-record-type))
 
-(parachute:define-test reference-function-as-variable
+(parachute:define-test reference-fun-as-var
   (parachute:fail
    (cl-tiger:compile-tiger
-    (tiger-source-path "reference-function-as-variable.tig")
+    (tiger-source-path "reference-fun-as-var.tig")
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:reference-function-as-variable))
+   'type-check:reference-fun-as-var))
 
-(parachute:define-test call-non-function
+(parachute:define-test call-non-fun
   (parachute:fail
    (cl-tiger:compile-tiger
-    (tiger-source-path "call-non-function.tig")
+    (tiger-source-path "call-non-fun.tig")
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:call-non-function))
+   'type-check:call-non-fun))
 
 (parachute:define-test array-size-expr-not-int
   (parachute:fail
@@ -570,7 +570,7 @@
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
        :dont-generate-project t)
-      type-check:unsupported-operation))
+      type-check:unsupported-op))
 
 (parachute:define-test book-test-14
   (parachute:fail
@@ -579,7 +579,7 @@
        nil
        (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
        :dont-generate-project t)
-      'type-check:unsupported-operation))
+      'type-check:unsupported-op))
 
 (parachute:define-test book-test-15
   (parachute:fail
@@ -638,7 +638,7 @@
 (parachute:define-test book-test-21
   (parachute:finish
    (expect-type-check-errors
-       '(type-check:unsupported-operation type-check:return-value-type-mismatch)
+       '(type-check:unsupported-op type-check:return-value-type-mismatch)
        t
      (cl-tiger:compile-tiger
       (tiger-book-test-source-path "test-21.tig")
@@ -689,7 +689,7 @@
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:unsupported-operation))
+   'type-check:unsupported-op))
 
 (parachute:define-test book-test-27
   (parachute:is
@@ -841,7 +841,7 @@
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:unsupported-operation))
+   'type-check:unsupported-op))
 
 (parachute:define-test book-test-44
   (parachute:finish

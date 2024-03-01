@@ -53,12 +53,12 @@
    #:assign-index-var
    #:assign-index-var-var
 
-   #:unsupported-operation
-   #:unsupported-operation-op
-   #:unsupported-operation-short-left-ty
-   #:unsupported-operation-left-ty
-   #:unsupported-operation-short-right-ty
-   #:unsupported-operation-right-ty
+   #:unsupported-op
+   #:unsupported-op-op
+   #:unsupported-op-short-left-ty
+   #:unsupported-op-left-ty
+   #:unsupported-op-short-right-ty
+   #:unsupported-op-right-ty
 
    #:undefined-type
    #:undefined-type-type-id
@@ -114,11 +114,11 @@
    #:create-record-use-non-record-type-type-id
    #:create-record-use-non-record-type-ty
 
-   #:reference-function-as-variable
-   #:reference-function-as-variable-name
+   #:reference-fun-as-var
+   #:reference-fun-as-var-name
 
-   #:call-non-function
-   #:call-non-function-name
+   #:call-non-fun
+   #:call-non-fun-name
 
    #:init-expr-type-mismatch
    #:init-expr-type-mismatch-type-id
@@ -305,27 +305,27 @@
     :initarg :var
     :reader assign-index-var-var)))
 
-(define-condition unsupported-operation (type-check-error)
+(define-condition unsupported-op (type-check-error)
   ((op
     :type op
     :initarg :op
-    :reader unsupported-operation-op)
+    :reader unsupported-op-op)
    (short-left-ty
     :type type:ty
     :initarg :short-left-ty
-    :reader unsupported-operation-short-left-ty)
+    :reader unsupported-op-short-left-ty)
    (left-ty
     :type type:ty
     :initarg :left-ty
-    :reader unsupported-operation-left-ty)
+    :reader unsupported-op-left-ty)
    (short-right-ty
     :type type:ty
     :initarg :short-right-ty
-    :reader unsupported-operation-short-right-ty)
+    :reader unsupported-op-short-right-ty)
    (right-ty
     :type type:ty
     :initarg :right-ty
-    :reader unsupported-operation-right-ty)))
+    :reader unsupported-op-right-ty)))
 
 (define-condition undefined-type (type-check-error)
   ((type-id
@@ -460,17 +460,17 @@
     :initarg :ty
     :reader create-record-use-non-record-type-ty)))
 
-(define-condition reference-function-as-variable (type-check-error)
+(define-condition reference-fun-as-var (type-check-error)
   ((name
     :type symbol:sym
     :initarg :name
-    :reader reference-function-as-variable-name)))
+    :reader reference-fun-as-var-name)))
 
-(define-condition call-non-function (type-check-error)
+(define-condition call-non-fun (type-check-error)
   ((name
     :type symbol:sym
     :initarg :name
-    :reader call-non-function-name)))
+    :reader call-non-fun-name)))
 
 (define-condition init-expr-type-mismatch (type-check-error)
   ((decl-type-id
@@ -652,7 +652,7 @@
 (def-type-check-error-constructor for-low-not-int short-ty ty)
 (def-type-check-error-constructor for-high-not-int short-ty ty)
 (def-type-check-error-constructor assign-index-var var)
-(def-type-check-error-constructor unsupported-operation
+(def-type-check-error-constructor unsupported-op
   op short-left-ty left-ty short-right-ty right-ty)
 (def-type-check-error-constructor undefined-type type-id)
 (def-type-check-error-constructor undefined-field-type type-id field-name)
@@ -675,9 +675,9 @@
   type-id ty)
 (def-type-check-error-constructor create-record-use-non-record-type
   type-id ty)
-(def-type-check-error-constructor reference-function-as-variable
+(def-type-check-error-constructor reference-fun-as-var
   name)
-(def-type-check-error-constructor call-non-function name)
+(def-type-check-error-constructor call-non-fun name)
 (def-type-check-error-constructor init-expr-type-mismatch
   decl-type-id decl-ty short-init-ty init-ty)
 (def-type-check-error-constructor array-size-expr-not-int
@@ -801,7 +801,7 @@
          ((type-check-entry-var ty short-ty is-index-var)
           (type-check-var-result (type:actual-ty ty) short-ty is-index-var))
          ((type-check-entry-fun _ _ _ _)
-          (reference-function-as-variable
+          (reference-fun-as-var
            pos *line-map* sym
            "You cannot reference the function ~A as a variable."
            (symbol:sym-name sym))))
@@ -1059,7 +1059,7 @@
                         (symbol:sym-name fun) i formal-ty arg-ty))))
           (type-check-expr-result (type:actual-ty result-ty) short-result-ty))
          ((type-check-entry-var _ _ _)
-          (call-non-function
+          (call-non-fun
            pos *line-map* fun
            "You can only call a function, but ~A is a variable."
            (symbol:sym-name fun))))
@@ -1081,7 +1081,7 @@
                     ((or ast:op-eq ast:op-neq ast:op-lt ast:op-le ast:op-gt ast:op-ge)
                      t)
                     (_ nil))
-            (unsupported-operation
+            (unsupported-op
              pos *line-map* op short-left-ty left-ty short-right-ty right-ty
              "Unsupported operation ~A on strings."
              (ast:op->string op)))
@@ -1093,7 +1093,7 @@
                       t)
                      (_ nil))
                    (type:ty-compatible left-ty right-ty))
-            (unsupported-operation
+            (unsupported-op
              pos *line-map* op short-left-ty left-ty short-right-ty right-ty
              "Unsupported operation (type ~A) ~A (type ~A)."
              (type:short-ty->string short-left-ty)
