@@ -225,6 +225,15 @@
        :dont-generate-project t)
       'type-check:break-not-within-loop))
 
+(parachute:define-test break-cross-funs
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-source-path "break-cross-funs.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      'type-check:break-not-within-loop))
+
 (parachute:define-test circular-dep
   (parachute:fail
       (cl-tiger:compile-tiger
