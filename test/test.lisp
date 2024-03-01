@@ -187,24 +187,6 @@
                  nil))))
       result-env))))
 
-(parachute:define-test break-not-within-loop
-  (parachute:fail
-      (cl-tiger:compile-tiger
-       (tiger-source-path "break-not-within-loop.tig")
-       nil
-       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :dont-generate-project t)
-      'type-check:break-not-within-loop))
-
-(parachute:define-test circular-dep
-  (parachute:fail
-      (cl-tiger:compile-tiger
-       (tiger-source-path "circular-dep.tig")
-       nil
-       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-       :dont-generate-project t)
-      'type-check:circular-dep))
-
 (parachute:define-test queens
   (parachute:is
    string=
@@ -233,6 +215,24 @@
      (build-and-run-project
       project-dir *target-os*
       :input-string "-45 3 896 3748 3784 7823743; -7897 -34 637 789 987 7632 7667 9767;"))))
+
+(parachute:define-test break-not-within-loop
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-source-path "break-not-within-loop.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      'type-check:break-not-within-loop))
+
+(parachute:define-test circular-dep
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-source-path "circular-dep.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      'type-check:circular-dep))
 
 (parachute:define-test lots-of-args
   (parachute:is
@@ -301,41 +301,23 @@
                           (continue)))))
        (build-and-run-project project-dir *target-os*)))))
 
-(parachute:define-test undefined-array-base-type
+(parachute:define-test test-of-if-not-int
   (parachute:fail
    (cl-tiger:compile-tiger
-    (tiger-source-path "undefined-array-base-type.tig")
+    (tiger-source-path "test-of-if-not-int.tig")
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:undefined-array-base-type))
+   'type-check:test-of-if-not-int))
 
-(parachute:define-test create-array-use-non-array-type
+(parachute:define-test test-of-while-not-int
   (parachute:fail
    (cl-tiger:compile-tiger
-    (tiger-source-path "create-array-use-non-array-type.tig")
+    (tiger-source-path "test-of-while-not-int.tig")
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:create-array-use-non-array-type))
-
-(parachute:define-test create-record-use-non-record-type
-  (parachute:fail
-   (cl-tiger:compile-tiger
-    (tiger-source-path "create-record-use-non-record-type.tig")
-    nil
-    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-    :dont-generate-project t)
-   'type-check:create-record-use-non-record-type))
-
-(parachute:define-test array-size-expr-not-int
-  (parachute:fail
-   (cl-tiger:compile-tiger
-    (tiger-source-path "array-size-expr-not-int.tig")
-    nil
-    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-    :dont-generate-project t)
-   'type-check:array-size-expr-not-int))
+   'type-check:test-of-while-not-int))
 
 (parachute:define-test body-of-for-not-unit
   (parachute:fail
@@ -346,14 +328,14 @@
     :dont-generate-project t)
    'type-check:body-of-for-not-unit))
 
-(parachute:define-test test-of-while-not-int
+(parachute:define-test undefined-array-base-type
   (parachute:fail
-   (cl-tiger:compile-tiger
-    (tiger-source-path "test-of-while-not-int.tig")
-    nil
-    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-    :dont-generate-project t)
-   'type-check:test-of-while-not-int))
+      (cl-tiger:compile-tiger
+       (tiger-source-path "undefined-array-base-type.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      'type-check:undefined-array-base-type))
 
 (parachute:define-test undefined-fun-formal-type
   (parachute:fail
@@ -373,6 +355,24 @@
     :dont-generate-project t)
    'type-check:undefined-fun-result-type))
 
+(parachute:define-test create-array-use-non-array-type
+  (parachute:fail
+      (cl-tiger:compile-tiger
+       (tiger-source-path "create-array-use-non-array-type.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      'type-check:create-array-use-non-array-type))
+
+(parachute:define-test create-record-use-non-record-type
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "create-record-use-non-record-type.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:create-record-use-non-record-type))
+
 (parachute:define-test reference-function-as-variable
   (parachute:fail
    (cl-tiger:compile-tiger
@@ -391,23 +391,32 @@
     :dont-generate-project t)
    'type-check:call-non-function))
 
-(parachute:define-test test-of-if-not-int
+(parachute:define-test array-size-expr-not-int
   (parachute:fail
    (cl-tiger:compile-tiger
-    (tiger-source-path "test-of-if-not-int.tig")
+    (tiger-source-path "array-size-expr-not-int.tig")
     nil
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
-   'type-check:test-of-if-not-int))
+   'type-check:array-size-expr-not-int))
+
+(parachute:define-test array-subscript-expr-not-int
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "array-subscript-expr-not-int.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:array-subscript-expr-not-int))
 
 (parachute:define-test field-init-expr-type-mismatch
   (parachute:fail
-   (cl-tiger:compile-tiger
-    (tiger-source-path "field-init-expr-type-mismatch.tig")
-    nil
-    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-    :dont-generate-project t)
-   'type-check:field-init-expr-type-mismatch))
+      (cl-tiger:compile-tiger
+       (tiger-source-path "field-init-expr-type-mismatch.tig")
+       nil
+       (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+       :dont-generate-project t)
+      'type-check:field-init-expr-type-mismatch))
 
 (parachute:define-test missing-field-init-expr
   (parachute:fail
@@ -426,15 +435,6 @@
     (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
     :dont-generate-project t)
    'type-check:init-unknown-field))
-
-(parachute:define-test array-subscript-expr-not-int
-  (parachute:fail
-   (cl-tiger:compile-tiger
-    (tiger-source-path "array-subscript-expr-not-int.tig")
-    nil
-    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
-    :dont-generate-project t)
-   'type-check:array-subscript-expr-not-int))
 
 (parachute:define-test book-test-01
   (parachute:finish
