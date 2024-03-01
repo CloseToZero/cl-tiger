@@ -418,6 +418,15 @@
     :dont-generate-project t)
    'type-check:init-unknown-field))
 
+(parachute:define-test array-subscript-expr-not-int
+  (parachute:fail
+   (cl-tiger:compile-tiger
+    (tiger-source-path "array-subscript-expr-not-int.tig")
+    nil
+    (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+    :dont-generate-project t)
+   'type-check:array-subscript-expr-not-int))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger

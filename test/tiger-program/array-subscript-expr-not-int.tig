@@ -1,0 +1,6 @@
+let
+  type intArray = array of int
+  var arr := intArray[8] of 0
+in
+  arr["abc"]
+end

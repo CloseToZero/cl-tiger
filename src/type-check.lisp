@@ -133,6 +133,10 @@
    #:array-init-expr-type-mismatch-short-init-ty
    #:array-init-expr-type-mismatch-init-ty
 
+   #:array-subscript-expr-not-int
+   #:array-subscript-expr-not-int-short-ty
+   #:array-subscript-expr-not-int-ty
+
    #:field-init-expr-type-mismatch
    #:field-init-expr-type-mismatch-record-type-id
    #:field-init-expr-type-mismatch-record-ty
@@ -505,6 +509,16 @@
     :initarg :init-ty
     :reader array-init-expr-type-mismatch-init-ty)))
 
+(define-condition array-subscript-expr-not-int (type-check-error)
+  ((short-ty
+    :type type:ty
+    :initarg :short-ty
+    :reader array-subscript-expr-not-int-short-ty)
+   (ty
+    :type type:ty
+    :initarg :ty
+    :reader array-subscript-expr-not-int-ty)))
+
 (define-condition field-init-expr-type-mismatch (type-check-error)
   ((record-type-id
     :type symbol:sym
@@ -659,6 +673,8 @@
   short-ty ty)
 (def-type-check-error-constructor array-init-expr-type-mismatch
   array-type-id array-ty short-init-ty init-ty)
+(def-type-check-error-constructor array-subscript-expr-not-int
+  short-ty ty)
 (def-type-check-error-constructor field-init-expr-type-mismatch
   record-type-id record-ty short-init-ty init-ty short-decl-field-ty decl-field-ty)
 (def-type-check-error-constructor missing-field-init-expr
@@ -816,12 +832,13 @@
                  "You can only subscript an array, but you subscript a value of the type: ~A."
                  (type:short-ty->string short-ty)))))
        (trivia:let-match1
-           (type-check-expr-result index-ty _)
+           (type-check-expr-result index-ty short-index-ty)
            (type-check-expr ty-env type-check-env within-loop expr)
          (unless (type:ty-compatible index-ty (type:get-ty type:*base-ty-env* (symbol:get-sym "int")))
-           (type-check-error
-            pos *line-map*
-            "The type of the subscript expression of an array should be int.")))))))
+           (array-subscript-expr-not-int
+            pos *line-map* short-index-ty index-ty
+            "The type of the subscript expression of an array should be int, but is ~A."
+            (type:short-ty->string short-index-ty))))))))
 
 (defun type-check-decl (ty-env type-check-env within-loop decl)
   (serapeum:match-of ast:decl decl
