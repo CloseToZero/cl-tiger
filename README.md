@@ -32,6 +32,7 @@ x86-64 architecture on Windows, Linux and Mac.
   a valid assembly source file, combine the assembly source file with the runtime C source
   to generate a CMake project, then user can use CMake to generate a native
   project and compile the native project to an executable: see `build.lisp` and `build-x86-64.lisp`.
+- Runtime array bound checking and nil record field access checking: see `translate.lisp`.
 
 ## TODOs
 
