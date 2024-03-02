@@ -26,7 +26,7 @@ x86-64 architecture on Windows, Linux and Mac.
   see `instr-select.lisp` and `instr-select-x86-64.lisp`.
 - Flow graph construction: see `flow-graph.lisp`.
 - Liveness analysis: see `liveness.lisp`.
-- Register allocation with spilling and coalescing: see `reg-alloc.lisp`.
+- Graph coloring register allocation with spilling and coalescing: see `reg-alloc.lisp`.
 - A C runtime: see `runtime.c`.
 - Assemble the generated ASM labels, definitions and instructions etc into
   a valid assembly source file, combine the assembly source file with the runtime C source
