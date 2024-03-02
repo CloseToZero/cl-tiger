@@ -10,7 +10,9 @@ x86-64 architecture on Windows, Linux and Mac.
 
 - Straight-line program interpreter (Chapter 1 of the book): see `straight-line.lisp`.
 - Lexical analysis and parsing: see `parse.lisp`,
-  I combine both lexical analysis and parsing using [esrap](https://github.com/scymtym/esrap).
+  I combine both lexical analysis and parsing using [esrap](https://github.com/scymtym/esrap)
+  and use [a trick](https://github.com/scymtym/esrap/issues/10) of the author to ignore
+  whitespace where appropriate.
 - Translate into AST during parsing: see `parse.lisp` and `ast.lisp`.
 - Type checking: see `type-check.lisp`.
 - Frame/Activation record abstraction and its implementation on x86-64:
