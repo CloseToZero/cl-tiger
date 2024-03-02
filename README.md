@@ -6,6 +6,35 @@ The Tiger programming language is from the book: *Modern Compiler Implementation
 
 x86-64 architecture on Windows, Linux and Mac.
 
+# Things implemented
+
+- Straight-line program interpreter (Chapter 1 of the book): see `straight-line.lisp`.
+- Lexical analysis and parsing: see `parse.lisp`,
+  I combine both lexical analysis and parsing using [esrap](https://github.com/scymtym/esrap).
+- Translate into AST during parsing: see `parse.lisp` and `ast.lisp`.
+- Type checking: see `type-check.lisp`.
+- Frame/Activation record abstraction and its implementation on x86-64:
+  see `frame.lisp` and `frame-x86-64.lisp`.
+- Translate into IR: see `translate.lisp` and `ir.lisp`.
+- Normalize/Canonize IRs: see `normalize.lisp`.
+- Split IRs into basic blocks: see `normalize.lisp`.
+- Trace schedule basic blocks: see `normalize.lisp`.
+- Abstraction of machine instruction: see `instr.lisp`.
+- Instruction selection interface and its implementation on x86-64:
+  see `instr-select.lisp` and `instr-select-x86-64.lisp`.
+- Flow graph construction: see `flow-graph.lisp`.
+- Liveness analysis: see `liveness.lisp`.
+- Register allocation with spilling and coalescing: see `reg-alloc.lisp`.
+- A C runtime: see `runtime.c`.
+- Assemble the generated ASM labels, definitions and instructions etc into
+  a valid assembly source file, combine the assembly source file with the runtime C source
+  to generate a CMake project, then user can use CMake to generate a native
+  project and compile the native project to an executable: see `build.lisp` and `build-x86-64.lisp`.
+
+# TODOs
+
+- Garbage Collection
+
 # How to compile and build a tiger program
 
 We compile a tiger source to an assembly file `tiger.asm/tiger.s`,
