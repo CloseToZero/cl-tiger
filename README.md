@@ -37,7 +37,7 @@ x86-64 architecture on Windows, Linux and Mac.
 
 - Garbage Collection
 
-# How to compile and build a tiger program
+# How to compile and build a tiger source
 
 We compile a tiger source to an assembly file `tiger.asm/tiger.s`,
 then generate a CMake project including the assembly file `tiger.asm/tiger.s`
