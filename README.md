@@ -2,11 +2,11 @@
 
 The Tiger programming language is from the book: *Modern Compiler Implementation in ML*.
 
-# Supported platforms
+## Supported platforms
 
 x86-64 architecture on Windows, Linux and Mac.
 
-# Things implemented
+## Things implemented
 
 - Straight-line program interpreter (Chapter 1 of the book): see `straight-line.lisp`.
 - Lexical analysis and parsing: see `parse.lisp`,
@@ -33,11 +33,11 @@ x86-64 architecture on Windows, Linux and Mac.
   to generate a CMake project, then user can use CMake to generate a native
   project and compile the native project to an executable: see `build.lisp` and `build-x86-64.lisp`.
 
-# TODOs
+## TODOs
 
 - Garbage Collection
 
-# How to compile and build a tiger source
+## How to compile and build a tiger source
 
 We compile a tiger source to an assembly file `tiger.asm/tiger.s`,
 then generate a CMake project including the assembly file `tiger.asm/tiger.s`
@@ -78,7 +78,7 @@ After `cmake --build .`,
 the compiled executable should be generated,
 you should be able to run it and see its output.
 
-# How to test the system
+## How to test the system
 
 At the first time, we haven't download the dependencies of `cl-tiger`
 and `cl-tiger-test` systems, we use `quicklisp` to do that:
@@ -98,7 +98,7 @@ Next time, we can use `asdf:test-system` directly without
 `ql:quickload` since we already download the dependencies of
 `cl-tiger` and `cl-tiger-test` systems.
 
-# ABI references
+## ABI references
 
 - For Windows, see [x64 calling convention of Microsoft](https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention).
 - For Linux and Mac, see [System V AMD64 ABI](https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI).
