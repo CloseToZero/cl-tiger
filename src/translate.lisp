@@ -772,7 +772,7 @@
 (defun alloc-fun (body frame)
   (setf *frags* (cons (frame:frag-fun body frame) *frags*)))
 
-;; A map from a record descriptor string to its frame:frag-str,
+;; A map from a record descriptor string to a label which has the record descriptor string as definition,
 ;; for what is record descriptor string, see tiger_AllocRecord in runtime.c,
 ;; the initial value of the special variable is nil,
 ;; it should be bound to a hash-table before translation.
