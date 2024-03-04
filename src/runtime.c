@@ -12,6 +12,30 @@ struct ChString
   char str[2];
 };
 
+enum Type {
+  kTypeArray = 1,
+  kTypeRecord = 2,
+};
+
+#pragma pack(1)
+struct ArrayInfo {
+  intmax_t num_of_elements;
+};
+
+struct RecordInfo {
+  intmax_t num_of_fields;
+  uint8_t *is_pointer_table;
+};
+
+struct Descriptor {
+  intmax_t type;
+  union {
+    struct ArrayInfo array_info;
+    struct RecordInfo record_info;
+  } u;
+};
+#pragma options align=reset
+
 static struct ChString ch_strings[CHAR_MAX - CHAR_MIN];
 
 static void CheckMemAlloc(void *ptr, const char *label) {
@@ -21,20 +45,41 @@ static void CheckMemAlloc(void *ptr, const char *label) {
   }
 }
 
-void* tiger_AllocRecord(intmax_t size) {
-  assert(size >= 0);
-  void *ptr = malloc((size_t)size);
+void* tiger_AllocRecord(const char *descriptor_str) {
+  // The descriptor string is something like "npp",
+  // the length of the string tell us the number of fields,
+  // the 0th character 'n' tell us the 0th field is not a pointer,
+  // the 1th character 'p' tell us the 1th field is a pointer,
+  // etc.
+  size_t num_of_fields = strlen(descriptor_str);
+  size_t size = num_of_fields * sizeof(intmax_t);
+  void *ptr = malloc(size + sizeof(struct Descriptor *));
   CheckMemAlloc(ptr, "AllocRecord");
+  struct Descriptor *descriptor = (struct Descriptor *)malloc(sizeof(struct Descriptor));
+  CheckMemAlloc(ptr, "AllocRecord(descriptor)");
+  descriptor->type = kTypeRecord;
+  descriptor->u.record_info.num_of_fields = num_of_fields;
+  descriptor->u.record_info.is_pointer_table = (uint8_t *)malloc(num_of_fields * sizeof(uint8_t));
+  CheckMemAlloc(descriptor->u.record_info.is_pointer_table, "AllocRecord(is_pointer_table)");
+  for (size_t i = 0; i < num_of_fields; i++)
+  {
+    descriptor->u.record_info.is_pointer_table[i] = descriptor_str[i] == 'p';
+  }
+  *(struct Descriptor **)ptr = descriptor;
   return ptr;
 }
 
-intmax_t* tiger_AllocArray(intmax_t num_of_elements, intmax_t init) {
+void* tiger_AllocArray(intmax_t num_of_elements, intmax_t init) {
   assert(num_of_elements >= 0);
-  intmax_t *ptr = (intmax_t *)malloc(((size_t)num_of_elements + 1) * sizeof(intmax_t));
+  void *ptr = (intmax_t *)malloc(((size_t)num_of_elements) * sizeof(intmax_t) + sizeof(struct Descriptor*));
   CheckMemAlloc(ptr, "AllocArray");
-  *ptr = num_of_elements;
+  struct Descriptor *descriptor = (struct Descriptor *)malloc(sizeof(struct Descriptor));
+  descriptor->type = kTypeArray;
+  descriptor->u.array_info.num_of_elements = num_of_elements;
+  *(struct Descriptor **)ptr = descriptor;
+  intmax_t *elements = (intmax_t *)((uint8_t *)ptr + sizeof(struct Descriptor*));
   for (intmax_t i = 0; i < num_of_elements; i++) {
-    ptr[i + 1] = init;
+    elements[i] = init;
   }
   return ptr;
 }
@@ -51,10 +96,11 @@ intmax_t tiger_CheckNilRecord(void *record) {
   return 0;
 }
 
-intmax_t tiger_CheckArraySubscript(intmax_t *array_head, intmax_t index) {
-  intmax_t num_of_elements = *array_head;
-  if (index < 0 || index >= num_of_elements) {
-    printf("Index %jd out of range [0, %jd)\n", index, num_of_elements);
+intmax_t tiger_CheckArraySubscript(void *array_head, intmax_t index) {
+  struct Descriptor *descriptor = *(struct Descriptor **)array_head;
+  assert(descriptor->type == kTypeArray);
+  if (index < 0 || index >= descriptor->u.array_info.num_of_elements) {
+    printf("Index %jd out of range [0, %jd)\n", index, descriptor->u.array_info.num_of_elements);
     exit(1);
   }
   return 0;

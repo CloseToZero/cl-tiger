@@ -307,7 +307,9 @@
                   (ir:expr-bin-op
                    (tagged-ir->expr var-tagged-ir)
                    ir:bin-op-plus
-                   (ir:expr-int (* index (frame:word-size target)))))))))))
+                   (ir:expr-int
+                    (* (+ index 1) ; + 1 to skip the record descriptor pointer
+                       (frame:word-size target)))))))))))
     ((ast:var-subscript var expr _)
      (trivia:let-match (((list (type:ty-array base-ty) var-tagged-ir)
                          (translate-var ty-env ir-env level target break-target var))
@@ -328,7 +330,7 @@
                  (tagged-ir->expr var-tagged-ir)
                  ir:bin-op-plus
                  (ir:expr-bin-op
-                  ;; Skip array head (storing array size).
+                  ;; Skip the array descriptor pointer.
                   (ir:expr-bin-op
                    (tagged-ir->expr expr-tagged-ir)
                    ir:bin-op-plus
@@ -548,7 +550,7 @@
                            (ir:expr-temp m)
                            (frame:external-call
                             "AllocRecord"
-                            (list (ir:expr-int (* (length fields) (frame:word-size target))))
+                            (list (record-descriptor-expr ty))
                             target))
                           (loop for field in fields
                                 for index from 0
@@ -559,7 +561,9 @@
                                    (ir:expr-mem
                                     (ir:expr-bin-op (ir:expr-temp m)
                                                     ir:bin-op-plus
-                                                    (ir:expr-int (* index (frame:word-size target)))))
+                                                    (ir:expr-int
+                                                     (* (+ index 1) ; + 1 to skip the record descriptor pointer
+                                                        (frame:word-size target)))))
                                    (tagged-ir->expr field-tagged-ir)))))
                    (ir:expr-temp m))))))))
     ((ast:expr-seq exprs)
@@ -768,9 +772,32 @@
 (defun alloc-fun (body frame)
   (setf *frags* (cons (frame:frag-fun body frame) *frags*)))
 
+;; A map from a record descriptor string to its frame:frag-str,
+;; for what is record descriptor string, see tiger_AllocRecord in runtime.c,
+;; the initial value of the special variable is nil,
+;; it should be bound to a hash-table before translation.
+(defvar *record-descriptor-map* nil)
+
+(defun record-descriptor-expr (record-ty)
+  ;; fields: A list of (sym ty)
+  (trivia:let-match1 (type:ty-record fields) record-ty
+    (let ((descriptor-str (make-string (length fields))))
+      (loop for (nil field-ty) in fields
+            for index from 0
+            do (setf (elt descriptor-str index)
+                     (trivia:match (type:actual-ty field-ty)
+                       ((or (type:ty-array _) (type:ty-record _)) #\p)
+                       (_  #\n))))
+      (or (gethash descriptor-str  *record-descriptor-map*)
+          (setf (gethash descriptor-str *record-descriptor-map*)
+                (let ((label (temp:new-label "record_descriptor_str")))
+                  (alloc-string label descriptor-str)
+                  (ir:expr-label label)))))))
+
 (defun translate-program (prog target)
   (find-and-fill-escapes prog)
   (let ((*frags* nil)
+        (*record-descriptor-map* (make-hash-table :test #'equal))
         (level (new-level level-top (temp:new-named-label "tiger_main") nil target)))
     (trivia:let-match1 (list _ prog-tagged-ir)
         (translate-expr type:*base-ty-env*
