@@ -463,6 +463,19 @@
     :dont-generate-project t)
    'type-check:init-unknown-field))
 
+(parachute:define-test record-with-many-pointers
+  (parachute:is
+   string=
+   (read-test-file-string "record-with-many-pointers-output.txt")
+   (with-temporary-directory (project-dir "record-with-many-pointers")
+     (cl-tiger:compile-tiger
+      (tiger-source-path "record-with-many-pointers.tig")
+      project-dir
+      (cl-tiger/target:target cl-tiger/target:arch-x86-64 *target-os*)
+      :build-args (list :generate-get-exe-path-target t))
+     (build-and-run-project
+      project-dir *target-os*))))
+
 (parachute:define-test book-test-01
   (parachute:finish
    (cl-tiger:compile-tiger

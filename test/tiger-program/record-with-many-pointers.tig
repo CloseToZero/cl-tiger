@@ -1,0 +1,29 @@
+/* a record type and a record variable */
+let
+  type intArray = array of int
+  var arr1 := intArray [8] of 0
+  var arr2 := intArray [8] of 1
+
+  type recType = { name: string, age: int }
+  var rec := recType { name = "Nobody", age = 1000 }
+
+  type rectypeWithPointers = { a: intArray, b: int, c: recType, d: intArray, e: recType, f: string }
+  var recWithPointers := rectypeWithPointers { a = arr1, b = 13, c = rec, d = arr2, e = rec, f = "abc" }
+in
+  printn(recWithPointers.a[0]);
+  print("\n");
+  printn(recWithPointers.b);
+  print("\n");
+  print(recWithPointers.c.name);
+  print("\n");
+  printn(recWithPointers.c.age);
+  print("\n");
+  printn(recWithPointers.d[0]);
+  print("\n");
+  print(recWithPointers.e.name);
+  print("\n");
+  printn(recWithPointers.e.age);
+  print("\n");
+  print(recWithPointers.f);
+  print("\n")
+end
