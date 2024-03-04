@@ -17,7 +17,11 @@ enum Type {
   kTypeRecord = 2,
 };
 
+#ifdef __clang__
 #pragma pack(1)
+#else
+#pragma pack(push, 1)
+#endif
 struct ArrayInfo {
   intmax_t num_of_elements;
 };
@@ -34,7 +38,11 @@ struct Descriptor {
     struct RecordInfo record_info;
   } u;
 };
+#ifdef __clang__
 #pragma options align=reset
+#else
+#pragma pack(pop)
+#endif
 
 static struct ChString ch_strings[CHAR_MAX - CHAR_MIN];
 
@@ -63,7 +71,7 @@ void* tiger_AllocRecord(const char *descriptor_str) {
   CheckMemAlloc(descriptor->u.record_info.is_pointer_table, "AllocRecord(is_pointer_table)");
   for (size_t i = 0; i < num_of_fields; i++)
   {
-    descriptor->u.record_info.is_pointer_table[i] = descriptor_str[i] == 'p';
+    descriptor->u.record_info.is_pointer_table[i] = (uint8_t)(descriptor_str[i] == 'p');
   }
   *(struct Descriptor **)ptr = descriptor;
   return ptr;
