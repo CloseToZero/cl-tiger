@@ -1056,7 +1056,9 @@
                        (function-formal-actual-type-mismatch
                         pos *line-map* short-formal-ty formal-ty short-arg-ty arg-ty
                         "Function ~A ~Ath arg expect type ~A, but got a arg of type ~A."
-                        (symbol:sym-name fun) i formal-ty arg-ty))))
+                        (symbol:sym-name fun) i
+                        (type:short-ty->string short-formal-ty)
+                        (type:short-ty->string short-arg-ty)))))
           (type-check-expr-result (type:actual-ty result-ty) short-result-ty))
          ((type-check-entry-var _ _ _)
           (call-non-fun
