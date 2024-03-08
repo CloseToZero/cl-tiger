@@ -776,7 +776,7 @@
 ;; for what is record descriptor string, see tiger_AllocRecord in runtime.c,
 ;; the initial value of the special variable is nil,
 ;; it should be bound to a hash-table before translation.
-(defvar *record-descriptor-map* nil)
+(defvar *record-descriptor-table* nil)
 
 (defun record-descriptor-expr (record-ty)
   ;; fields: A list of (sym ty)
@@ -788,8 +788,8 @@
                      (trivia:match (type:actual-ty field-ty)
                        ((or (type:ty-array _) (type:ty-record _)) #\p)
                        (_  #\n))))
-      (or (gethash descriptor-str  *record-descriptor-map*)
-          (setf (gethash descriptor-str *record-descriptor-map*)
+      (or (gethash descriptor-str  *record-descriptor-table*)
+          (setf (gethash descriptor-str *record-descriptor-table*)
                 (let ((label (temp:new-label "record_descriptor_str")))
                   (alloc-string label descriptor-str)
                   (ir:expr-label label)))))))
@@ -797,7 +797,7 @@
 (defun translate-program (prog target)
   (find-and-fill-escapes prog)
   (let ((*frags* nil)
-        (*record-descriptor-map* (make-hash-table :test #'equal))
+        (*record-descriptor-table* (make-hash-table :test #'equal))
         (level (new-level level-top (temp:new-named-label "tiger_main") nil target)))
     (trivia:let-match1 (list _ prog-tagged-ir)
         (translate-expr type:*base-ty-env*
