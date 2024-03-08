@@ -36,7 +36,9 @@ x86-64 architecture on Windows, Linux and Mac.
 
 ## TODOs
 
-- Garbage Collection
+- Garbage Collection: This will probably never be finished, I want to handle derived pointers correctly,
+  but that will cost nontrivial amount of time and I don't like the current toy IR,
+  in short, I have no motivation to continue.
 
 ## How to compile and build a tiger source
 
