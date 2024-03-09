@@ -51,7 +51,7 @@
           (setf build-frag-funs
                 (loop for frag-fun in frag-funs
                       collect
-                      (trivia:let-match1 (frame:frag-fun body frame) frag-fun
+                      (trivia:let-match1 (frame:frag-fun body frame _) frag-fun
                         (trivia:let-match1 (list blocks exit-label)
                             (normalize:split-into-basic-blocks (normalize:normalize body))
                           (let ((instrs

@@ -162,7 +162,8 @@
    (str string))
   (frag-fun
    (body ir:stm)
-   (frame frame)))
+   (frame frame)
+   (is-pointer-table hash-table)))
 
 ;; Returns a list of instr:instr
 (defun preserve-live-out (frame body-instrs target)
