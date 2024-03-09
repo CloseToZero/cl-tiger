@@ -52,7 +52,9 @@
 (defun actual-ty (ty)
   (serapeum:match-of ty ty
     ((ty-name _ ty-ref)
-     (if (null ty) ty (actual-ty (ty-ref-value ty-ref))))
+     (if (null (ty-ref-value ty-ref))
+         ty
+         (actual-ty (ty-ref-value ty-ref))))
     (_ ty)))
 
 ;; Compare two actual types.

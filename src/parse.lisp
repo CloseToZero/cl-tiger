@@ -8,9 +8,13 @@
 
 (cl:in-package :cl-tiger/parse)
 
-(esrap:defrule whitespace
-    (+ (or #\Space #\Tab #\Newline #\Return #\Linefeed #\Page))
-  (:constant nil))
+(defmacro def-whitespace-rule ()
+  `(esrap:defrule whitespace
+       (+ (or ,@(delete-duplicates
+                 (sort (list #\Space #\Tab #\Newline #\Return #\Linefeed #\Page) #'char<))))
+     (:constant nil)))
+
+(def-whitespace-rule)
 
 (esrap:defrule comment
     (and "/*" (* (or comment (not "*/"))) "*/")
@@ -308,6 +312,7 @@
 (esrap:defrule expr-nil
     "nil"
   (:lambda (result)
+    (declare (ignore result))
     ast:expr-nil))
 
 (esrap:defrule expr-int
@@ -487,6 +492,7 @@
 
 (esrap:defrule expr-break keyword-break
   (:lambda (result esrap:&bounds start)
+    (declare (ignore result))
     (ast:expr-break start)))
 
 (esrap:defrule expr-op boolean-or-or-high-prior-term)
