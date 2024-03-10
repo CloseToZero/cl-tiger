@@ -79,9 +79,12 @@
         (access-in-frame offset))
       (access-in-reg (temp:new-temp))))
 
-(defmethod frame:new-frame% (name formals target
+(defmethod frame:new-frame% (name formals is-pointer-table target
                              (target-arch target:arch-x86-64) target-os)
-  (let ((frame (make-instance 'frame :name name :target target)))
+  (let ((frame (make-instance 'frame
+                              :name name
+                              :is-pointer-table is-pointer-table
+                              :target target)))
     (setf (frame:frame-formals% frame)
           (mapcar (lambda (escape)
                     (alloc-formal frame escape target))

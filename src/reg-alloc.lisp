@@ -563,7 +563,11 @@
       (assign-regs)
       (cond ((not (null spilled-temps))
              (let ((generated-temps (rewrite-instrs-for-spilled-temps)))
-               (reg-alloc% instrs (fset:union generated-temps pre-generated-temps) frame target)))
+               (reg-alloc%
+                instrs
+                (fset:union generated-temps pre-generated-temps)
+                frame
+                target)))
             (t
              (flet ((get-reg (temp)
                       (let ((reg (gethash temp allocation)))
