@@ -24,6 +24,7 @@ enum Type {
 #endif
 struct ArrayInfo {
   intmax_t num_of_elements;
+  uint8_t is_pointer;
 };
 
 struct RecordInfo {
@@ -77,13 +78,14 @@ void* tiger_AllocRecord(const char *descriptor_str) {
   return ptr;
 }
 
-void* tiger_AllocArray(intmax_t num_of_elements, intmax_t init) {
+void* tiger_AllocArray(intmax_t num_of_elements, intmax_t init, intmax_t is_pointer) {
   assert(num_of_elements >= 0);
   void *ptr = (intmax_t *)malloc(((size_t)num_of_elements) * sizeof(intmax_t) + sizeof(struct Descriptor*));
   CheckMemAlloc(ptr, "AllocArray");
   struct Descriptor *descriptor = (struct Descriptor *)malloc(sizeof(struct Descriptor));
   descriptor->type = kTypeArray;
   descriptor->u.array_info.num_of_elements = num_of_elements;
+  descriptor->u.array_info.is_pointer = is_pointer != 0;
   *(struct Descriptor **)ptr = descriptor;
   intmax_t *elements = (intmax_t *)((uint8_t *)ptr + sizeof(struct Descriptor*));
   for (intmax_t i = 0; i < num_of_elements; i++) {

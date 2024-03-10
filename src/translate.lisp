@@ -772,7 +772,7 @@
             (ir:stm-jump (ir:expr-label break-target) (list break-target)))))
     ((ast:expr-array type-id size init _)
      (let ((ty (type:actual-ty (type:get-ty ty-env type-id))))
-       (trivia:let-match1 (type:ty-array _) ty
+       (trivia:let-match1 (type:ty-array base-ty) ty
          (trivia:let-match (((list _ size-tagged-ir)
                              (translate-expr ty-env ir-env level target break-target size))
                             ((list _ init-tagged-ir)
@@ -783,7 +783,8 @@
                    "AllocArray"
                    (list
                     (tagged-ir->expr size-tagged-ir)
-                    (tagged-ir->expr init-tagged-ir))
+                    (tagged-ir->expr init-tagged-ir)
+                    (ir:expr-int (if (is-ty-pointer base-ty) 1 0)))
                    target)))))))
     ((ast:expr-let decls body _)
      (trivia:let-match1 (list new-ty-env new-ir-env tagged-irs)
