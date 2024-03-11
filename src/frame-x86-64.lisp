@@ -36,11 +36,13 @@
   (defclass frame (frame:frame)
     ((next-offset
       :type fixnum
-      :initform (- *word-size*)
+      ;; -2 * *word-size* for the return address and a local
+      ;; to store the current frame layout table pointer.
+      :initform (* -2 *word-size*)
       :accessor frame-next-offset)
      (size
       :type fixnum
-      :initform 0
+      :initform *word-size*
       :accessor frame-size)))
 
   (defclass access-in-frame (frame:access)
@@ -430,3 +432,27 @@
                  (format out "~A" byte)))
       (when string-literal-as-comment
         (format out " # ~S" (util:str-without-newlines str))))))
+
+(defmethod frame:frag-data->definition% (frag-data target
+                                         (target-arch target:arch-x86-64) (target-os target:os-windows))
+  (trivia:let-match1 (frame:frag-data label data) frag-data
+    (with-output-to-string (out)
+      (format out "~A db " (frame:label-name label target))
+      (loop with first? = t
+            for byte across data
+            do (if first?
+                   (setf first? nil)
+                   (format out ", "))
+               (format out "~A" byte)))))
+
+(defmethod frame:frag-data->definition% (frag-data target
+                                         (target-arch target:arch-x86-64) target-os)
+  (trivia:let-match1 (frame:frag-data label data) frag-data
+    (with-output-to-string (out)
+      (format out "~A:~%.byte " (frame:label-name label target))
+      (loop with first? = t
+            for byte across data
+            do (if first?
+                   (setf first? nil)
+                   (format out ", "))
+               (format out "~A" byte)))))

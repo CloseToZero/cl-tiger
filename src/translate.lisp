@@ -786,10 +786,10 @@
 (defvar *frags* nil)
 
 (defun alloc-string (label str)
-  (setf *frags* (cons (frame:frag-str label str) *frags*)))
+  (push (frame:frag-str label str) *frags*))
 
 (defun alloc-fun (body frame)
-  (setf *frags* (cons (frame:frag-fun body frame) *frags*)))
+  (push (frame:frag-fun body frame) *frags*))
 
 ;; A map from a record descriptor string to a label which has the record descriptor string as definition,
 ;; for what is record descriptor string, see tiger_AllocRecord in runtime.c,

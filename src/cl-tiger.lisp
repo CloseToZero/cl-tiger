@@ -54,14 +54,30 @@
                       (trivia:let-match1 (frame:frag-fun body frame) frag-fun
                         (trivia:let-match1 (list blocks exit-label)
                             (normalize:split-into-basic-blocks (normalize:normalize body))
-                          (let ((instrs
-                                   (frame:preserve-live-out
-                                    frame
-                                    (mapcan (lambda (stm)
-                                              (instr-select:select-instrs stm frame target))
-                                            (normalize:trace-schedule blocks exit-label))
-                                    target)))
-                            (let ((instrs (reg-alloc:reg-alloc instrs frame target)))
+                          (let ((stm-instrs-list nil))
+                            (dolist (stm (normalize:trace-schedule blocks exit-label))
+                              (trivia:let-match1 (list stm-instrs stm-data-frags)
+                                  (instr-select:select-instrs stm frame target)
+                                (push stm-instrs stm-instrs-list)
+                                (setf build-frag-strs
+                                      (nconc build-frag-strs
+                                             (loop for stm-data-frag in stm-data-frags
+                                                   collect (build:frag-str
+                                                            (frame:frag-data->definition
+                                                             stm-data-frag target)))))))
+                            (trivia:let-match1 (list instrs data-frags)
+                                (reg-alloc:reg-alloc
+                                 (frame:preserve-live-out
+                                  frame
+                                  (apply #'nconc (nreverse stm-instrs-list))
+                                  target)
+                                 frame target)
+                              (setf build-frag-strs
+                                    (nconc build-frag-strs
+                                           (loop for data-frag in data-frags
+                                                 collect (build:frag-str
+                                                          (frame:frag-data->definition
+                                                           data-frag target)))))
                               (trivia:let-match1 (list prolog instrs epilog)
                                   (frame:wrap-entry-exit frame instrs target)
                                 (build:frag-fun prolog instrs epilog))))))))

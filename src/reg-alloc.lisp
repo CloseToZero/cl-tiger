@@ -133,7 +133,8 @@
          (reduced-stack nil)
 
          (spilled-temps nil)
-         (allocation (make-hash-table)))
+         (allocation (make-hash-table))
+         (data-frags nil))
     (labels ((build ()
                (let ((fgraph (flow-graph:flow-graph-graph flow-graph))
                      (defs-table (flow-graph:flow-graph-defs-table flow-graph))
@@ -505,15 +506,21 @@
                                 (push dst new-dsts)))
                             (nconc
                              (when src-fetch-stms
-                               (instr-select:select-instrs
-                                (apply #'ir:stms->stm-compound (nreverse src-fetch-stms))
-                                frame target))
+                               (trivia:let-match1 (list stm-instrs stm-data-frags)
+                                   (instr-select:select-instrs
+                                    (apply #'ir:stms->stm-compound (nreverse src-fetch-stms))
+                                    frame target)
+                                 (push stm-data-frags data-frags)
+                                 stm-instrs))
                              (list
                               (funcall rebuild-instr-fun (nreverse new-dsts) (nreverse new-srcs)))
                              (when dst-restore-stms
-                               (instr-select:select-instrs
-                                (apply #'ir:stms->stm-compound (nreverse dst-restore-stms))
-                                frame target))))))
+                               (trivia:let-match1 (list stm-instrs stm-data-frags)
+                                   (instr-select:select-instrs
+                                    (apply #'ir:stms->stm-compound (nreverse dst-restore-stms))
+                                    frame target)
+                                 (push stm-data-frags data-frags)
+                                 stm-instrs))))))
                    (setf instrs
                          (mapcan (lambda (instr)
                                    (serapeum:match-of instr:instr instr
@@ -574,39 +581,41 @@
                         (unless reg
                           (error "Cannot get reg of ~S." temp))
                         reg)))
-               (remove-if
-                (lambda (instr)
-                  ;; remove self moves.
-                  (serapeum:match-of instr:instr instr
-                    ((instr:instr-move _ dst src)
-                     (eq dst src))
-                    (_
-                     nil)))
-                (mapcar
+               (list
+                (remove-if
                  (lambda (instr)
+                   ;; remove self moves.
                    (serapeum:match-of instr:instr instr
-                     ((instr:instr-op template dsts srcs jumps)
-                      (instr:instr-op template
-                                      (mapcar #'get-reg dsts)
-                                      (mapcar #'get-reg srcs)
-                                      jumps))
-                     ((instr:instr-stack-arg template dsts srcs reloc-fun)
-                      (instr:instr-stack-arg template
-                                             (mapcar #'get-reg dsts)
-                                             (mapcar #'get-reg srcs)
-                                             reloc-fun))
-                     ((instr:instr-call template dsts srcs num-of-regs)
-                      (instr:instr-call template
-                                        (mapcar #'get-reg dsts)
-                                        (mapcar #'get-reg srcs)
-                                        num-of-regs))
-                     ((instr:instr-move template dst src)
-                      (instr:instr-move template
-                                        (get-reg dst)
-                                        (get-reg src)))
-                     ((instr:instr-label _ _)
-                      instr)))
-                 instrs))))))))
+                     ((instr:instr-move _ dst src)
+                      (eq dst src))
+                     (_
+                      nil)))
+                 (mapcar
+                  (lambda (instr)
+                    (serapeum:match-of instr:instr instr
+                      ((instr:instr-op template dsts srcs jumps)
+                       (instr:instr-op template
+                                       (mapcar #'get-reg dsts)
+                                       (mapcar #'get-reg srcs)
+                                       jumps))
+                      ((instr:instr-stack-arg template dsts srcs reloc-fun)
+                       (instr:instr-stack-arg template
+                                              (mapcar #'get-reg dsts)
+                                              (mapcar #'get-reg srcs)
+                                              reloc-fun))
+                      ((instr:instr-call template dsts srcs num-of-regs)
+                       (instr:instr-call template
+                                         (mapcar #'get-reg dsts)
+                                         (mapcar #'get-reg srcs)
+                                         num-of-regs))
+                      ((instr:instr-move template dst src)
+                       (instr:instr-move template
+                                         (get-reg dst)
+                                         (get-reg src)))
+                      ((instr:instr-label _ _)
+                       instr)))
+                  instrs))
+                (nreverse data-frags))))))))
 
 (defun temp->adjs-table->graphviz (temp->adjs-table &optional (stream t))
   (format stream "digraph G {~%")

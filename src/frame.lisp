@@ -28,10 +28,14 @@
    #:wrap-entry-exit
    #:preserve-live-out
    #:frag-str->definition
+   #:frag-data->definition
    #:frag
    #:frag-str
    #:frag-str-label
    #:frag-str-str
+   #:frag-data
+   #:frag-data-label
+   #:frag-data-data
    #:frag-fun
    #:frag-fun-body
    #:frag-fun-frame
@@ -54,7 +58,8 @@
    #:wrap-ir-entry-exit%
    #:wrap-entry-exit%
    #:preserve-live-out%
-   #:frag-str->definition%))
+   #:frag-str->definition%
+   #:frag-data->definition%))
 
 (cl:in-package :cl-tiger/frame)
 
@@ -180,7 +185,10 @@ but we will mark these temps.")
    (str string))
   (frag-fun
    (body ir:stm)
-   (frame frame)))
+   (frame frame))
+  (frag-data
+   (label temp:label)
+   (data (array (unsigned-byte 8) (*)))))
 
 ;; Returns a list of instr:instr
 (defun preserve-live-out (frame body-instrs target)
@@ -200,3 +208,9 @@ but we will mark these temps.")
                          target (target:target-arch target) (target:target-os target)))
 
 (defgeneric frag-str->definition% (frag-str string-literal-as-comment target target-arch target-os))
+
+(defun frag-data->definition (frag-data target)
+  (frag-data->definition% frag-data
+                          target (target:target-arch target) (target:target-os target)))
+
+(defgeneric frag-data->definition% (frag-data target target-arch target-os))
