@@ -43,14 +43,14 @@
                 else
                   collect frag into frag-funs
                 finally (return (list frag-strs frag-funs)))
-        (let ((build-frag-strs nil)
+        (let ((build-frag-strs-list nil)
               (build-frag-funs nil))
-          (setf build-frag-strs
-                (loop for frag-str in frag-strs
+          (push (loop for frag-str in frag-strs
                       collect
                       (build:frag-str
                        (frame:frag-str->definition
-                        frag-str string-literal-as-comment target))))
+                        frag-str string-literal-as-comment target)))
+                build-frag-strs-list)
           (setf build-frag-funs
                 (loop for frag-fun in frag-funs
                       collect
@@ -62,12 +62,11 @@
                               (trivia:let-match1 (list stm-instrs stm-data-frags)
                                   (instr-select:select-instrs stm frame target)
                                 (push stm-instrs stm-instrs-list)
-                                (setf build-frag-strs
-                                      (nconc build-frag-strs
-                                             (loop for stm-data-frag in stm-data-frags
-                                                   collect (build:frag-str
-                                                            (frame:frag-data->definition
-                                                             stm-data-frag target)))))))
+                                (push (loop for stm-data-frag in stm-data-frags
+                                            collect (build:frag-str
+                                                     (frame:frag-data->definition
+                                                      stm-data-frag target)))
+                                      build-frag-strs-list)))
                             (trivia:let-match1 (list instrs data-frags)
                                 (reg-alloc:reg-alloc
                                  (frame:preserve-live-out
@@ -75,14 +74,15 @@
                                   (apply #'nconc (nreverse stm-instrs-list))
                                   target)
                                  frame target)
-                              (setf build-frag-strs
-                                    (nconc build-frag-strs
-                                           (loop for data-frag in data-frags
-                                                 collect (build:frag-str
-                                                          (frame:frag-data->definition
-                                                           data-frag target)))))
+                              (push (loop for data-frag in data-frags
+                                          collect (build:frag-str
+                                                   (frame:frag-data->definition
+                                                    data-frag target)))
+                                     build-frag-strs-list)
                               (trivia:let-match1 (list prolog instrs epilog)
                                   (frame:wrap-entry-exit frame instrs target)
                                 (build:frag-fun prolog instrs epilog))))))))
           (unless dont-generate-project
-            (apply #'build:build build-frag-strs build-frag-funs dst-dir target build-args)))))))
+            (apply #'build:build
+                   (apply #'nconc (nreverse build-frag-strs-list))
+                   build-frag-funs dst-dir target build-args)))))))
