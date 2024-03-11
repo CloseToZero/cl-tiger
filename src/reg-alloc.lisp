@@ -134,7 +134,7 @@
 
          (spilled-temps nil)
          (allocation (make-hash-table))
-         (data-frags nil))
+         (data-frags-list nil))
     (labels ((build ()
                (let ((fgraph (flow-graph:flow-graph-graph flow-graph))
                      (defs-table (flow-graph:flow-graph-defs-table flow-graph))
@@ -510,7 +510,7 @@
                                    (instr-select:select-instrs
                                     (apply #'ir:stms->stm-compound (nreverse src-fetch-stms))
                                     frame target)
-                                 (push stm-data-frags data-frags)
+                                 (push stm-data-frags data-frags-list)
                                  stm-instrs))
                              (list
                               (funcall rebuild-instr-fun (nreverse new-dsts) (nreverse new-srcs)))
@@ -519,7 +519,7 @@
                                    (instr-select:select-instrs
                                     (apply #'ir:stms->stm-compound (nreverse dst-restore-stms))
                                     frame target)
-                                 (push stm-data-frags data-frags)
+                                 (push stm-data-frags data-frags-list)
                                  stm-instrs))))))
                    (setf instrs
                          (mapcan (lambda (instr)
@@ -615,7 +615,7 @@
                       ((instr:instr-label _ _)
                        instr)))
                   instrs))
-                (nreverse data-frags))))))))
+                (apply #'nconc (nreverse data-frags-list)))))))))
 
 (defun temp->adjs-table->graphviz (temp->adjs-table &optional (stream t))
   (format stream "digraph G {~%")
