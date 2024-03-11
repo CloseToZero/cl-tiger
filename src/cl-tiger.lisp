@@ -2,6 +2,7 @@
   (:use :cl)
   (:local-nicknames
    (:util :cl-tiger/util)
+   (:temp :cl-tiger/temp)
    (:target :cl-tiger/target)
    (:frame :cl-tiger/frame)
    (:parse :cl-tiger/parse)
@@ -25,7 +26,9 @@
                         dont-generate-project
                         (string-literal-as-comment t)
                         build-args)
-  (let* ((text (etypecase source
+  (let* ((temp:*temp-count* temp:*temp-count*)
+         (temp:*label-count* temp:*label-count*)
+         (text (etypecase source
                  (stream (uiop:slurp-stream-string source))
                  (pathname (uiop:read-file-string source))
                  (string source)))

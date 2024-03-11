@@ -3,6 +3,8 @@
   (:local-nicknames
    (:symbol :cl-tiger/symbol))
   (:export
+   #:*temp-count*
+   #:*label-count*
    #:temp
    #:temp-num
    #:temp-name
@@ -16,8 +18,7 @@
 
 (cl:in-package :cl-tiger/temp)
 
-;; The count 0 is reserved for named temps.
-(defvar *temp-count* 1)
+(defvar *temp-count* 0)
 
 (serapeum:defconstructor temp
   (num integer)
