@@ -17,11 +17,6 @@ enum Type {
   kTypeRecord = 2,
 };
 
-#ifdef __clang__
-#pragma pack(1)
-#else
-#pragma pack(push, 1)
-#endif
 struct ArrayInfo {
   intmax_t num_of_elements;
   uint8_t is_pointer;
@@ -39,11 +34,6 @@ struct Descriptor {
     struct RecordInfo record_info;
   } u;
 };
-#ifdef __clang__
-#pragma options align=reset
-#else
-#pragma pack(pop)
-#endif
 
 static struct ChString ch_strings[CHAR_MAX - CHAR_MIN];
 
