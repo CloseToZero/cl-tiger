@@ -873,36 +873,6 @@
          instr:not-jump))
        r))
     ((ir:expr-call fun args)
-     (let ((frame-layout-t (temp:new-temp "frame_layout_t"))
-           (frame-layout-data-label (temp:new-label "frame_layout")))
-       ;; TODO fill in real frame layout, need liveness information after the call,
-       ;; provide a callback here to acheve that.
-       (instr-select:alloc-data
-        frame-layout-data-label
-        (make-array
-         1 :element-type '(unsigned-byte 8) :initial-element 0))
-       (emit
-        (instr:instr-op
-         (asm->string
-          (asm-get-label-addr *d0-arg* frame-layout-data-label)
-          target)
-         (list frame-layout-t)
-         nil
-         instr:not-jump))
-       (emit
-        (instr:instr-op
-         (asm->string
-          (asm-bin-op
-           op-mov
-           (arg-mem
-            (mem-base-disp
-             *s0*
-             (- (frame:word-size target))))
-           *s1-arg*)
-          target)
-         nil
-         (list (frame:fp target) frame-layout-t)
-         instr:not-jump)))
      (let ((f (temp:new-temp "fun")))
        (emit
         (instr:instr-move
@@ -928,9 +898,9 @@
            r
            (frame:rv target)))
          ;; Pass back the rax directly is a bad idea,
-         ;; in many places, we assume the value of the temp
+         ;; since in many places, we assume the value of the temp
          ;; return by select-instr-expr won't be overwritten,
-         ;; Pass back the rax directly violate this assumption.
+         ;; pass back the rax directly violate this assumption.
          r)))
     ((ir:expr-stm-then-expr stm expr)
      (select-instr-stm stm frame target)

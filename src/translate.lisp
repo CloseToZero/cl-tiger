@@ -141,8 +141,8 @@
   (tagged-condi
    (value (function (temp:label temp:label) ir:stm))))
 
-(defun new-level (parent name formals is-pointer-table target)
-  (let ((frame (frame:new-frame name (cons t formals) is-pointer-table target)))
+(defun new-level (parent name formals target)
+  (let ((frame (frame:new-frame name (cons t formals) target)))
     (level-inner parent name frame)))
 
 (defun level-formals (level)
@@ -239,18 +239,6 @@
    (label temp:label)
    (level level)))
 
-(defun mark-access-as-pointer (level access)
-  (setf (gethash (access-frame-access access)
-                 (frame:frame-is-pointer-table (level-inner-frame level)))
-        t))
-
-(defun is-ty-pointer (ty)
-  (serapeum:match-of type:ty (type:actual-ty ty)
-    ((or (type:ty-record _)
-         (type:ty-array _))
-     t)
-    (_ nil)))
-
 (defun base-ir-env (target)
   (let ((env (fset:empty-map)))
     (reduce (lambda (env binding)
@@ -260,7 +248,6 @@
                                         (mapcar (lambda (formal-ty)
                                                   (declare (ignore formal-ty)) nil)
                                                 formal-tys)
-                                        (frame:new-is-pointer-table)
                                         target)))
                   (fset:with env
                              (symbol:get-sym name)
@@ -357,8 +344,6 @@
      (trivia:let-match1 (list init-ty init-tagged-ir)
          (translate-expr ty-env ir-env level target break-target init)
        (let ((var-access (alloc-local level (ast:escape-ref-value escape-ref) target)))
-         (when (is-ty-pointer init-ty)
-           (mark-access-as-pointer level var-access))
          (list ty-env
                (insert-ir-entry
                 ir-env name
@@ -391,31 +376,30 @@
              decl-types)
        (list new-ty-env ir-env nil)))
     ((ast:decl-functions decl-functions)
-     (let* ((new-ir-env
-              (reduce (lambda (acc-ir-env decl-function)
-                        (let ((name (temp:new-label (symbol:sym-name (ast:decl-function-name decl-function)))))
-                          (insert-ir-entry
-                           acc-ir-env
-                           (ast:decl-function-name decl-function)
-                           (ir-entry-fun
-                            (mapcar (lambda (param-field)
-                                      (type:get-ty ty-env (ast:field-type-id param-field)))
-                                    (ast:decl-function-params decl-function))
-                            (let ((decl-function-result (ast:decl-function-result decl-function)))
-                              ;; decl-function-result form: (sym pos).
-                              (if decl-function-result
-                                  (type:get-ty ty-env (first decl-function-result))
-                                  (type:get-unnamed-base-ty (symbol:get-sym "unit"))))
-                            name
-                            (new-level level name
-                                       (mapcar (lambda (param-field)
-                                                 (ast:escape-ref-value
-                                                  (ast:field-escape-ref param-field)))
-                                               (ast:decl-function-params decl-function))
-                                       (frame:new-is-pointer-table)
-                                       target)))))
-                      decl-functions
-                      :initial-value ir-env)))
+     (let ((new-ir-env
+             (reduce (lambda (acc-ir-env decl-function)
+                       (let ((name (temp:new-label (symbol:sym-name (ast:decl-function-name decl-function)))))
+                         (insert-ir-entry
+                          acc-ir-env
+                          (ast:decl-function-name decl-function)
+                          (ir-entry-fun
+                           (mapcar (lambda (param-field)
+                                     (type:get-ty ty-env (ast:field-type-id param-field)))
+                                   (ast:decl-function-params decl-function))
+                           (let ((decl-function-result (ast:decl-function-result decl-function)))
+                             ;; decl-function-result form: (sym pos).
+                             (if decl-function-result
+                                 (type:get-ty ty-env (first decl-function-result))
+                                 (type:get-unnamed-base-ty (symbol:get-sym "unit"))))
+                           name
+                           (new-level level name
+                                      (mapcar (lambda (param-field)
+                                                (ast:escape-ref-value
+                                                 (ast:field-escape-ref param-field)))
+                                              (ast:decl-function-params decl-function))
+                                      target)))))
+                     decl-functions
+                     :initial-value ir-env)))
        (mapc (lambda (decl-function)
                (let ((ir-entry (get-ir-entry new-ir-env (ast:decl-function-name decl-function))))
                  (trivia:let-match1 (ir-entry-fun formal-tys _ _ level) ir-entry
@@ -433,8 +417,6 @@
                                         (ir-entry-var
                                          formal-ty
                                          formal-access)))
-                                 (when (is-ty-pointer formal-ty)
-                                   (mark-access-as-pointer level formal-access))
                               finally (return acc-ir-env))
                         level
                         target
@@ -560,7 +542,7 @@
      (let ((ty (type:actual-ty (type:get-ty ty-env type-id))))
        (trivia:let-match1 (type:ty-record _) ty
          (list ty
-               (let ((m (temp:new-temp "record")))
+               (let ((m (temp:new-temp "record_memeory")))
                  (tagged-expr
                   (ir:expr-stm-then-expr
                    (apply #'ir:stms->stm-compound
@@ -797,6 +779,13 @@
 ;; it should be bound to a hash-table before translation.
 (defvar *record-descriptor-table* nil)
 
+(defun is-ty-pointer (ty)
+  (serapeum:match-of type:ty (type:actual-ty ty)
+    ((or (type:ty-record _)
+         (type:ty-array _))
+     t)
+    (_ nil)))
+
 (defun record-descriptor-expr (record-ty)
   ;; fields: A list of (sym ty)
   (trivia:let-match1 (type:ty-record fields) record-ty
@@ -804,9 +793,9 @@
       (loop for (nil field-ty) in fields
             for index from 0
             do (setf (elt descriptor-str index)
-                     (trivia:match (type:actual-ty field-ty)
-                       ((or (type:ty-array _) (type:ty-record _)) #\p)
-                       (_  #\n))))
+                     (if (is-ty-pointer field-ty)
+                         #\p
+                         #\n)))
       (or (gethash descriptor-str  *record-descriptor-table*)
           (setf (gethash descriptor-str *record-descriptor-table*)
                 (let ((label (temp:new-label "record_descriptor_str")))
@@ -817,11 +806,7 @@
   (find-and-fill-escapes prog)
   (let ((*frags* nil)
         (*record-descriptor-table* (make-hash-table :test #'equal))
-        (level (new-level level-top
-                          (temp:new-named-label "tiger_main")
-                          nil
-                          (frame:new-is-pointer-table)
-                          target)))
+        (level (new-level level-top (temp:new-named-label "tiger_main") nil target)))
     (trivia:let-match1 (list _ prog-tagged-ir)
         (translate-expr type:*base-ty-env*
                         (base-ir-env target)
