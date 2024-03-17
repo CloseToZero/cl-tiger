@@ -101,7 +101,7 @@
 (defvar *cl-arg* (arg-temp *cl*))
 
 (defun emit (instr)
-  (setf *instrs* (cons instr *instrs*))
+  (push instr *instrs*)
   nil)
 
 (defun rel-op->unary-op (rel-op)
