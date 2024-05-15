@@ -37,7 +37,7 @@ x86-64 architecture on Windows, Linux and Mac.
 ## TODOs
 
 - Garbage Collection: I have no motivation to finish this, need too
-  much changes and a nontrivial amount of time to properly handle various cases of a pointer
+  many changes and a nontrivial amount of time to properly handle various cases of a pointer
   get reused across calls (the expression used to reproduce the pointer is best to be side effect free,
   this is easy to acheve, difficulties lie in other places).
 
