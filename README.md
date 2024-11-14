@@ -2,6 +2,13 @@
 
 The Tiger programming language is from the book: *Modern Compiler Implementation in ML*.
 
+## Why archive the repository?
+
+1. The code is quite messy, I don't like it.
+2. The source language Tiger is very ugly, I don't like it.
+
+I have no motivation to clean up the implementation for the second reason.
+
 ## Supported platforms
 
 x86-64 architecture on Windows, Linux and Mac.
